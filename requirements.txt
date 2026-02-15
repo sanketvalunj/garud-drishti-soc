@@ -1,0 +1,27 @@
+fastapi
+uvicorn
+pydantic
+python-dotenv
+
+# Data processing
+pandas
+numpy
+
+# Anomaly detection
+pyod
+tsfresh
+scikit-learn
+
+# Storage
+elasticsearch
+
+# AI / LLM
+transformers
+sentence-transformers
+langchain
+langgraph
+ollama
+
+# Utilities
+requests
+tqdm

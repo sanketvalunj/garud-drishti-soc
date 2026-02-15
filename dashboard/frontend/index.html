@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Garud-Drishti SOC</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+ --bg:#020617;
+ --panel:#0b1220;
+ --panel2:#0f172a;
+ --border:rgba(255,255,255,.06);
+ --cyan:#38bdf8;
+ --red:#f87171;
+ --amber:#fbbf24;
+ --green:#34d399;
+ --text:#e6edf7;
+ --muted:#8aa0bf;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+ font-family:Inter,system-ui;
+ background:radial-gradient(circle at top,#0b1220,#020617);
+ color:var(--text);
+}
+
+/* HEADER */
+.top{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ padding:18px 28px;
+ border-bottom:1px solid var(--border);
+}
+.brand{font-weight:700;font-size:18px;letter-spacing:1px}
+.brand span{color:var(--cyan)}
+.right-top{
+ display:flex;
+ gap:20px;
+ align-items:center;
+ font-family:"JetBrains Mono";
+}
+.clock{color:var(--cyan)}
+.updated{color:var(--muted);font-size:12px}
+
+/* CONTROLS */
+.controls{
+ padding:18px 28px;
+ display:flex;
+ gap:12px;
+}
+button{
+ background:linear-gradient(135deg,#3b82f6,#6366f1);
+ color:white;border:none;
+ padding:12px 22px;border-radius:10px;
+ cursor:pointer;font-weight:600;
+}
+button:hover{transform:translateY(-1px)}
+.refresh{background:linear-gradient(135deg,#0ea5e9,#06b6d4)}
+
+/* KPIs */
+.kpis{
+ display:grid;
+ grid-template-columns:repeat(5,1fr);
+ gap:14px;
+ padding:0 28px 22px;
+}
+.kpi{
+ background:var(--panel);
+ border:1px solid var(--border);
+ padding:18px;border-radius:14px;
+}
+.kpi h4{font-size:11px;color:var(--muted)}
+.kpi .val{font-size:26px;font-weight:700}
+
+/* MAIN GRID */
+.main{
+ display:grid;
+ grid-template-columns:330px 1fr 260px;
+ gap:16px;
+ padding:0 28px 28px;
+}
+
+/* PANEL */
+.panel{
+ background:var(--panel);
+ border:1px solid var(--border);
+ border-radius:14px;
+ display:flex;
+ flex-direction:column;
+ min-height:200px;
+}
+.header{
+ padding:14px 16px;
+ border-bottom:1px solid var(--border);
+ font-weight:600;
+}
+.body{
+ padding:14px;
+ overflow:auto;
+ flex:1;
+}
+
+/* INCIDENT */
+.incident{
+ background:var(--panel2);
+ border:1px solid var(--border);
+ border-left:4px solid var(--cyan);
+ border-radius:10px;
+ padding:12px;
+ margin-bottom:12px;
+ cursor:pointer;
+ transition:.3s;
+}
+.incident.high{border-left-color:var(--red)}
+.incident.medium{border-left-color:var(--amber)}
+.incident.low{border-left-color:var(--green)}
+
+/* NEW INCIDENT ANIMATION */
+.incident.new{
+ animation:glow 2s ease;
+}
+@keyframes glow{
+ 0%{box-shadow:0 0 0 rgba(56,189,248,0)}
+ 50%{box-shadow:0 0 20px rgba(56,189,248,.7)}
+ 100%{box-shadow:0 0 0 rgba(56,189,248,0)}
+}
+
+.risk{height:5px;background:#111;border-radius:5px;margin-top:6px}
+.fill{height:100%;border-radius:5px}
+.fill.high{background:var(--red)}
+.fill.medium{background:var(--amber)}
+.fill.low{background:var(--green)}
+
+.playbook{
+ margin-top:10px;padding:10px;background:#020617;
+ border-radius:8px;display:none;
+}
+.incident.open .playbook{display:block}
+
+/* TIMELINE */
+.timeline-item{
+ border-left:3px solid var(--cyan);
+ padding-left:10px;margin:10px 0;font-size:13px;
+}
+
+/* NODE */
+.node{
+ padding:10px;background:var(--panel2);
+ border-radius:8px;margin-bottom:10px;
+}
+
+canvas{display:block;margin:auto}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+ <div class="brand">🦅 GARUD<span>-DRISHTI</span> SOC</div>
+ <div class="right-top">
+   <div class="updated" id="updated">Last updated: --</div>
+   <div class="clock" id="clock"></div>
+ </div>
+</div>
+
+<div class="controls">
+ <button onclick="runPipeline()">Run Detection Pipeline</button>
+ <button class="refresh" onclick="refreshData()">Refresh</button>
+</div>
+
+<div class="kpis">
+ <div class="kpi"><h4>Total Events</h4><div class="val" id="k1">0</div></div>
+ <div class="kpi"><h4>Active Threats</h4><div class="val" id="k2">0</div></div>
+ <div class="kpi"><h4>High Severity</h4><div class="val" id="k3">0</div></div>
+ <div class="kpi"><h4>Resolved</h4><div class="val" id="k4">0</div></div>
+ <div class="kpi"><h4>Coverage</h4><div class="val">97%</div></div>
+</div>
+
+<div class="main">
+
+<!-- INCIDENTS -->
+<div class="panel">
+<div class="header">🚨 Incidents</div>
+<div class="body" id="incidents"></div>
+</div>
+
+<!-- CENTER -->
+<div>
+<div class="panel" style="height:240px;margin-bottom:16px">
+<div class="header">📊 Risk Distribution</div>
+<div class="body"><canvas id="donut" width="180" height="180"></canvas></div>
+</div>
+
+<div class="panel">
+<div class="header">📅 Timeline</div>
+<div class="body" id="timeline"></div>
+</div>
+</div>
+
+<!-- RIGHT -->
+<div>
+<div class="panel">
+<div class="header">🖥 Nodes</div>
+<div class="body">
+<div class="node">AI Processing — Healthy</div>
+<div class="node">Log Storage — Healthy</div>
+<div class="node">Analyst UI — Healthy</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<script>
+let previousIncidents=[];
+
+function updateClock(){
+ document.getElementById("clock").innerText=
+ new Date().toLocaleTimeString();
+}
+setInterval(updateClock,1000);updateClock();
+
+function updateTimestamp(){
+ document.getElementById("updated").innerText=
+ "Last updated: "+new Date().toLocaleTimeString();
+}
+
+async function runPipeline(){
+ try{
+   await fetch("http://127.0.0.1:8000/run-pipeline",{method:"POST"});
+   loadData();
+ }catch{loadDemo();}
+}
+
+function refreshData(){ loadData(); }
+
+async function loadData(){
+ try{
+  const inc=await fetch("http://127.0.0.1:8000/incidents");
+  const pb=await fetch("http://127.0.0.1:8000/playbooks");
+  render((await inc.json()).incidents,(await pb.json()).playbooks);
+ }catch{loadDemo();}
+ updateTimestamp();
+}
+
+function loadDemo(){
+ const now=Date.now();
+ render([
+ {incident_id:"INC-1",severity:"high",risk_score:.92,timestamp:now,summary:"Brute force on auth"},
+ {incident_id:"INC-2",severity:"medium",risk_score:.61,timestamp:now-300000,summary:"Suspicious login"},
+ {incident_id:"INC-3",severity:"low",risk_score:.21,timestamp:now-500000,summary:"EDR script alert"}
+ ],[
+ {playbook_id:"INC-1",steps:["Block IP","Lock account","Notify SOC"]},
+ {playbook_id:"INC-2",steps:["Check logs","Force reset"]}
+ ]);
+ updateTimestamp();
+}
+
+function render(incidents,playbooks){
+
+document.getElementById("k1").innerText=incidents.length;
+document.getElementById("k2").innerText=incidents.filter(i=>i.severity!="low").length;
+document.getElementById("k3").innerText=incidents.filter(i=>i.severity=="high").length;
+document.getElementById("k4").innerText=Math.floor(incidents.length*.3);
+
+const box=document.getElementById("incidents");box.innerHTML="";
+incidents.forEach(i=>{
+ const pb=playbooks.find(p=>p.playbook_id==i.incident_id);
+ let steps="";
+ if(pb){steps="<div class='playbook'><b>Playbook</b><ul>";
+ pb.steps.forEach(s=>steps+="<li>"+s+"</li>");
+ steps+="</ul></div>";}
+
+ const isNew=!previousIncidents.includes(i.incident_id);
+
+ const div=document.createElement("div");
+ div.className="incident "+i.severity+(isNew?" new":"");
+ div.innerHTML=`<b>${i.incident_id}</b><br>
+ <small>${i.summary}</small>
+ <div class="risk"><div class="fill ${i.severity}" style="width:${i.risk_score*100}%"></div></div>
+ ${steps}`;
+ div.onclick=()=>div.classList.toggle("open");
+ box.appendChild(div);
+});
+
+previousIncidents=incidents.map(i=>i.incident_id);
+
+const tl=document.getElementById("timeline");tl.innerHTML="";
+incidents.forEach(i=>{
+ tl.innerHTML+=`<div class="timeline-item">${new Date(i.timestamp).toLocaleTimeString()} — ${i.severity.toUpperCase()}</div>`;
+});
+
+drawDonut(incidents);
+}
+
+function drawDonut(inc){
+let h=0,m=0,l=0;
+inc.forEach(i=>{if(i.severity=="high")h++;else if(i.severity=="medium")m++;else l++;});
+const ctx=document.getElementById("donut").getContext("2d");
+ctx.clearRect(0,0,180,180);
+const data=[h,m,l];const colors=["#f87171","#fbbf24","#34d399"];
+let start=-Math.PI/2,total=h+m+l||1;
+data.forEach((v,i)=>{
+ const angle=(v/total)*Math.PI*2;
+ ctx.beginPath();ctx.moveTo(90,90);
+ ctx.arc(90,90,70,start,start+angle);
+ ctx.fillStyle=colors[i];ctx.fill();
+ start+=angle;
+});
+}
+
+loadData();
+</script>
+</body>
+</html>
