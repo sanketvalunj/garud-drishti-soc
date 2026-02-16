@@ -2,29 +2,24 @@ version: "3.9"
 
 services:
 
-  garud-backend:
+  backend:
     build: .
-    container_name: garud-backend
+    container_name: garud_backend
     ports:
       - "8000:8000"
     depends_on:
       - elasticsearch
-    environment:
-      - ELASTIC_HOST=http://elasticsearch:9200
     volumes:
       - .:/app
+    restart: always
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
-    container_name: garud-elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    container_name: garud_elastic
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
       - "9200:9200"
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-
-volumes:
-  es_data:
+    restart: always
