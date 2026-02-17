@@ -1,35 +1,37 @@
-import pandas as pd
+from datetime import datetime, timedelta
 
-def build_timeline_groups(df, window_minutes=10):
-    df = df.copy()
 
-    if "timestamp" not in df.columns:
-        raise ValueError("timestamp column missing")
+class TimelineGenerator:
+    """
+    Groups normalized events into time windows.
+    """
 
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
-    df = df.sort_values("timestamp")
+    def __init__(self, gap_minutes=30):
+        self.gap = timedelta(minutes=gap_minutes)
 
-    groups = []
-    current = []
-    last_time = None
-    window = pd.Timedelta(minutes=window_minutes)
+    def build(self, events: list):
+        """
+        Returns list of event clusters.
+        """
 
-    for _, row in df.iterrows():
+        if not events:
+            return []
 
-        if last_time is None:
-            current.append(row)
-            last_time = row["timestamp"]
-            continue
+        # sort by timestamp
+        events = sorted(events, key=lambda x: x["timestamp"])
 
-        if row["timestamp"] - last_time <= window:
-            current.append(row)
-        else:
-            groups.append(pd.DataFrame(current))
-            current = [row]
+        clusters = []
+        current_cluster = [events[0]]
 
-        last_time = row["timestamp"]
+        for prev, curr in zip(events, events[1:]):
+            t1 = datetime.fromisoformat(prev["timestamp"])
+            t2 = datetime.fromisoformat(curr["timestamp"])
 
-    if current:
-        groups.append(pd.DataFrame(current))
+            if t2 - t1 <= self.gap:
+                current_cluster.append(curr)
+            else:
+                clusters.append(current_cluster)
+                current_cluster = [curr]
 
-    return groups
+        clusters.append(current_cluster)
+        return clusters

@@ -1,28 +1,16 @@
-def calculate_fidelity(group_df, graph):
+class FidelityScorer:
     """
-    Multi-signal fidelity scoring.
-    Produces score between 0 and 1.
+    Assigns fidelity score to incident cluster.
     """
 
-    score = 0.0
+    def score(self, events: list):
+        anomaly = sum(e.get("anomaly_score", 0) for e in events) / max(len(events),1)
+        asset_spread = len(set(e.get("asset") for e in events))
 
-    # multiple systems triggered
-    unique_events = group_df["event_type"].nunique()
-    score += min(unique_events * 0.15, 0.45)
+        # simple scoring logic (can be improved later)
+        score = (
+            anomaly * 60 +
+            min(asset_spread * 10, 40)
+        )
 
-    # multiple entities involved
-    score += min(len(graph["users"]) * 0.1, 0.2)
-    score += min(len(graph["devices"]) * 0.1, 0.2)
-
-    # suspicious event keywords
-    suspicious_keywords = [
-        "login_failed", "powershell", "download",
-        "external_connection", "privilege_escalation"
-    ]
-
-    for ev in group_df["event_type"].astype(str):
-        if any(k in ev for k in suspicious_keywords):
-            score += 0.1
-            break
-
-    return min(score, 1.0)
+        return round(score, 2)

@@ -1,10 +1,40 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import json
 import subprocess
 
+# ---- import new routers ----
+from garud_drishti.backend.api.ingest_api import router as ingest_router
+from garud_drishti.backend.api.detection_api import router as detection_router
+from garud_drishti.backend.api.incident_api import router as incident_router
+from garud_drishti.backend.api.playbook_api import router as playbook_router
+
+
 app = FastAPI(title="Garud Drishti SOC")
 
+# -------------------------------------------------
+# ENABLE CORS (dashboard needs this)
+# -------------------------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# -------------------------------------------------
+# REGISTER NEW ARCHITECTURE ROUTERS
+# -------------------------------------------------
+app.include_router(ingest_router)
+app.include_router(detection_router)
+app.include_router(incident_router)
+app.include_router(playbook_router)
+
+# -------------------------------------------------
+# FILE PATHS (old endpoints still use these)
+# -------------------------------------------------
 INCIDENT_FILE = Path("data/incident_records/incidents.json")
 PLAYBOOK_FILE = Path("data/incident_records/playbooks.json")
 
@@ -15,8 +45,12 @@ PLAYBOOK_FILE = Path("data/incident_records/playbooks.json")
 def home():
     return {"status": "Garud Drishti running"}
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 # -------------------------------------------------
-# GET INCIDENTS
+# GET INCIDENTS (used by dashboard)
 # -------------------------------------------------
 @app.get("/incidents")
 def get_incidents():
@@ -29,7 +63,7 @@ def get_incidents():
     return {"total": len(data), "incidents": data}
 
 # -------------------------------------------------
-# GET PLAYBOOKS
+# GET PLAYBOOKS (used by dashboard)
 # -------------------------------------------------
 @app.get("/playbooks")
 def get_playbooks():
@@ -42,11 +76,14 @@ def get_playbooks():
     return {"total": len(data), "playbooks": data}
 
 # -------------------------------------------------
-# RUN FULL PIPELINE (DEMO MAGIC BUTTON)
+# RUN OLD SCRIPT PIPELINE (fallback option)
 # -------------------------------------------------
 @app.post("/run-pipeline")
 def run_pipeline():
-
+    """
+    Executes legacy script-based pipeline.
+    Useful as fallback if SOC orchestration endpoint fails.
+    """
     try:
         subprocess.run(["python", "scripts/generate_fake_logs.py"], check=True)
         subprocess.run(["python", "scripts/normalize_logs.py"], check=True)

@@ -1,63 +1,36 @@
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import json
 from pathlib import Path
-from datetime import datetime
 
-INPUT_FILE = Path("data/incident_records/incidents.json")
-OUTPUT_FILE = Path("data/incident_records/playbooks.json")
+from garud_drishti.ai_engine.playbook.generator import generate_playbook
 
-OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+INCIDENT_FILE = Path("data/incident_records/incidents.json")
+PLAYBOOK_FILE = Path("data/incident_records/playbooks.json")
 
-with open(INPUT_FILE, "r") as f:
-    incidents = json.load(f)
+def main():
 
-def build_playbook(incident):
+    if not INCIDENT_FILE.exists():
+        print("No incidents found")
+        return
 
-    severity = incident["severity"]
+    with open(INCIDENT_FILE, "r") as f:
+        incidents = json.load(f)
 
-    base_steps = [
-        "Verify alert authenticity",
-        "Review recent user activity logs",
-        "Check login source IP reputation"
-    ]
+    playbooks = []
 
-    if severity == "high":
-        extra = [
-            "Disable affected account temporarily",
-            "Check for lateral movement",
-            "Scan endpoint for malware",
-            "Notify SOC lead immediately"
-        ]
-    elif severity == "medium":
-        extra = [
-            "Force password reset",
-            "Enable MFA if not enabled",
-            "Monitor account activity for next 24h"
-        ]
-    else:
-        extra = [
-            "Log event for audit",
-            "Continue monitoring"
-        ]
+    for incident in incidents:
+        pb = generate_playbook(incident)
+        playbooks.append(pb)
 
-    return base_steps + extra
+    PLAYBOOK_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-playbooks = []
+    with open(PLAYBOOK_FILE, "w") as f:
+        json.dump(playbooks, f, indent=2)
 
-for incident in incidents:
+    print(f"Generated {len(playbooks)} AI playbooks")
 
-    pb = {
-        "playbook_id": incident["incident_id"],
-        "generated_at": datetime.utcnow().isoformat(),
-        "incident_severity": incident["severity"],
-        "steps": build_playbook(incident)
-    }
 
-    playbooks.append(pb)
-
-# Save playbooks
-with open(OUTPUT_FILE, "w") as f:
-    json.dump(playbooks, f, indent=2)
-
-print("✅ Playbooks generated successfully")
-print(f"Saved to: {OUTPUT_FILE}")
-print(f"Total playbooks: {len(playbooks)}")
+if __name__ == "__main__":
+    main()

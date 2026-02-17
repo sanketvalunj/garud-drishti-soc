@@ -1,31 +1,26 @@
-def build_graph(group_df):
+class GraphConstructor:
     """
-    Builds a simple entity graph from events.
+    Builds simple relationship graph between events/assets.
     """
 
-    graph = {
-        "users": set(),
-        "devices": set(),
-        "ips": set(),
-        "event_types": set()
-    }
+    def build(self, events: list):
+        nodes = []
+        edges = []
 
-    for _, row in group_df.iterrows():
+        for e in events:
+            asset = e.get("asset", "unknown")
+            nodes.append(asset)
 
-        if "user" in row and row["user"]:
-            graph["users"].add(row["user"])
+        nodes = list(set(nodes))
 
-        if "device" in row and row["device"]:
-            graph["devices"].add(row["device"])
+        # connect events sequentially
+        for i in range(len(events) - 1):
+            edges.append({
+                "from": events[i].get("asset", "unknown"),
+                "to": events[i+1].get("asset", "unknown")
+            })
 
-        if "ip" in row and row["ip"]:
-            graph["ips"].add(row["ip"])
-
-        if "event_type" in row:
-            graph["event_types"].add(row["event_type"])
-
-    # convert sets → list (important for JSON later)
-    for k in graph:
-        graph[k] = list(graph[k])
-
-    return graph
+        return {
+            "nodes": nodes,
+            "edges": edges
+        }

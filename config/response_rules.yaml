@@ -1,0 +1,33 @@
+severity_mapping:
+  critical:
+    min_fidelity: 80
+  high:
+    min_fidelity: 60
+  medium:
+    min_fidelity: 40
+  low:
+    min_fidelity: 0
+
+automation_rules:
+  lock_account:
+    allowed_for:
+      - brute_force
+      - credential_compromise
+      - suspicious_login
+
+  isolate_endpoint:
+    allowed_for:
+      - malware_execution
+      - lateral_movement
+      - ransomware_activity
+
+  block_ip:
+    allowed_for:
+      - suspicious_ip_access
+      - brute_force
+      - data_exfiltration
+
+playbook_defaults:
+  containment_first: true
+  investigation_required: true
+  escalation_required: true

@@ -1,39 +1,30 @@
 import uuid
 
-def build_incident(group_df, graph, fidelity):
 
-    incident_id = "INC-" + uuid.uuid4().hex[:6].upper()
+class IncidentBuilder:
+    """
+    Converts event cluster into incident object.
+    """
 
-    # severity from fidelity
-    if fidelity >= 0.75:
-        severity = "high"
-    elif fidelity >= 0.45:
-        severity = "medium"
-    else:
-        severity = "low"
+    def build(self, events: list, graph: dict, fidelity: float):
 
-    first_time = group_df["timestamp"].min()
+        summary = events[0].get("event_type", "Suspicious activity")
 
-    summary = generate_summary(group_df, graph, fidelity)
+        return {
+            "incident_id": str(uuid.uuid4())[:8],
+            "summary": summary,
+            "signals": events,
+            "graph": graph,
+            "fidelity_score": fidelity,
+            "anomaly_score": sum(e.get("anomaly_score",0) for e in events)/max(len(events),1),
+            "severity": self._severity_from_score(fidelity)
+        }
 
-    return {
-        "incident_id": incident_id,
-        "timestamp": str(first_time),
-        "severity": severity,
-        "fidelity_score": fidelity,
-        "summary": summary,
-        "graph": graph,
-        "event_count": len(group_df)
-    }
-
-
-def generate_summary(group_df, graph, fidelity):
-
-    users = ", ".join(graph["users"]) if graph["users"] else "unknown user"
-    devices = ", ".join(graph["devices"]) if graph["devices"] else "unknown device"
-
-    return (
-        f"Suspicious activity involving {users} on {devices}. "
-        f"{len(group_df)} related events detected. "
-        f"Confidence score: {round(fidelity,2)}."
-    )
+    def _severity_from_score(self, score):
+        if score > 80:
+            return "Critical"
+        if score > 60:
+            return "High"
+        if score > 40:
+            return "Medium"
+        return "Low"

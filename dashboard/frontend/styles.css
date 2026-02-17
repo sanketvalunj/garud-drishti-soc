@@ -1,0 +1,142 @@
+:root{
+ --bg:#020617;
+ --panel:#0b1220;
+ --panel2:#0f172a;
+ --border:rgba(255,255,255,.06);
+ --cyan:#38bdf8;
+ --red:#f87171;
+ --amber:#fbbf24;
+ --green:#34d399;
+ --text:#e6edf7;
+ --muted:#8aa0bf;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+ font-family:Inter,system-ui;
+ background:radial-gradient(circle at top,#0b1220,#020617);
+ color:var(--text);
+}
+
+/* HEADER */
+.top{
+ display:flex;
+ justify-content:space-between;
+ padding:18px 28px;
+ border-bottom:1px solid var(--border);
+}
+.brand{font-weight:700;font-size:18px}
+.brand span{color:var(--cyan)}
+.right-top{display:flex;gap:18px;font-family:"JetBrains Mono"}
+.clock{color:var(--cyan)}
+.updated{color:var(--muted);font-size:12px}
+
+/* CONTROLS */
+.controls{padding:18px 28px;display:flex;gap:12px}
+button{
+ background:linear-gradient(135deg,#3b82f6,#6366f1);
+ color:white;border:none;
+ padding:12px 22px;border-radius:10px;
+ cursor:pointer;font-weight:600;
+}
+.refresh{background:linear-gradient(135deg,#0ea5e9,#06b6d4)}
+
+.kpis{
+ display:grid;
+ grid-template-columns:repeat(5,1fr);
+ gap:14px;
+ padding:0 28px 22px;
+}
+.kpi{
+ background:var(--panel);
+ border:1px solid var(--border);
+ padding:18px;border-radius:14px;
+}
+.kpi h4{font-size:11px;color:var(--muted)}
+.kpi .val{font-size:26px;font-weight:700}
+.ok{color:var(--green)}
+
+.main{
+ display:grid;
+ grid-template-columns:330px 1fr 260px;
+ gap:16px;
+ padding:0 28px 28px;
+}
+
+.panel{
+ background:var(--panel);
+ border:1px solid var(--border);
+ border-radius:14px;
+ display:flex;
+ flex-direction:column;
+ margin-bottom:16px;
+}
+.header{
+ padding:14px 16px;
+ border-bottom:1px solid var(--border);
+ font-weight:600;
+}
+.body{padding:14px;overflow:auto}
+
+/* INCIDENT */
+.incident{
+ background:var(--panel2);
+ border:1px solid var(--border);
+ border-left:4px solid var(--cyan);
+ border-radius:10px;
+ padding:12px;margin-bottom:12px;
+ cursor:pointer;
+}
+.incident.high{border-left-color:var(--red)}
+.incident.medium{border-left-color:var(--amber)}
+.incident.low{border-left-color:var(--green)}
+
+.risk{height:5px;background:#111;border-radius:5px;margin-top:6px}
+.fill{height:100%;border-radius:5px}
+
+.playbook{margin-top:10px;padding:10px;background:#020617;border-radius:8px;display:none}
+.incident.open .playbook{display:block}
+
+.timeline-item{
+ border-left:3px solid var(--cyan);
+ padding-left:10px;margin:10px 0;font-size:13px;
+}
+
+.node{
+ padding:10px;background:var(--panel2);
+ border-radius:8px;margin-bottom:10px;
+}
+
+canvas{display:block;margin:auto}
+/* MITRE GRID */
+.mitre-grid{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:10px;
+}
+
+.mitre-card{
+ background:var(--panel2);
+ border:1px solid var(--border);
+ border-left:4px solid var(--cyan);
+ border-radius:10px;
+ padding:10px;
+ font-size:13px;
+}
+
+.mitre-card h5{
+ font-size:12px;
+ margin-bottom:6px;
+ color:var(--cyan);
+}
+
+.mitre-tech{
+ font-size:12px;
+ color:var(--muted);
+ margin-left:6px;
+}
+#attackGraph{
+ background:#020617;
+ border-radius:10px;
+}

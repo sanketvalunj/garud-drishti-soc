@@ -1,0 +1,10 @@
+{
+  "timestamp": "ISO8601 string",
+  "source": "system generating the log",
+  "event_type": "normalized event name",
+  "asset": "affected host/user/device",
+  "user": "optional username",
+  "ip_address": "optional source ip",
+  "severity": "optional raw severity",
+  "details": "free text or structured data"
+}

@@ -1,37 +1,34 @@
-import pandas as pd
-
-from .timeline_generator import build_timeline_groups
-from .graph_constructor import build_graph
-from .fidelity_scoring import calculate_fidelity
-from .incident_builder import build_incident
+from .timeline_generator import TimelineGenerator
+from .graph_constructor import GraphConstructor
+from .fidelity_scoring import FidelityScorer
+from .incident_builder import IncidentBuilder
 
 
-def correlate_events(events_path="data/normalized_events/events.csv"):
-    df = pd.read_csv(events_path)
+class CorrelationService:
+    """
+    Main correlation pipeline:
+    events -> clusters -> graph -> score -> incidents
+    """
 
-    groups = build_timeline_groups(df)
-    graph = build_graph(df)
+    def __init__(self):
+        self.timeline = TimelineGenerator()
+        self.graph = GraphConstructor()
+        self.scorer = FidelityScorer()
+        self.builder = IncidentBuilder()
 
-    incidents = []
+    def build_incidents(self, events: list):
+        """
+        Full correlation flow.
+        """
 
-    for g in groups:
-        score = compute_fidelity_score(g)
+        clusters = self.timeline.build(events)
 
-        severity = "low"
-        if score > 0.85:
-            severity = "high"
-        elif score > 0.6:
-            severity = "medium"
+        incidents = []
 
-        summary = build_incident_summary(g)
+        for cluster in clusters:
+            graph = self.graph.build(cluster)
+            fidelity = self.scorer.score(cluster)
+            incident = self.builder.build(cluster, graph, fidelity)
+            incidents.append(incident)
 
-        incidents.append({
-            "incident_id": f"INC-{random.randint(100000,999999)}",
-            "severity": severity,
-            "fidelity": float(score),
-            "risk_score": float(score),
-            "timestamp": int(time.time() * 1000),
-            "summary": summary
-        })
-
-    return incidents
+        return incidents
