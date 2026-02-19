@@ -21,6 +21,7 @@ garud_drishti/ai_engine/reasoning/mitre_mapper.py
 garud_drishti/ai_engine/reasoning/risk_explainer.py
 garud_drishti/automation/__init__.py
 garud_drishti/automation/account_lock.py
+garud_drishti/automation/automation_executor.py
 garud_drishti/automation/endpoint_isolation.py
 garud_drishti/automation/ip_blocker.py
 garud_drishti/backend/__init__.py
@@ -36,6 +37,7 @@ garud_drishti/backend/services/detection_service.py
 garud_drishti/backend/services/ingestion_service.py
 garud_drishti/backend/services/response_service.py
 garud_drishti/backend/utils/__init__.py
+garud_drishti/backend/utils/config_loader.py
 garud_drishti/backend/utils/json_helpers.py
 garud_drishti/backend/utils/logger.py
 garud_drishti/backend/utils/security_utils.py
@@ -53,6 +55,7 @@ garud_drishti/detection/anomaly_models/__init__.py
 garud_drishti/detection/anomaly_models/model_loader.py
 garud_drishti/detection/anomaly_models/pyod_model.py
 garud_drishti/detection/temporal_analysis/__init__.py
+garud_drishti/detection/temporal_analysis/feature_selector.py
 garud_drishti/detection/temporal_analysis/tsfresh_features.py
 garud_drishti/ingestion/__init__.py
 garud_drishti/ingestion/ingestion_api.py

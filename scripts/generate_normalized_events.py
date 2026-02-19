@@ -1,32 +1,51 @@
-import pandas as pd
+import json
 from datetime import datetime, timedelta
 import random
+from pathlib import Path
 
-events = []
+OUT = Path("data/raw_logs/demo_logs.json")
+OUT.parent.mkdir(parents=True, exist_ok=True)
 
-users = ["user1", "user2", "admin"]
-devices = ["laptop1", "server1", "pc2"]
-event_types = [
+users = ["emp_101", "emp_102", "emp_103", "emp_104"]
+servers = ["auth-server", "loan-db", "core-banking", "swift-terminal"]
+
+actions = [
     "login_success",
     "login_failed",
-    "powershell_exec",
-    "file_download",
-    "external_connection"
+    "powershell_execution",
+    "data_download",
+    "export_report",
+    "privilege_escalation"
 ]
 
+ips = [
+    "10.0.0.2",
+    "10.0.0.5",
+    "203.0.113.45",
+    "185.220.101.1"
+]
+
+logs = []
 base_time = datetime.now()
 
-for i in range(20):
-    events.append({
-        "timestamp": base_time + timedelta(minutes=i),
-        "user": random.choice(users),
-        "device": random.choice(devices),
-        "ip": f"192.168.1.{random.randint(1,50)}",
-        "event_type": random.choice(event_types)
+for i in range(200):
+
+    action = random.choice(actions)
+
+    logs.append({
+        "timestamp": (base_time + timedelta(minutes=i)).isoformat(),
+        "user_id": random.choice(users),
+        "server": random.choice(servers),
+        "ip": random.choice(ips),
+        "action": action,
+        "risk_flag": "suspicious" if action in [
+            "powershell_execution",
+            "data_download",
+            "privilege_escalation"
+        ] else "normal"
     })
 
-df = pd.DataFrame(events)
+with open(OUT, "w") as f:
+    json.dump(logs, f, indent=2)
 
-df.to_csv("data/normalized_events/events.csv", index=False)
-
-print("✅ Fake normalized events generated")
+print(f"✅ Fake raw logs generated at {OUT}")

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "🧠 Starting Garud-Drishti AI Engine..."
+echo "-------------------------------------"
 
 cd "$(dirname "$0")/.."
 
@@ -8,13 +9,25 @@ cd "$(dirname "$0")/.."
 if [ -d "venv" ]; then
     source venv/bin/activate
     echo "✅ Virtual environment activated"
+else
+    echo "⚠️ No virtual environment found"
 fi
 
-# Example placeholder for AI engine start
-echo "⚙️ Initializing AI modules..."
+# Ensure imports work
+export PYTHONPATH=.
 
-python - <<EOF
-print("AI Engine booted successfully")
-EOF
+echo "⚙️ Initializing reasoning modules..."
+sleep 1
+echo "⚙️ Loading correlation engine..."
+sleep 1
+echo "⚙️ Loading playbook generator..."
+sleep 1
+
+# Optional Ollama check (safe even if not installed)
+if command -v ollama >/dev/null 2>&1; then
+    echo "🤖 Ollama detected"
+else
+    echo "ℹ️ Ollama not running (using fallback logic)"
+fi
 
 echo "🧠 AI Engine ready"

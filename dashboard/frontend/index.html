@@ -1,95 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Garud-Drishti SOC</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
-
+  <title>CRYPTIX SOC</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-<!-- HEADER -->
-<div class="top">
- <div class="brand">🦅 GARUD<span>-DRISHTI</span> SOC</div>
- <div class="right-top">
-   <div class="updated" id="updated">Last updated: --</div>
-   <div class="clock" id="clock"></div>
- </div>
-</div>
-
-<!-- CONTROLS -->
-<div class="controls">
- <button onclick="runPipeline()">Run SOC Pipeline</button>
- <button class="refresh" onclick="loadData()">Refresh</button>
-</div>
-
-<!-- KPI BAR -->
-<div class="kpis">
- <div class="kpi"><h4>Total Incidents</h4><div class="val" id="k1">0</div></div>
- <div class="kpi"><h4>Active Threats</h4><div class="val" id="k2">0</div></div>
- <div class="kpi"><h4>High Severity</h4><div class="val" id="k3">0</div></div>
- <div class="kpi"><h4>Automation Actions</h4><div class="val" id="k4">0</div></div>
- <div class="kpi"><h4>System Health</h4><div class="val ok">ONLINE</div></div>
+<div class="sidebar">
+  <h2>CRYPTIX</h2>
+  <button onclick="loadDashboard()">Dashboard</button>
+  <button onclick="loadIncidents()">Incidents</button>
+  <button onclick="loadPlaybooks()">Playbooks</button>
+  <button onclick="runPipeline()">Run Pipeline</button>
 </div>
 
 <div class="main">
-
-<!-- LEFT: INCIDENTS -->
-<div class="panel">
-<div class="header">🚨 Incidents</div>
-<div class="body" id="incidents"></div>
+  <h1>CRYPTIX SOC Dashboard</h1>
+  <div id="content"></div>
 </div>
-
-<!-- CENTER -->
-<div>
-
-<div class="panel risk-panel">
-<div class="header">📊 Risk Distribution</div>
-<div class="body"><canvas id="donut" width="200" height="200"></canvas></div>
-</div>
-
-<div class="panel">
-<div class="header">📅 Timeline</div>
-<div class="body" id="timeline"></div>
-<div class="panel">
-<div class="header">🧭 MITRE ATT&CK Map</div>
-<div class="body">
-  <div id="mitre-map" class="mitre-grid"></div>
-</div>
-
-<div class="panel">
-<div class="header">🌐 Attack Graph</div>
-<div class="body">
-  <canvas id="attackGraph" width="420" height="260"></canvas>
-</div>
-
-</div>
-
-<!-- RIGHT SIDE -->
-<div>
-
-<div class="panel">
-<div class="header">⚡ Automation</div>
-<div class="body" id="automation"></div>
-</div>
-
-<div class="panel">
-<div class="header">🖥 Nodes</div>
-<div class="body">
-<div class="node">AI Engine — Healthy</div>
-<div class="node">Log Storage — Healthy</div>
-<div class="node">Backend API — Healthy</div>
-</div>
-</div>
-
-</div>
-
-</div>
-
 
 <script src="dashboard.js"></script>
 <script src="timeline_view.js"></script>
