@@ -9,6 +9,10 @@ from garud_drishti.backend.api.ingest_api import router as ingest_router
 from garud_drishti.backend.api.detection_api import router as detection_router
 from garud_drishti.backend.api.incident_api import router as incident_router
 from garud_drishti.backend.api.playbook_api import router as playbook_router
+from garud_drishti.backend.api.stream_api import router as stream_router
+from garud_drishti.backend.api.reasoning_api import router as reasoning_router
+from garud_drishti.backend.api.mitre_api import router as mitre_router
+from garud_drishti.backend.api.admin_api import router as admin_router
 
 
 app = FastAPI(title="Garud Drishti SOC")
@@ -31,6 +35,10 @@ app.include_router(ingest_router)
 app.include_router(detection_router)
 app.include_router(incident_router)
 app.include_router(playbook_router)
+app.include_router(stream_router)
+app.include_router(reasoning_router)
+app.include_router(mitre_router)
+app.include_router(admin_router)
 
 # -------------------------------------------------
 # FILE PATHS (old endpoints still use these)

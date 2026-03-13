@@ -67,7 +67,6 @@ def build_incident_story(signals, summary):
 # MAIN PIPELINE
 # ---------------------------------------------------
 def main():
-
     # Ensure normalized events exist
     if not EVENTS_FILE.exists():
         print(f"⚠️ No events file found at {EVENTS_FILE}")
@@ -88,6 +87,7 @@ def main():
 
     anomaly_df = pd.read_csv(ANOM_FILE)
 
+    # Align lengths safely
     usable_len = min(len(events), len(anomaly_df))
 
     enriched_events = []
@@ -97,6 +97,7 @@ def main():
         e["anomaly_score"] = float(anomaly_df.loc[i, "anomaly_score"])
         enriched_events.append(e)
 
+    # Filter suspicious only
     suspicious_events = [e for e in enriched_events if e["is_anomaly"] == 1]
 
     print("Suspicious events:", len(suspicious_events))
@@ -116,8 +117,6 @@ def main():
     final_incidents = []
 
     for inc in incidents:
-
-        # Normalize fidelity to 0-1 range
         fidelity = (
             inc.get("fidelity_score")
             or inc.get("fidelity")
@@ -125,29 +124,14 @@ def main():
             or 0.5
         )
 
-        if fidelity > 1:
-            fidelity = fidelity / 100.0
-
         signals = inc.get("signals", [])
-
-        # Clean duplicate graph edges
-        graph = inc.get("graph", {})
-        if graph and "edges" in graph:
-            unique = []
-            seen = set()
-            for e in graph["edges"]:
-                key = (e["from"], e["to"])
-                if key not in seen:
-                    seen.add(key)
-                    unique.append(e)
-            graph["edges"] = unique
 
         story = build_incident_story(
             signals,
             inc.get("summary", "suspicious activity")
         )
 
-        final_incidents.append({
+        final_incident = {
             "incident_id": inc.get("incident_id", str(uuid4())),
             "timestamp": datetime.now().isoformat(),
             "severity": severity_from_fidelity(fidelity),
@@ -157,6 +141,7 @@ def main():
                 "Correlated suspicious activity detected"
             ),
             "story": story,
+            "signals": signals,
             "recommended_action":
                 "Review correlated events and initiate response workflow",
             "related_events": len(signals),
@@ -165,8 +150,27 @@ def main():
                 "users": list({s.get("user") for s in signals}),
                 "ips": list({s.get("source_ip") for s in signals}),
             },
-            "graph": graph
-        })
+            "graph": inc.get("graph", {})
+        }
+
+        # Clean duplicate edges in graph
+        if "graph" in inc:
+            edges = inc["graph"].get("edges", [])
+            unique = []
+            seen = set()
+            for e in edges:
+                key = (e["from"], e["to"])
+                if key not in seen:
+                    seen.add(key)
+                    unique.append(e)
+            
+            # Update the graph edges in the final object, not the original 'inc'
+            if "graph" not in final_incident:
+                final_incident["graph"] = {}
+            final_incident["graph"]["edges"] = unique
+            final_incident["graph"]["nodes"] = inc["graph"].get("nodes", [])
+
+        final_incidents.append(final_incident)
 
     # Save incidents
     with open(OUT, "w") as f:

@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 font-sans;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-lg rounded-2xl;
+  }
+
+  .glass-panel {
+    @apply bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 shadow-xl;
+  }
+
+  .nav-item {
+    @apply flex items-center px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all duration-200;
+  }
+
+  .nav-item.active {
+    @apply text-blue-400 bg-blue-500/10 border-l-2 border-blue-500;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-500/20 transition-all font-medium;
+  }
+
+  .heading-xl {
+    @apply text-4xl font-bold tracking-tight text-slate-900;
+  }
+
+  .heading-lg {
+    @apply text-2xl font-semibold tracking-tight text-slate-900;
+  }
+}
