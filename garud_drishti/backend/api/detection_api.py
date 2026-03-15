@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from garud_drishti.backend.utils.json_helpers import load_json
 from garud_drishti.ingestion.ingestion_api import IngestionService
-from garud_drishti.detection import DetectionService
+from garud_drishti.detectiontemp import DetectionService
 
 router = APIRouter()
 

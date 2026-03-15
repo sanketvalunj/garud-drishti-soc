@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from garud_drishti.correlation.correlation_service import correlate_events
+from garud_drishti.correlation_engine.correlation_service import correlate_events
 
 incidents = correlate_events()
 

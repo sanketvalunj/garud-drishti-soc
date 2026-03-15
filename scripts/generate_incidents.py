@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pandas as pd
 
-from garud_drishti.correlation.correlation_service import CorrelationService
+from garud_drishti.correlation_engine.correlation_service import CorrelationService
 
 OUT = Path("data/incident_records/incidents.json")
 OUT.parent.mkdir(parents=True, exist_ok=True)

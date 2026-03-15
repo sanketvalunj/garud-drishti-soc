@@ -1,4 +1,4 @@
-from garud_drishti.detection.anomaly_models import ModelLoader
+from garud_drishti.detectiontemp.anomaly_models import ModelLoader
 from .feature_engineering import FeatureEngineer
 from .behavior_profiles import BehaviorProfiler
 
