@@ -9,7 +9,7 @@ Handles:
 This package exposes the main classes used by the SOC AI engine.
 """
 
-from .generator import PlaybookGenerator
+from .playbook_generator import PlaybookGenerator
 from .workflow_builder import WorkflowBuilder
 from .response_selector import ResponseSelector
 
