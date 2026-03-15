@@ -1,27 +1,20 @@
-fastapi
-uvicorn
-pydantic
-python-dotenv
+# ═══════════════════════════════════════════
+# Garud-Drishti AI SOC Platform
+# Python Dependencies
+# ═══════════════════════════════════════════
 
-# Data processing
+# Web Framework
+fastapi
+uvicorn[standard]
+pydantic
+
+# Data Processing
 pandas
 numpy
 
-# Anomaly detection
-pyod
-tsfresh
-scikit-learn
-
 # Storage
-elasticsearch
-
-# AI / LLM
-transformers
-sentence-transformers
-langchain
-langgraph
-ollama
+elasticsearch>=8.0.0
 
 # Utilities
-requests
+python-dotenv
 tqdm
