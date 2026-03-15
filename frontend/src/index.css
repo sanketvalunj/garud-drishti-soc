@@ -4,23 +4,71 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Light Mode Defaults */
+  --bg-color: #f1f5f9;
+  --text-color: #0f172a;
+  --accent: #6366f1;
+  --surface-color: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-border-hover: rgba(255, 255, 255, 0.6);
+  --text-muted: #475569;
+}
+
+[data-theme="dark"] {
+  /* Dark Mode Overrides */
+  --bg-color: #020617;
+  --text-color: #f8fafc;
+  --accent: #8b5cf6;
+  --surface-color: rgba(15, 23, 42, 0.5);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-border-hover: rgba(59, 130, 246, 0.3);
+  --text-muted: #94a3b8;
+}
+
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800 font-sans;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+    transition: 
+      background-color 300ms ease, 
+      color 300ms ease;
+  }
+  
+  h1, h2, h3, h4, h5, h6, p, span, div {
+     transition: color 300ms ease;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-lg rounded-2xl;
+    background: var(--surface-color);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    transition: background-color 300ms ease, border-color 300ms ease;
   }
 
+  /* Make sure our main dashboard panels are explicitly glassy */
   .glass-panel {
-    @apply bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 shadow-xl;
+    background: var(--surface-color);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    transition: background-color 300ms ease, border-color 300ms ease;
   }
 
   .nav-item {
-    @apply flex items-center px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all duration-200;
+    @apply flex items-center px-4 py-3 rounded-xl transition-all duration-200;
+    color: var(--text-muted);
+  }
+
+  .nav-item:hover {
+    color: var(--text-color);
+    background: rgba(255,255,255,0.05);
   }
 
   .nav-item.active {
@@ -32,10 +80,12 @@
   }
 
   .heading-xl {
-    @apply text-4xl font-bold tracking-tight text-slate-900;
+    @apply text-4xl font-bold tracking-tight;
+    color: var(--text-color);
   }
 
   .heading-lg {
-    @apply text-2xl font-semibold tracking-tight text-slate-900;
+    @apply text-2xl font-semibold tracking-tight;
+    color: var(--text-color);
   }
 }

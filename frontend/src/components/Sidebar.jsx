@@ -16,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePipeline } from '../context/PipelineContext';
 import api from '../services/api';
 import clsx from 'clsx';
+import ThemeToggle from './ThemeToggle';
 
 const Sidebar = () => {
     const { logout, user } = useAuth();
@@ -51,24 +52,27 @@ const Sidebar = () => {
     return (
         <aside className="fixed left-4 top-4 bottom-4 w-64 glass-panel rounded-2xl flex flex-col z-50">
             {/* Header */}
-            <div className="p-6 flex items-center gap-3 border-b border-white/5">
-                <div className="p-2 bg-blue-500/20 rounded-lg relative">
-                    <Shield className="w-6 h-6 text-blue-400" />
-                    <div className={clsx(
-                        "absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-slate-900",
-                        health === 'online' ? "bg-green-500" : "bg-red-500"
-                    )} />
-                </div>
-                <div>
-                    <h1 className="font-bold text-lg text-white tracking-tight flex items-center gap-2">
-                        CRYPTIX
-                        {isRunning && <span className="animate-spin text-blue-400">⟳</span>}
-                    </h1>
-                    <div className="flex items-center gap-2">
-                        <p className="text-[10px] text-blue-400 uppercase tracking-wider font-semibold">SOC Platform</p>
-                        {health === 'offline' && <span className="text-[10px] text-red-500 font-bold">OFFLINE</span>}
+            <div className="p-6 flex items-center justify-between border-b border-slate-700/30">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/20 rounded-lg relative">
+                        <Shield className="w-6 h-6 text-blue-400" />
+                        <div className={clsx(
+                            "absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[var(--surface-color)]",
+                            health === 'online' ? "bg-green-500" : "bg-red-500"
+                        )} />
+                    </div>
+                    <div>
+                        <h1 className="font-bold text-lg text-[var(--text-color)] tracking-tight flex items-center gap-2">
+                            CRYPTIX
+                            {isRunning && <span className="animate-spin text-blue-400">⟳</span>}
+                        </h1>
+                        <div className="flex items-center gap-2">
+                            <p className="text-[10px] text-blue-400 uppercase tracking-wider font-semibold">SOC Platform</p>
+                            {health === 'offline' && <span className="text-[10px] text-red-500 font-bold">OFFLINE</span>}
+                        </div>
                     </div>
                 </div>
+                <ThemeToggle className="ml-2 w-8 h-8 rounded-full border border-slate-700/50 bg-[var(--surface-color)] shadow-sm" />
             </div>
 
             {/* Navigation */}
