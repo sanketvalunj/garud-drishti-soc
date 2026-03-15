@@ -1,62 +1,33 @@
 import pandas as pd
-from pathlib import Path
+import os
 from pyod.models.iforest import IForest
 
-FEATURE_FILE = Path("data/model_features/features.csv")
-OUTPUT_FILE = Path("data/incident_records/anomaly_results.csv")
+# ensure output folder exists
+os.makedirs("data/incident_records", exist_ok=True)
 
-OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+# load features
+df = pd.read_csv("data/model_features/features.csv")
 
-# ----------------------------
-# Load features
-# ----------------------------
-df = pd.read_csv(FEATURE_FILE)
+# select ML features
+X = df.drop(columns=["user_id"])
 
-if df.empty:
-    raise ValueError("Feature file is empty")
+# build anomaly model
+model = IForest(
+    contamination=0.05,
+    n_estimators=200,
+    random_state=42
+)
 
-# Keep numeric matrix only (safer for model)
-X = df.select_dtypes(include=["number"]).copy()
-
-if X.empty:
-    raise ValueError("No numeric features found for anomaly detection")
-
-# ----------------------------
-# Train Isolation Forest
-# ----------------------------
-model = IForest(contamination=0.1, random_state=42)
 model.fit(X)
 
-# ----------------------------
-# Predict anomalies
-# ----------------------------
-scores = model.decision_scores_
-labels = model.predict(X)   # 1 = anomaly, 0 = normal
+# anomaly score
+scores = model.decision_function(X)
 
-# Attach results AFTER prediction
 df["anomaly_score"] = scores
-df["is_anomaly"] = labels
+df["is_anomaly"] = model.predict(X)
 
-# ----------------------------
-# SAFETY: ensure at least some anomalies exist
-# (prevents demo showing 0 incidents)
-# ----------------------------
-if df["is_anomaly"].sum() == 0:
-    print("⚠️ No anomalies detected — forcing top 5 as anomalies for demo")
-    top_idx = df["anomaly_score"].nlargest(5).index
-    df.loc[top_idx, "is_anomaly"] = 1
+# save results
+df.to_csv("data/incident_records/anomaly_results.csv", index=False)
 
-# ----------------------------
-# Save results
-# ----------------------------
-df.to_csv(OUTPUT_FILE, index=False)
-
-print("✅ Anomaly detection completed")
-print(f"Results saved to: {OUTPUT_FILE}")
-
-print("\nTop suspicious rows:")
-print(
-    df.sort_values("anomaly_score", ascending=False)
-      .head(5)
-      [["anomaly_score", "is_anomaly"]]
-)
+print("Anomaly detection completed")
+print(df.head())

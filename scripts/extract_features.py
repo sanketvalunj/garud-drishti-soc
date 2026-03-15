@@ -1,88 +1,70 @@
 import json
 import pandas as pd
-from pathlib import Path
+import os
 
-INPUT_FILE = Path("data/normalized_events/events.json")
-OUTPUT_FILE = Path("data/model_features/features.csv")
+# ensure output directory exists
+os.makedirs("data/model_features", exist_ok=True)
 
-OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+# load logs
+with open("data/raw_logs/demo_logs.json") as f:
+    logs = json.load(f)
 
-# -----------------------------
-# Load events
-# -----------------------------
-with open(INPUT_FILE, "r") as f:
-    events = json.load(f)
+df = pd.DataFrame(logs)
 
-if not events:
-    raise ValueError("No normalized events found")
+print("Columns detected:", df.columns)
 
-df = pd.DataFrame(events)
+# convert timestamp
+df["timestamp"] = pd.to_datetime(df["timestamp"])
 
-# Preserve row order index for alignment
-df["row_id"] = range(len(df))
+# extract hour
+df["hour"] = df["timestamp"].dt.hour
 
-# Convert timestamp safely
-df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+# default columns if missing (prevents crashes)
+if "status" not in df.columns:
+    df["status"] = "success"
 
-# -----------------------------
-# FEATURE 1: hour of day
-# -----------------------------
-df["hour"] = df["timestamp"].dt.hour.fillna(0)
+if "device" not in df.columns:
+    df["device"] = "unknown"
 
-# -----------------------------
-# FEATURE 2: weekend flag
-# -----------------------------
-df["is_weekend"] = (df["timestamp"].dt.weekday >= 5).fillna(False).astype(int)
+if "asset_criticality" not in df.columns:
+    df["asset_criticality"] = "low"
 
-# -----------------------------
-# FEATURE 3: action encoding (stable mapping)
-# -----------------------------
-unique_actions = sorted(df["event_type"].dropna().unique())
-action_map = {a: i for i, a in enumerate(unique_actions)}
-df["action_code"] = df["event_type"].map(action_map).fillna(0)
+# detect failures
+df["failed_event"] = df["status"].apply(lambda x: 1 if x == "failed" else 0)
 
-# -----------------------------
-# FEATURE 4: severity encoding
-# -----------------------------
-severity_map = {"low": 1, "medium": 2, "high": 3}
-df["severity_score"] = df["severity"].map(severity_map).fillna(1)
+# detect logins
+df["login_event"] = df["action"].apply(lambda x: 1 if "login" in x else 0)
 
-# -----------------------------
-# FEATURE 5: user activity count
-# -----------------------------
-df["user_activity_count"] = df.groupby("user")["event_id"].transform("count").fillna(1)
+# detect downloads
+df["download_event"] = df["action"].apply(lambda x: 1 if "download" in x else 0)
 
-# -----------------------------
-# FEATURE 6: asset access frequency
-# -----------------------------
-df["asset_access_count"] = df.groupby("asset")["event_id"].transform("count").fillna(1)
+# night activity
+df["night_activity"] = df["hour"].apply(lambda x: 1 if x < 6 else 0)
 
-# -----------------------------
-# Build feature matrix
-# -----------------------------
-features = df[[
-    "hour",
-    "is_weekend",
-    "action_code",
-    "severity_score",
-    "user_activity_count",
-    "asset_access_count"
-]].copy()
+# critical asset access
+df["critical_asset"] = df["asset_criticality"].apply(
+    lambda x: 1 if x == "high" else 0
+)
 
-# Ensure numeric types
-features = features.astype({
-    "hour": "int",
-    "is_weekend": "int",
-    "action_code": "int",
-    "severity_score": "int",
-    "user_activity_count": "int",
-    "asset_access_count": "int"
-})
+# group by user behavior
+features = df.groupby("user_id").agg(
+    total_events=("action", "count"),
+    failed_events=("failed_event", "sum"),
+    login_events=("login_event", "sum"),
+    downloads=("download_event", "sum"),
+    unique_ips=("ip", "nunique"),
+    unique_servers=("server", "nunique"),
+    unique_devices=("device", "nunique"),
+    night_activity=("night_activity", "sum"),
+    critical_asset_access=("critical_asset", "sum"),
+    avg_hour=("hour", "mean")
+).reset_index()
 
-# -----------------------------
-# Save features
-# -----------------------------
-features.to_csv(OUTPUT_FILE, index=False)
+# ratio feature
+features["failure_ratio"] = features["failed_events"] / features["total_events"]
 
-print(f"✅ Feature matrix saved to: {OUTPUT_FILE}")
+# save features
+features.to_csv("data/model_features/features.csv", index=False)
+
+print("\nFeature extraction completed.")
 print(features.head())
