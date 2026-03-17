@@ -16,7 +16,7 @@ venv/
 .DS_Store
 
 # Data files (optional – remove if you want them tracked)
-data/
+
 models/
 
 # Docker

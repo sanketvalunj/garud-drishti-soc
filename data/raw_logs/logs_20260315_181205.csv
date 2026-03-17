@@ -1,0 +1,40 @@
+timestamp,user,device,asset,ip,event_type,source,severity,session_id,mitre_technique,mitre_tactic,geo_country,geo_risk,network_zone,asset_criticality,threat_score,user_risk_score,attack_chain
+2026-03-15T09:49:32,emp_121,hr-laptop-021,,10.0.0.21,mfa_attempt,IAM,low,f75e1798,T1556,Credential Access,IN,low,internal,low,5,0.21,
+2026-03-15T14:58:40,emp_128,,,,vpn_disconnect,FIREWALL,low,9a8d763d,T1133,Initial Access,IN,low,internal,low,7,0.78,
+2026-03-15T17:44:37,emp_149,,audit-db,10.0.0.49,database_query,APP,low,e5520aef,T1213,Collection,IN,low,internal,high,6,0.09,
+2026-03-15T15:09:15,emp_131,hr-laptop-031,,10.0.0.31,password_change,IAM,low,8b1721a1,T1098,Persistence,IN,low,internal,low,8,0.83,
+2026-03-15T13:18:30,emp_114,hr-laptop-014,,10.0.0.14,password_change,IAM,low,c7e3c7fa,T1098,Persistence,IN,low,internal,low,7,0.75,
+2026-03-15T17:36:00,emp_122,trading-workstation-022,,10.0.0.22,file_download,EDR,medium,7499524c,T1105,Command and Control,IN,low,internal,low,29,0.45,malware_infection
+2026-03-15T17:37:15,emp_122,trading-workstation-022,,10.0.0.22,privilege_escalation,EDR,critical,7499524c,T1068,Privilege Escalation,IN,low,internal,low,87,0.45,malware_infection
+2026-03-15T08:04:21,emp_139,hr-laptop-039,,10.0.0.39,password_change,IAM,low,68e95175,T1098,Persistence,IN,low,internal,low,4,0.06,
+2026-03-15T01:32:00,emp_120,siem-server,siem-server,10.0.0.58,privilege_escalation,EDR,critical,2678530a,T1068,Privilege Escalation,IN,low,internal,high,85,0.12,lateral_movement
+2026-03-15T01:14:26,emp_120,,,,connection_attempt,FIREWALL,low,1d65e7a5,T1071,Command and Control,DE,low,external,low,6,0.12,
+2026-03-15T16:37:26,emp_125,hr-laptop-025,,10.0.0.25,process_start,EDR,low,45f14633,T1059,Execution,IN,low,internal,low,8,0.75,
+2026-03-15T08:15:30,emp_115,,,,connection_attempt,FIREWALL,low,3c321aa5,T1071,Command and Control,IN,low,internal,low,9,0.79,
+2026-03-15T04:37:01,emp_132,ops-workstation-032,,1.8.66.224,account_locked,IAM,high,a2616fa7,T1110,Credential Access,AU,low,external,low,49,0.49,brute_force
+2026-03-15T08:42:18,emp_121,hr-laptop-021,,10.0.0.21,file_access,EDR,low,15b92bd3,T1083,Discovery,IN,low,internal,low,6,0.21,
+2026-03-15T13:57:26,emp_132,ops-workstation-032,,10.0.0.32,mfa_attempt,IAM,low,2f33b28d,T1556,Credential Access,IN,low,internal,low,6,0.49,
+2026-03-15T22:13:43,emp_143,,,,external_transfer,FIREWALL,high,6ed0cd23,T1041,Exfiltration,NG,high,external,low,61,0.34,
+2026-03-15T12:29:32,emp_141,,trading-db,10.0.0.41,database_query,APP,low,a4f1de0c,T1213,Collection,IN,low,internal,critical,9,0.7,
+2026-03-15T03:08:33,emp_143,,trading-db,10.0.0.43,database_query,APP,low,090d2d62,T1213,Collection,IN,low,internal,critical,7,0.34,
+2026-03-15T15:07:50,emp_132,ops-workstation-032,,10.0.0.32,process_start,EDR,low,7af433e5,T1059,Execution,IN,low,internal,low,7,0.49,
+2026-03-15T02:41:15,emp_123,,audit-db,10.0.0.23,data_export,APP,critical,53574291,T1567,Exfiltration,IN,low,internal,high,70,0.12,
+2026-03-15T10:45:10,emp_108,finance-laptop-008,,10.0.0.8,file_access,EDR,low,358ac8e6,T1083,Discovery,IN,low,internal,low,7,0.58,
+2026-03-15T02:47:22,emp_142,finance-laptop-042,,213.36.227.52,mfa_failed,IAM,high,a4ba4008,T1556,Credential Access,IN,low,external,low,42,0.44,
+2026-03-15T04:33:30,emp_104,internal-api,internal-api,10.0.0.53,process_start,EDR,low,ee41b2f4,T1059,Execution,IN,low,internal,high,17,0.49,lateral_movement
+2026-03-15T04:36:00,emp_104,,,10.0.0.4,connection_attempt,FIREWALL,low,ee41b2f4,T1071,Command and Control,IN,low,internal,low,18,0.49,lateral_movement
+2026-03-15T04:02:11,emp_143,,,,port_scan,FIREWALL,high,9bb6df7f,T1046,Discovery,CA,low,external,low,46,0.34,
+2026-03-15T09:36:47,emp_103,finance-laptop-003,,10.0.0.3,login_success,IAM,low,bac3418c,T1078,Initial Access,IN,low,internal,low,6,0.33,
+2026-03-15T03:57:00,emp_149,hr-laptop-049,,211.189.46.127,login_failed,IAM,low,79436052,T1110.001,Credential Access,ID,medium,external,low,31,0.09,brute_force
+2026-03-15T03:57:24,emp_149,hr-laptop-049,,211.189.46.127,login_failed,IAM,medium,79436052,T1110.001,Credential Access,ID,medium,external,low,40,0.09,brute_force
+2026-03-15T03:57:32,emp_149,hr-laptop-049,,211.189.46.127,login_failed,IAM,medium,79436052,T1110.001,Credential Access,ID,medium,external,low,40,0.09,brute_force
+2026-03-15T23:59:08,emp_119,compliance-workstation-019,,124.74.55.121,mfa_failed,IAM,high,8c21cfd7,T1556,Credential Access,DE,low,external,low,41,0.26,
+2026-03-15T14:39:40,emp_105,trading-workstation-005,,10.0.0.5,process_start,EDR,low,e8de64b9,T1059,Execution,IN,low,internal,low,7,0.59,
+2026-03-15T03:27:50,emp_141,,,,blocked_ip,FIREWALL,medium,59675e75,T1090,Command and Control,GB,low,external,low,30,0.7,
+2026-03-15T09:52:38,emp_142,,,,vpn_connect,FIREWALL,low,f919ff46,T1133,Initial Access,IN,low,internal,low,6,0.44,
+2026-03-15T15:19:27,emp_127,,trading-db,10.0.0.27,data_access,APP,medium,a3aafbed,T1530,Collection,IN,low,internal,critical,24,0.59,
+2026-03-15T09:40:05,emp_148,,,,vpn_connect,FIREWALL,low,56d537bb,T1133,Initial Access,IN,low,internal,low,7,0.66,
+2026-03-15T22:51:46,emp_135,,,,blocked_ip,FIREWALL,medium,43a888d6,T1090,Command and Control,JP,low,external,low,28,0.35,
+2026-03-15T16:27:42,emp_123,compliance-workstation-023,,10.0.0.23,file_download,EDR,medium,46a1f29b,T1105,Command and Control,IN,low,internal,low,17,0.12,
+2026-03-15T09:52:27,emp_127,,,,connection_attempt,FIREWALL,low,a336b42b,T1071,Command and Control,IN,low,internal,low,8,0.59,
+2026-03-15T04:08:30,emp_105,vpn-gateway,vpn-gateway,10.0.0.57,process_start,EDR,low,b4100c91,T1059,Execution,IN,low,internal,high,17,0.59,lateral_movement
