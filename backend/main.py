@@ -28,6 +28,9 @@ from typing import List, Dict
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from backend.services.scheduler import start_scheduler
+from backend.api.ueba_api import router as ueba_router
+from backend.api.anomaly_api import router as anomaly_router
 
 # ─────────────────────────────────────────────
 # Ensure project root is on sys.path
@@ -85,6 +88,7 @@ indexer: EventIndexer = None
 # Streaming control
 streaming_active = False
 streaming_task = None
+
 
 
 # ─────────────────────────────────────────────
@@ -156,6 +160,10 @@ async def lifespan(app: FastAPI):
     logger.info("📡 Phase 6: Starting real-time log stream...")
     streaming_active = True
     streaming_task = asyncio.create_task(_stream_logs())
+
+    # ── Phase 7: Start UEBA Scheduler ──
+    start_scheduler()
+    logger.info("⏱️ UEBA scheduler started (30 min interval)")
 
     elapsed = time.time() - start_time
     logger.info("=" * 60)
@@ -241,7 +249,8 @@ app.add_middleware(
 # ── REGISTER ROUTERS ──
 app.include_router(events_router)
 app.include_router(simulate_router)
-
+app.include_router(ueba_router)
+app.include_router(anomaly_router)
 
 # ─────────────────────────────────────────────
 # ROOT ENDPOINTS
@@ -313,3 +322,4 @@ async def toggle_stream():
         streaming_active = True
         streaming_task = asyncio.create_task(_stream_logs())
         return {"streaming": True, "message": "Streaming started"}
+
