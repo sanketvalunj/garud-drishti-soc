@@ -92,7 +92,7 @@ const LLMReasoning = () => {
 
     const confidence = data?.decision_logic?.confidence ?? 0;
     const confidencePct = Math.round(confidence * 100);
-    const confidenceColor = confidence > 0.7 ? 'text-green-500' : confidence > 0.4 ? 'text-yellow-500' : 'text-red-500';
+    const confidenceColor = confidence > 0.7 ? 'text-green-500' : confidence > 0.4 ? 'text-yellow-500' : 'text-[#B91C1C]';
 
     return (
         <div className="max-w-7xl mx-auto space-y-6 pb-20">
@@ -127,7 +127,14 @@ const LLMReasoning = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* AI Narrative Card */}
                     {data.llm_prompt && (
-                        <div className="lg:col-span-3 glass-panel rounded-2xl border border-slate-700/50 overflow-hidden">
+                        <div className="lg:col-span-3 rounded-2xl border overflow-hidden"
+                            style={{ 
+                                background: 'var(--surface-color)', 
+                                backdropFilter: 'blur(20px)',
+                                WebkitBackdropFilter: 'blur(20px)',
+                                borderColor: 'var(--glass-border)' 
+                            }}
+                        >
                             <div className="bg-slate-900 px-4 py-2.5 border-b border-slate-700 flex items-center gap-2">
                                 <Terminal size={14} className="text-slate-400" />
                                 <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">AI Narrative / System Prompt</span>
@@ -139,7 +146,14 @@ const LLMReasoning = () => {
                     )}
 
                     {/* Analysis Panel */}
-                    <div className="lg:col-span-1 glass-panel p-6 rounded-2xl border border-violet-500/20 bg-violet-900/5 relative overflow-hidden">
+                    <div className="lg:col-span-1 p-6 rounded-2xl border relative overflow-hidden"
+                        style={{ 
+                            background: 'rgba(139, 92, 246, 0.05)', 
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            borderColor: 'rgba(139, 92, 246, 0.2)' 
+                        }}
+                    >
                         <div className="absolute top-0 right-0 p-3 opacity-10"><Brain size={80} /></div>
                         <h3 className="text-white font-bold mb-5 flex items-center gap-2 relative z-10">
                             <Search size={16} className="text-violet-400" /> Analysis
@@ -165,7 +179,14 @@ const LLMReasoning = () => {
                     </div>
 
                     {/* Decision Logic */}
-                    <div className="lg:col-span-1 glass-panel p-6 rounded-2xl border border-blue-500/20 bg-blue-900/5">
+                    <div className="lg:col-span-1 p-6 rounded-2xl border"
+                        style={{ 
+                            background: 'rgba(59, 130, 246, 0.05)', 
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            borderColor: 'rgba(59, 130, 246, 0.2)' 
+                        }}
+                    >
                         <h3 className="text-white font-bold mb-5 flex items-center gap-2">
                             <Cpu size={16} className="text-blue-400" /> Decision Logic
                         </h3>
@@ -186,7 +207,14 @@ const LLMReasoning = () => {
                     </div>
 
                     {/* Confidence Meter */}
-                    <div className="lg:col-span-1 glass-panel p-6 rounded-2xl border border-slate-700/50 bg-slate-900/50 flex flex-col items-center justify-center relative">
+                    <div className="lg:col-span-1 p-6 rounded-2xl border flex flex-col items-center justify-center relative"
+                        style={{ 
+                            background: 'var(--surface-color)', 
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            borderColor: 'var(--glass-border)' 
+                        }}
+                    >
                         <h3 className="absolute top-5 left-5 text-white font-bold text-sm">Confidence</h3>
                         <div className="relative w-36 h-36 flex items-center justify-center">
                             <svg className="w-full h-full -rotate-90">
@@ -213,7 +241,14 @@ const LLMReasoning = () => {
                     </div>
 
                     {/* Response Strategy */}
-                    <div className="lg:col-span-3 glass-panel p-6 rounded-2xl border border-slate-700/50">
+                    <div className="lg:col-span-3 p-6 rounded-2xl border"
+                        style={{ 
+                            background: 'var(--surface-color)', 
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            borderColor: 'var(--glass-border)' 
+                        }}
+                    >
                         <h3 className="text-white font-bold mb-5 flex items-center gap-2">
                             <ShieldAlert size={16} className="text-emerald-400" /> Recommended Containment Strategy
                         </h3>
@@ -224,8 +259,8 @@ const LLMReasoning = () => {
                                 </h4>
                                 <ul className="space-y-2">
                                     {(data.recommended_strategy?.containment || ['Isolate affected endpoints immediately', 'Block suspicious IP ranges', 'Revoke active sessions for flagged users']).map((action, idx) => (
-                                        <li key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-red-900/10 border border-red-900/20 text-red-200 text-sm">
-                                            <div className="mt-0.5 min-w-4 h-4 flex items-center justify-center rounded-full bg-red-500/20 text-[10px] font-bold">!</div>
+                                        <li key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-[rgba(185,28,28,0.1)] border border-[rgba(185,28,28,0.2)] text-red-200 text-sm">
+                                            <div className="mt-0.5 min-w-4 h-4 flex items-center justify-center rounded-full bg-[rgba(185,28,28,0.2)] text-[10px] font-bold">!</div>
                                             {action}
                                         </li>
                                     ))}

@@ -1,60 +1,29 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-const ThemeContext = createContext(undefined);
+const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-    const [theme, setTheme] = useState(() => {
-        return localStorage.getItem('theme-preference') || 'system';
+    // Read from localStorage or default to 'system'
+    const [theme, setThemeState] = useState(() => {
+        const stored = localStorage.getItem('cryptix-theme');
+        return stored ? stored : 'dark';
     });
 
-    const [isDark, setIsDark] = useState(false);
+    const [resolvedTheme, setResolvedTheme] = useState('light');
 
     useEffect(() => {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-        const applyTheme = (currentTheme) => {
-            let resolvedIsDark = false;
-
-            if (currentTheme === 'system') {
-                resolvedIsDark = mediaQuery.matches;
-            } else {
-                resolvedIsDark = currentTheme === 'dark';
-            }
-
-            setIsDark(resolvedIsDark);
-
-            if (resolvedIsDark) {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            } else {
-                document.documentElement.setAttribute('data-theme', 'light');
-            }
-
-            localStorage.setItem('theme-preference', currentTheme);
-        };
-
-        applyTheme(theme);
-
-        const listener = (e) => {
-            if (theme === 'system') {
-                applyTheme('system');
-            }
-        };
-
-        mediaQuery.addEventListener('change', listener);
-        return () => mediaQuery.removeEventListener('change', listener);
+        const root = window.document.documentElement;
+        root.setAttribute('data-theme', theme);
+        setResolvedTheme(theme);
     }, [theme]);
 
-    // Provide a toggle function as requested by the user
-    const toggleTheme = () => {
-        setTheme(prev => {
-            if (prev === 'dark') return 'light';
-            if (prev === 'light') return 'system';
-            return 'dark'; // from system to dark
-        });
+    const setTheme = (newTheme) => {
+        setThemeState(newTheme);
+        localStorage.setItem('cryptix-theme', newTheme);
     };
 
     return (
-        <ThemeContext.Provider value={{ theme, isDark, setTheme, toggleTheme }}>
+        <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
             {children}
         </ThemeContext.Provider>
     );

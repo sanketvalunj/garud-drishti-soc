@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = (username, password) => {
-        if (username === 'testuser' && password === 'password') {
+        if (username === 'testuser' && password === 'password123') {
             const userData = { username, role: 'Analyst' };
             setIsAuthenticated(true);
             setUser(userData);

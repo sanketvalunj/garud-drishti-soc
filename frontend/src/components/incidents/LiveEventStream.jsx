@@ -13,21 +13,21 @@ import {
     Wifi,
     WifiOff
 } from 'lucide-react';
-import { usePipeline } from '../context/PipelineContext';
-import api from '../services/api';
+import { usePipeline } from '../../context/PipelineContext';
+import api from '../../services/api';
 import clsx from 'clsx';
 
 const STREAM_URL = 'http://127.0.0.1:8000/stream-events';
 
 const SEV_STYLE = {
-    critical: 'bg-red-500/20 text-red-400 border-red-500/30',
+    critical: 'bg-[rgba(185,28,28,0.2)] text-[#B91C1C] border-[rgba(185,28,28,0.3)]',
     high: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
     warning: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
     info: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
 };
 
 const SEV_DOT = {
-    critical: 'bg-red-500',
+    critical: 'bg-[#B91C1C]',
     high: 'bg-orange-500',
     warning: 'bg-yellow-400',
     info: 'bg-blue-400',
@@ -150,7 +150,14 @@ const LiveEventStream = () => {
 
     // ─────────────────────────────────────────────────────────────────
     return (
-        <div className="glass-panel p-0 rounded-2xl overflow-hidden border border-slate-700/50 bg-slate-900/50 grid grid-cols-1 lg:grid-cols-12 h-[350px]">
+        <div className="p-0 rounded-2xl overflow-hidden border grid grid-cols-1 lg:grid-cols-12 h-[350px]"
+            style={{ 
+                background: 'var(--surface-color)', 
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderColor: 'var(--glass-border)' 
+            }}
+        >
 
             {/* ── LEFT: Real SSE log stream ── */}
             <div className="lg:col-span-3 bg-slate-950/50 border-r border-slate-800 p-4 flex flex-col">
@@ -235,15 +242,16 @@ const LiveEventStream = () => {
                                     <motion.div
                                         animate={{
                                             scale: isActive ? 1.1 : 1,
-                                            boxShadow: isActive ? '0 0 20px rgba(59,130,246,0.5)' : '0 0 0px rgba(0,0,0,0)',
-                                            borderColor: isActive || isPast ? '#3b82f6' : '#334155',
+                                            boxShadow: isActive ? '0 0 20px rgba(59,130,246,0.3)' : '0 0 0px rgba(0,0,0,0)',
+                                            borderColor: isActive || isPast ? '#3b82f6' : 'var(--glass-border)',
                                         }}
                                         className={clsx(
-                                            'w-12 h-12 rounded-full flex items-center justify-center border-2 bg-slate-900 transition-colors duration-300',
-                                            isActive ? 'text-blue-400 bg-blue-900/20' :
+                                            'w-12 h-12 rounded-full flex items-center justify-center border-2 transition-colors duration-300',
+                                            isActive ? 'text-blue-400 bg-blue-900/40' :
                                                 isPast ? 'text-blue-500 border-blue-500' :
-                                                    'text-slate-600 border-slate-700'
+                                                    'text-slate-600 bg-white/5'
                                         )}
+                                        style={{ backdropFilter: 'blur(10px)' }}
                                     >
                                         <stage.icon size={20} />
                                     </motion.div>
@@ -289,7 +297,7 @@ const LiveEventStream = () => {
             {/* ── RIGHT: Incident feed ── */}
             <div className="lg:col-span-3 bg-slate-950/30 border-l border-slate-800 p-4 flex flex-col">
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <ShieldAlert size={14} className="text-red-500" /> Recent Incidents
+                    <ShieldAlert size={14} className="text-[#B91C1C]" /> Recent Incidents
                 </h3>
                 <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">
                     <AnimatePresence>
@@ -299,15 +307,16 @@ const LiveEventStream = () => {
                                 <motion.div
                                     key={inc.incident_id}
                                     initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1, borderColor: isNew ? '#ef4444' : '#334155' }}
+                                    animate={{ opacity: 1, scale: 1, borderColor: isNew ? '#B91C1C' : 'var(--glass-border)' }}
                                     layout
                                     className={clsx(
-                                        'p-3 rounded-lg border bg-slate-900 relative overflow-hidden',
-                                        isNew ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-slate-800'
+                                        'p-3 rounded-lg border relative overflow-hidden',
+                                        isNew ? 'bg-[rgba(185,28,28,0.1)] shadow-[0_0_15px_rgba(185,28,28,0.2)]' : 'bg-white/5'
                                     )}
+                                    style={{ backdropFilter: 'blur(10px)' }}
                                 >
                                     {isNew && (
-                                        <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-bl">
+                                        <div className="absolute top-0 right-0 bg-[#B91C1C] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-bl">
                                             NEW
                                         </div>
                                     )}
@@ -315,7 +324,7 @@ const LiveEventStream = () => {
                                         <span className="text-xs font-mono text-slate-400">{inc.incident_id?.substring(0, 8)}</span>
                                         <span className={clsx(
                                             'text-[10px] px-1.5 py-0.5 rounded font-bold uppercase',
-                                            inc.severity === 'Critical' ? 'bg-red-500/10 text-red-400' :
+                                            inc.severity === 'Critical' ? 'bg-[rgba(185,28,28,0.1)] text-[#B91C1C]' :
                                                 inc.severity === 'High' ? 'bg-orange-500/10 text-orange-400' :
                                                     'bg-blue-500/10 text-blue-400'
                                         )}>

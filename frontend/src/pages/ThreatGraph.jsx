@@ -45,7 +45,7 @@ const SimpleGraph = ({ nodes, edges, onNodeClick, highlightEntity }) => {
                     <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" />
                 </marker>
                 <marker id="arrow-red" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#B91C1C" />
                 </marker>
                 <filter id="glow">
                     <feGaussianBlur stdDeviation="3" result="coloredBlur" />
@@ -65,7 +65,7 @@ const SimpleGraph = ({ nodes, edges, onNodeClick, highlightEntity }) => {
                     <g key={i}>
                         <line
                             x1={src.x + 70} y1={src.y + 22} x2={tgt.x} y2={tgt.y + 22}
-                            stroke={isHighRisk ? '#ef4444' : '#6366f1'}
+                            stroke={isHighRisk ? '#B91C1C' : '#6366f1'}
                             strokeWidth={isHighRisk ? 2.5 : 1.5}
                             strokeDasharray={isHighRisk ? '0' : '6,4'}
                             markerEnd={isHighRisk ? 'url(#arrow-red)' : 'url(#arrow)'}
@@ -74,7 +74,7 @@ const SimpleGraph = ({ nodes, edges, onNodeClick, highlightEntity }) => {
                         <rect x={midX - 40} y={midY - 9} width={80} height={16} rx={4}
                             fill="#0f172a" stroke="#334155" strokeWidth={1} opacity={0.85} />
                         <text x={midX} y={midY + 4} textAnchor="middle" fontSize={8}
-                            fill={isHighRisk ? '#f87171' : '#94a3b8'} fontWeight="bold">
+                            fill={isHighRisk ? '#B91C1C' : '#94a3b8'} fontWeight="bold">
                             {edge.relation?.substring(0, 14)}
                         </text>
                     </g>
@@ -93,8 +93,8 @@ const SimpleGraph = ({ nodes, edges, onNodeClick, highlightEntity }) => {
                     <g key={node} onClick={() => onNodeClick && onNodeClick({ label: node, type })}
                         className="cursor-pointer">
                         <rect x={pos.x} y={pos.y} width={140} height={44} rx={10}
-                            fill={isHighlighted ? '#7f1d1d' : '#1e293b'}
-                            stroke={isHighlighted ? '#ef4444' : color}
+                            fill={isHighlighted ? 'rgba(185,28,28,0.2)' : '#1e293b'}
+                            stroke={isHighlighted ? '#B91C1C' : color}
                             strokeWidth={isHighlighted ? 2.5 : 1.5}
                             filter={isHighlighted ? 'url(#glow)' : ''}
                         />
@@ -245,9 +245,16 @@ const ThreatGraph = () => {
                     { label: 'Topology Nodes', value: graphData.nodes.length, icon: Network, color: 'violet' },
                 ].map(s => {
                     const Icon = s.icon;
-                    const col = { blue: 'blue-400 blue-500/10 blue-500/30', red: 'red-400 red-500/10 red-500/30', violet: 'violet-400 violet-500/10 violet-500/30' }[s.color].split(' ');
+                    const col = { blue: 'blue-400 blue-500/10 blue-500/30', red: '[#B91C1C] [rgba(185,28,28,0.1)] [rgba(185,28,28,0.3)]', violet: 'violet-400 violet-500/10 violet-500/30' }[s.color].split(' ');
                     return (
-                        <div key={s.label} className={`flex-1 glass-panel p-5 rounded-2xl flex items-center gap-4 border border-slate-700/50 bg-slate-900/50 hover:border-${s.color}-500/30 transition-all`}>
+                        <div key={s.label} className={`flex-1 p-5 rounded-2xl flex items-center gap-4 border transition-all`}
+                            style={{ 
+                                background: 'var(--surface-color)', 
+                                backdropFilter: 'blur(20px)',
+                                WebkitBackdropFilter: 'blur(20px)',
+                                borderColor: 'var(--glass-border)' 
+                            }}
+                        >
                             <div className={`p-3 bg-${s.color}-500/10 rounded-xl text-${s.color}-400`}><Icon size={22} /></div>
                             <div>
                                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500">{s.label}</div>
@@ -261,7 +268,14 @@ const ThreatGraph = () => {
             {/* Main: Graph + Inspector */}
             <div className="flex-1 flex gap-4 overflow-hidden">
                 {/* Graph Canvas */}
-                <div className={clsx('transition-all duration-500 relative glass-panel rounded-2xl border border-slate-700/50 bg-slate-950/20 overflow-hidden flex flex-col', activeEntity ? 'flex-1' : 'w-full')}>
+                <div className={clsx('transition-all duration-500 relative rounded-2xl border overflow-hidden flex flex-col', activeEntity ? 'flex-1' : 'w-full')}
+                    style={{ 
+                        background: 'var(--surface-color)', 
+                        backdropFilter: 'blur(10px)',
+                        WebkitBackdropFilter: 'blur(10px)',
+                        borderColor: 'var(--glass-border)' 
+                    }}
+                >
                     {/* Toolbar */}
                     <div className="absolute top-4 left-4 z-10 flex items-center gap-3">
                         <h3 className="text-white font-bold flex items-center gap-2 bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-700/50 text-sm backdrop-blur-md">
@@ -303,7 +317,13 @@ const ThreatGraph = () => {
                             initial={{ x: 300, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             exit={{ x: 300, opacity: 0 }}
-                            className="w-72 glass-panel rounded-2xl border border-slate-700/50 bg-slate-900/80 backdrop-blur-xl flex flex-col overflow-hidden shadow-2xl flex-shrink-0"
+                            className="w-72 rounded-2xl border flex flex-col overflow-hidden shadow-2xl flex-shrink-0"
+                            style={{ 
+                                background: 'var(--surface-color)', 
+                                backdropFilter: 'blur(30px)',
+                                WebkitBackdropFilter: 'blur(30px)',
+                                borderColor: 'var(--glass-border)' 
+                            }}
                         >
                             <div className="p-5 border-b border-slate-800 flex justify-between items-center">
                                 <h4 className="text-white font-bold flex items-center gap-2 text-sm">
@@ -321,7 +341,7 @@ const ThreatGraph = () => {
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="p-3 bg-slate-800/20 rounded-xl border border-slate-800/50">
                                         <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Status</div>
-                                        <div className={clsx('text-xs font-bold', activeEntity.status === 'active_threat' ? 'text-red-400' : 'text-green-400')}>
+                                        <div className={clsx('text-xs font-bold', (activeEntity.status === 'active_threat' || activeEntity.status === 'compromised') ? 'text-[#B91C1C]' : 'text-green-400')}>
                                             {activeEntity.status?.replace('_', ' ').toUpperCase()}
                                         </div>
                                     </div>
@@ -340,7 +360,7 @@ const ThreatGraph = () => {
                                     {activeEntity.associatedEvents?.slice(0, 5).map((evt, idx) => (
                                         <div key={idx} className="p-2.5 bg-slate-950/30 rounded-lg border border-slate-800/50 text-[10px] mb-1.5">
                                             <div className="flex justify-between mb-1">
-                                                <span className={clsx('font-bold', evt.severity === 'critical' || evt.severity === 'high' ? 'text-red-400' : 'text-blue-400')}>
+                                                <span className={clsx('font-bold', evt.severity === 'critical' || evt.severity === 'high' ? 'text-[#B91C1C]' : 'text-blue-400')}>
                                                     {evt.event_type || evt.type}
                                                 </span>
                                                 <span className="text-slate-600">{new Date(evt.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>

@@ -50,9 +50,21 @@ const App = () => {
     <ThemeProvider>
       <PipelineProvider>
         <Routes>
-          <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
-          <Route path="/onboarding" element={<AuthOnlyRoute><Onboarding /></AuthOnlyRoute>} />
-          <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          {/* Public */}
+          <Route path="/login" element={
+            <PublicOnlyRoute><Login /></PublicOnlyRoute>
+          } />
+
+          {/* Onboarding: auth required, but NOT onboarded yet */}
+          <Route path="/onboarding" element={
+            <AuthOnlyRoute><Onboarding /></AuthOnlyRoute>
+          } />
+
+          {/* Protected app shell — requires auth + onboarding */}
+          <Route path="/" element={
+            <ProtectedRoute><Layout /></ProtectedRoute>
+          }>
+            {/* Index → dashboard */}
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="incidents" element={<Incidents />} />
@@ -65,6 +77,8 @@ const App = () => {
             <Route path="llm-reasoning" element={<LLMReasoning />} />
             <Route path="admin" element={<Admin />} />
           </Route>
+
+          {/* Catch-all */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </PipelineProvider>

@@ -13,13 +13,29 @@ import {
     Globe,
     Brain,
     Target,
-    BookOpen
+    BookOpen,
+    Activity,
+    CheckCircle
 } from 'lucide-react';
-import AttackGraph from '../components/AttackGraph';
-import MitreAttackOverlay from '../components/MitreAttackOverlay';
-import AttackReplayTimeline from '../components/AttackReplayTimeline';
-import PlaybookViewer from '../components/PlaybookViewer';
-import { motion } from 'framer-motion';
+import AttackGraph from '../components/incidents/AttackGraph';
+import MitreAttackOverlay from '../components/incidents/MitreAttackOverlay';
+import AttackReplayTimeline from '../components/incidents/AttackReplayTimeline';
+import PlaybookViewer from '../components/incidents/PlaybookViewer';
+
+const SeverityBadge = ({ severity }) => {
+    const colors = {
+        HIGH: { bg: 'rgba(185,28,28,0.12)', text: '#B91C1C', border: 'rgba(185,28,28,0.2)' },
+        MEDIUM: { bg: 'rgba(234,179,8,0.12)', text: '#CA8A04', border: 'rgba(234,179,8,0.2)' },
+        LOW: { bg: 'rgba(0,174,239,0.12)', text: '#00AEEF', border: 'rgba(0,174,239,0.2)' }
+    };
+    const s = severity?.toUpperCase() === 'CRITICAL' ? 'HIGH' : (severity?.toUpperCase() || 'LOW');
+    const style = colors[s] || colors.LOW;
+    return (
+        <span className="px-2.5 py-0.5 rounded font-semibold text-xs border" style={{ backgroundColor: style.bg, color: style.text, borderColor: style.border }}>
+            {s}
+        </span>
+    );
+};
 
 const IncidentDetail = () => {
     const { id } = useParams();
@@ -63,181 +79,158 @@ const IncidentDetail = () => {
         }
     }
 
-    if (loading) return <div className="p-10 text-center text-slate-500">Loading incident details...</div>;
-    if (!incident) return <div className="p-10 text-center text-red-500">Incident not found</div>;
+    if (loading) return <div className="p-10 text-center" style={{ color: 'var(--text-muted)' }}>Loading incident details...</div>;
+    if (!incident) return <div className="p-10 text-center text-[#B91C1C]">Incident not found</div>;
 
     return (
-        <div className="space-y-6 animate-fade-in pb-10">
-
+        <div className="space-y-6 pb-10">
             {/* Header */}
-            <div className="flex items-center gap-4">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white"
-                >
-                    <ArrowLeft size={20} />
-                </button>
-                <div>
-                    <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                        {incident.summary.replace(/_/g, ' ').toUpperCase()}
-                        <span className={`text-xs px-2 py-1 rounded-full border ${incident.severity === 'critical' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
-                            'bg-orange-500/10 border-orange-500/20 text-orange-500'
-                            }`}>
-                            {incident.severity}
-                        </span>
-                    </h1>
-                    <div className="flex items-center gap-4 text-sm text-slate-400 mt-1">
-                        <span className="flex items-center gap-1"><Clock size={14} /> {new Date(incident.timestamp).toLocaleString()}</span>
-                        <span className="font-mono text-xs opacity-50">ID: {incident.incident_id}</span>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-xl shadow-sm border" 
+                style={{ 
+                    background: 'var(--surface-color)', 
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    borderColor: 'var(--glass-border)' 
+                }}
+            >
+                <div className="flex items-start gap-4">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-2 rounded-lg transition-colors mt-1"
+                        style={{ color: 'var(--text-secondary)' }}
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                                {incident.summary.replace(/_/g, ' ')}
+                            </h1>
+                            <SeverityBadge severity={incident.severity} />
+                        </div>
+                        <div className="flex items-center gap-4 text-sm mt-2 font-medium" style={{ color: 'var(--text-secondary)' }}>
+                            <span className="flex items-center gap-1.5"><Clock size={16} /> {new Date(incident.timestamp).toLocaleString()}</span>
+                            <span className="font-mono" style={{ color: 'var(--text-muted)' }}>ID: {incident.incident_id}</span>
+                            <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded font-bold border border-indigo-500/20">
+                                <Activity size={14} /> Investigating
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="ml-auto flex gap-2">
-                    <button className="btn-secondary flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-white">
+                <div className="flex gap-3">
+                    <button className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-semibold transition-colors" style={{ background: 'var(--glass-border)', borderColor: 'var(--glass-border)', color: 'var(--text-secondary)' }}>
                         <Share2 size={16} /> Share
                     </button>
-                    <button className="btn-primary flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm text-white shadow-lg shadow-blue-500/20">
-                        <Download size={16} /> Report
-                    </button>
+                    {/* <button className="flex items-center gap-2 px-4 py-2 bg-[#00AEEF] hover:bg-blue-400 rounded-lg text-sm font-semibold text-white transition-colors shadow-sm">
+                        <Download size={16} /> Export Report
+                    </button> */}
                 </div>
             </div>
 
+            {/* TOP SECTION: Narrative, Gauge, Entities */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                {/* Main Content: Story & Graph */}
+                
+                {/* 1. Incident Narrative & Abstract Kill Chain */}
                 <div className="lg:col-span-2 space-y-6">
-
-                    {/* Story Card */}
-                    <div className="glass-panel p-6 rounded-2xl">
-                        <h3 className="heading-lg text-white mb-4 flex items-center gap-2">
-                            <FileText size={20} className="text-blue-400" />
+                    <div className="p-6 rounded-xl shadow-sm border h-full flex flex-col" 
+                        style={{ 
+                            background: 'var(--surface-color)', 
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            borderColor: 'var(--glass-border)' 
+                        }}
+                    >
+                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                            <FileText size={20} className="text-[#00AEEF]" />
                             Incident Narrative
                         </h3>
-                        <p className="text-slate-300 leading-relaxed text-lg">
-                            {incident.story || "No narrative available for this incident."}
+                        <p className="leading-relaxed text-[15px] flex-1" style={{ color: 'var(--text-secondary)' }}>
+                            {incident.story || "No detailed narrative available for this incident. System flagged anomalous behavior matching known threat signatures."}
                         </p>
-                    </div>
-
-                    {/* LINKED PLAYBOOK - New Section */}
-                    <div id="playbook-section" className="glass-panel p-6 rounded-2xl border border-blue-500/20 bg-blue-900/5">
-                        <h3 className="heading-lg text-white mb-4 flex items-center gap-2">
-                            <BookOpen size={20} className="text-green-400" />
-                            Active Response Playbook
-                        </h3>
-                        {playbook ? (
-                            <PlaybookViewer playbook={playbook} incident={incident} compact={true} />
-                        ) : (
-                            <div className="text-center py-8 text-slate-500 bg-slate-800/20 rounded-xl border border-dashed border-slate-700">
-                                <p>No automated playbook generated yet.</p>
-                                <button className="mt-2 text-blue-400 hover:underline text-sm">Generate manually</button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* MITRE ATT&CK Overlay */}
-                    <div className="glass-panel p-6 rounded-2xl">
-                        <h3 className="heading-lg text-white mb-4 flex items-center gap-2">
-                            <ShieldAlert size={20} className="text-red-400" />
-                            Kill Chain Progression
-                        </h3>
-                        <MitreAttackOverlay incident={incident} />
-                    </div>
-
-                    {/* Attack Replay */}
-                    {incident.signals && incident.signals.length > 0 && (
-                        <div className="glass-panel p-6 rounded-2xl">
-                            <h3 className="heading-lg text-white mb-4 flex items-center gap-2">
-                                <Clock size={20} className="text-blue-400" />
-                                Incident Replay & Chronology
-                            </h3>
-                            <AttackReplayTimeline
-                                signals={incident.signals}
-                                onSignalChange={(signal) => setHighlightedEntity(signal?.asset || signal?.source_ip || signal?.user)}
-                            />
+                        
+                        <div className="mt-6 pt-6 border-t" style={{ borderColor: 'var(--glass-border)' }}>
+                             <h4 className="text-sm font-bold mb-4" style={{ color: 'var(--text-muted)' }}>Kill Chain Progression</h4>
+                             <MitreAttackOverlay incident={incident} mini={true} />
                         </div>
-                    )}
-
-                    {/* Attack Graph */}
-                    <div className="glass-panel p-6 rounded-2xl">
-                        <h3 className="heading-lg text-white mb-4 flex items-center gap-2">
-                            <Share2 size={20} className="text-violet-400" />
-                            Attack Graph Reconstruction
-                        </h3>
-                        <AttackGraph data={incident.graph} highlightEntity={highlightedEntity} />
                     </div>
-
                 </div>
 
-                {/* Sidebar Content: Entities & Risk */}
-                <div className="space-y-6">
-
-                    {/* Risk Meter */}
-                    <div className="glass-panel p-6 rounded-2xl text-center">
-                        <h3 className="text-slate-400 font-medium mb-4">AI Fidelity Score</h3>
-                        <div className="relative w-40 h-40 mx-auto flex items-center justify-center">
-                            <div className="absolute inset-0 rounded-full border-8 border-slate-800"></div>
-                            <div
-                                className="absolute inset-0 rounded-full border-8 border-transparent border-t-red-500 border-r-red-500 rotate-45"
-                                style={{ transform: `rotate(${incident.risk_score * 3.6}deg)` }} // simplistic mock
-                            ></div>
-                            <div>
-                                <span className="text-4xl font-bold text-white">{Math.round(incident.risk_score * 100)}</span>
-                                <span className="text-sm text-slate-500 block">/100</span>
+                {/* 2. AI Fidelity Score & 3. Entities */}
+                <div className="space-y-6 flex flex-col">
+                    {/* Fidelity Score Gauge */}
+                    <div className="p-6 rounded-xl shadow-sm border text-center flex-1 flex flex-col items-center justify-center" 
+                        style={{ 
+                            background: 'var(--surface-color)', 
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            borderColor: 'var(--glass-border)' 
+                        }}
+                    >
+                        <h3 className="text-sm font-bold mb-6" style={{ color: 'var(--text-muted)' }}>AI Fidelity Score</h3>
+                        
+                        <div className="relative w-48 h-24 mb-6">
+                            <svg viewBox="0 0 100 50" className="w-full h-full overflow-visible">
+                                {/* Background Arc */}
+                                <path 
+                                    d="M 10 50 A 40 40 0 0 1 90 50" 
+                                    fill="none" stroke="var(--bg-primary)" strokeWidth="12" strokeLinecap="round" 
+                                />
+                                {/* Foreground Arc */}
+                                <path 
+                                    d={`M 10 50 A 40 40 0 0 1 ${10 + 80 * Math.min(1, Math.max(0, incident.risk_score || 0))} ${50 - 40 * Math.sin(Math.PI * Math.min(1, Math.max(0, incident.risk_score || 0)))}`} 
+                                    fill="none" 
+                                    stroke={(incident.risk_score || 0) > 0.7 ? "#B91C1C" : (incident.risk_score || 0) > 0.4 ? "#D97706" : "#15803D"} 
+                                    strokeWidth="12" strokeLinecap="round" 
+                                    className="drop-shadow-sm"
+                                />
+                            </svg>
+                            <div className="absolute inset-x-0 bottom-[-10px] text-center">
+                                <span className="text-4xl font-bold font-mono" style={{ color: 'var(--text-primary)' }}>
+                                    {(incident.risk_score || 0).toFixed(2)}
+                                </span>
                             </div>
                         </div>
-                        <p className="text-sm text-slate-400 mt-4">
-                            Confirmed threat with high confidence based on multi-asset correlation.
+                        
+                        <p className="text-xs font-semibold px-4 mt-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                            {(incident.risk_score || 0) > 0.7 
+                                ? "Critical threat confirmed with high confidence. Immediate isolation recommended."
+                                : "Anomalous behavior detected. Requires further analyst verification."}
                         </p>
                     </div>
 
-                    {/* Entities */}
-                    <div className="glass-panel p-6 rounded-2xl">
-                        <h3 className="heading-lg text-white mb-4">Entities Involved</h3>
-
+                    {/* Entities list */}
+                    <div className="p-6 rounded-xl shadow-sm border" 
+                        style={{ 
+                            background: 'var(--surface-color)', 
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            borderColor: 'var(--glass-border)' 
+                        }}
+                    >
+                        <h3 className="text-sm font-bold mb-4" style={{ color: 'var(--text-muted)' }}>Entities Involved</h3>
                         <div className="space-y-4">
                             {incident.entities?.users?.length > 0 && (
                                 <div>
-                                    <h4 className="text-sm text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <div className="flex items-center gap-2 text-xs font-bold mb-2" style={{ color: 'var(--text-muted)' }}>
                                         <User size={14} /> Users
-                                    </h4>
+                                    </div>
                                     <div className="flex flex-wrap gap-2">
                                         {incident.entities.users.map(u => (
-                                            <span key={u} className="px-2 py-1 bg-slate-800 rounded text-sm text-blue-300 border border-slate-700">{u}</span>
+                                            <span key={u} className="px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded font-mono text-xs font-semibold border border-blue-500/20">{u}</span>
                                         ))}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Action Buttons */}
-                            <div className="flex gap-3 flex-wrap">
-                                <button
-                                    onClick={() => navigate('/reasoning', { state: { incidentId: incident.incident_id } })}
-                                    className="flex items-center gap-2 px-3 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded-lg transition-all text-xs font-bold uppercase"
-                                >
-                                    <Brain size={14} /> Reason
-                                </button>
-                                <button
-                                    onClick={() => navigate(`/mitre/${incident.incident_id}`, { state: { incidentId: incident.incident_id } })}
-                                    className="flex items-center gap-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg transition-all text-xs font-bold uppercase"
-                                >
-                                    <Target size={14} /> MITRE
-                                </button>
-                                <button
-                                    onClick={() => document.getElementById('playbook-section').scrollIntoView({ behavior: 'smooth' })}
-                                    className="flex items-center gap-2 px-3 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 rounded-lg transition-all text-xs font-bold uppercase"
-                                >
-                                    <BookOpen size={14} /> Response
-                                </button>
-                            </div>
-
                             {incident.entities?.assets?.length > 0 && (
                                 <div>
-                                    <h4 className="text-sm text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <div className="flex items-center gap-2 text-xs font-bold mb-2 mt-4" style={{ color: 'var(--text-muted)' }}>
                                         <Server size={14} /> Assets
-                                    </h4>
+                                    </div>
                                     <div className="flex flex-wrap gap-2">
                                         {incident.entities.assets.map(a => (
-                                            <span key={a} className="px-2 py-1 bg-slate-800 rounded text-sm text-violet-300 border border-slate-700">{a}</span>
+                                            <span key={a} className="px-2.5 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded font-mono text-xs font-semibold border border-indigo-500/20">{a}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -245,19 +238,111 @@ const IncidentDetail = () => {
 
                             {incident.entities?.ips?.length > 0 && (
                                 <div>
-                                    <h4 className="text-sm text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <div className="flex items-center gap-2 text-xs font-bold mb-2 mt-4" style={{ color: 'var(--text-muted)' }}>
                                         <Globe size={14} /> IPs
-                                    </h4>
+                                    </div>
                                     <div className="flex flex-wrap gap-2">
                                         {incident.entities.ips.map(ip => (
-                                            <span key={ip} className="px-2 py-1 bg-slate-800 rounded text-sm text-amber-300 border border-slate-700">{ip}</span>
+                                            <span key={ip} className="px-2.5 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded font-mono text-xs font-semibold border border-amber-500/20">{ip}</span>
                                         ))}
                                     </div>
                                 </div>
                             )}
                         </div>
                     </div>
+                </div>
+            </div>
 
+            {/* BOTTOM SECTION: Chronology, Graph, Playbook */}
+            <div className="space-y-6">
+                
+                {/* 4. Event Chronology */}
+                {incident.signals && incident.signals.length > 0 && (
+                    <div className="p-6 rounded-xl shadow-sm border" 
+                        style={{ 
+                            background: 'var(--surface-color)', 
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            borderColor: 'var(--glass-border)' 
+                        }}
+                    >
+                        <h3 className="text-lg font-bold mb-6 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                            <Clock size={20} className="text-[#00AEEF]" />
+                            Event Chronology
+                        </h3>
+                        {/* We reuse the existing component but might need to restyle it if it's too dark. 
+                            Assuming AttackReplayTimeline handles its own light/dark mode internally or we accept its style 
+                        */}
+                        <div className="rounded-lg p-4 border" style={{ background: 'var(--bg-primary)', borderColor: 'var(--glass-border)' }}>
+                             <AttackReplayTimeline
+                                signals={incident.signals}
+                                onSignalChange={(signal) => setHighlightedEntity(signal?.asset || signal?.source_ip || signal?.user)}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    {/* 5. Detailed Attack Graph / MITRE */}
+                    <div className="p-6 rounded-xl shadow-sm border flex flex-col h-[500px]" 
+                        style={{ 
+                            background: 'var(--surface-color)', 
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            borderColor: 'var(--glass-border)' 
+                        }}
+                    >
+                        <div className="flex justify-between items-center mb-6 shrink-0">
+                            <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                                <Share2 size={20} className="text-indigo-500" />
+                                Threat Topology
+                            </h3>
+                            <button
+                                onClick={() => navigate(`/mitre/${incident.incident_id}`, { state: { incidentId: incident.incident_id } })}
+                                className="text-sm font-semibold text-[#00AEEF] hover:underline flex items-center gap-1"
+                            >
+                                <Target size={16} /> Full MITRE Map
+                            </button>
+                        </div>
+                        <div className="flex-1 rounded-lg border overflow-hidden relative" style={{ background: 'var(--bg-primary)', borderColor: 'var(--glass-border)' }}>
+                             <AttackGraph data={incident.graph} highlightEntity={highlightedEntity} />
+                        </div>
+                    </div>
+
+                    {/* 6. Response Playbook */}
+                    <div id="playbook-section" className="p-6 rounded-xl shadow-sm border flex flex-col h-[500px]" 
+                        style={{ 
+                            background: 'var(--surface-color)', 
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            borderColor: 'var(--glass-border)', 
+                            borderTop: '4px solid #10B981' 
+                        }}
+                    >
+                        <div className="flex justify-between items-center mb-6 shrink-0">
+                            <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                                <BookOpen size={20} className="text-green-500" />
+                                Response Playbook
+                            </h3>
+                             <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">
+                                Recommended
+                            </span>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
+                            {playbook ? (
+                                <PlaybookViewer playbook={playbook} incident={incident} compact={true} />
+                            ) : (
+                                <div className="h-full flex flex-col items-center justify-center rounded-lg border border-dashed" style={{ background: 'var(--bg-primary)', borderColor: 'var(--glass-border)', color: 'var(--text-muted)' }}>
+                                    <BookOpen size={32} className="mb-3 opacity-20" />
+                                    <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>No automated playbook generated yet.</p>
+                                    <button className="mt-3 px-4 py-2 bg-[#0B1F3B] hover:bg-gray-800 text-white text-sm font-semibold rounded-lg transition-all duration-300 shimmer-btn">
+                                        Generate Manually
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
             </div>
