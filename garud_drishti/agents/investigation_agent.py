@@ -1,36 +1,31 @@
-from garud_drishti.ai_engine.reasoning import (
-    IncidentInterpreter,
-    MitreMapper,
-    RiskExplainer,
-)
-
+from garud_drishti.ai_engine.reasoning.threat_reasoner import ThreatReasoner
 
 class InvestigationAgent:
     """
-    Performs SOC investigation logic on incidents.
+    Performs Phase-2 SOC investigation logic on incidents.
     """
-
     def __init__(self):
-        self.interpreter = IncidentInterpreter()
-        self.mitre = MitreMapper()
-        self.risk = RiskExplainer()
+        self.reasoner = ThreatReasoner()
 
-    def run(self, incident: dict):
+    def investigate(self, context: dict) -> dict:
         """
-        Enrich a single incident with reasoning output.
+        Receives SOC context, runs ThreatReasoner, and produces structured investigation summary.
         """
-
-        interpretation = self.interpreter.interpret(incident)
-        mitre_matches = self.mitre.map(interpretation)
-        explanation = self.risk.explain(
-            incident,
-            interpretation,
-            mitre_matches,
-        )
-
+        # Extract anomalies from context
+        anomalies = context.get("anomalies", [])
+        
+        # Extract incident from context, defaulting to first item if inside list 'incidents'
+        incident = context.get("incident")
+        if not incident and context.get("incidents"):
+            incident = context["incidents"][0]
+        elif not incident:
+            incident = {}
+            
+        analysis = self.reasoner.analyze(incident, anomalies)
+        
         return {
-            "incident": incident,
-            "interpretation": interpretation,
-            "mitre": mitre_matches,
-            "risk": explanation,
+            "summary": "Automated SOC investigation completed",
+            "threat_type": analysis["threat_type"],
+            "risk_score": analysis["risk_score"],
+            "severity": analysis["severity"]
         }

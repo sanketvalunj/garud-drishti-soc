@@ -18,20 +18,17 @@ import Reasoning from './pages/Reasoning';
 import LLMReasoning from './pages/LLMReasoning';
 import Admin from './pages/Admin';
 
-
 // Layout
 import Layout from './layout/Layout';
 
 // ─── Guard Components ──────────────────────────────────────────
 
-// Requires authentication only (for onboarding route)
 const AuthOnlyRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 };
 
-// Full protected route: must be authenticated AND onboarded
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isOnboarded } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -39,7 +36,6 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Redirect already-logged-in users away from login
 const PublicOnlyRoute = ({ children }) => {
   const { isAuthenticated, isOnboarded } = useAuth();
   if (isAuthenticated && !isOnboarded) return <Navigate to="/onboarding" replace />;

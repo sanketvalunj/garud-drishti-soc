@@ -1,4 +1,4 @@
-from garud_drishti.correlation.correlation_service import CorrelationService
+from garud_drishti.correlation_engine.correlation_service import CorrelationService
 
 
 class CorrelationAgent:

@@ -1,4 +1,4 @@
-from garud_drishti.detection import DetectionService
+from garud_drishti.detectiontemp import DetectionService
 from .ingestion_service import run_ingestion
 
 

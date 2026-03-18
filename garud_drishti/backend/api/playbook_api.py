@@ -8,8 +8,8 @@ from garud_drishti.storage import IncidentRepository
 
 # Pipeline layers
 from garud_drishti.ingestion.ingestion_api import IngestionService
-from garud_drishti.detection import DetectionService
-from garud_drishti.correlation.correlation_service import CorrelationService
+from garud_drishti.detectiontemp import DetectionService
+from garud_drishti.correlation_engine.correlation_service import CorrelationService
 
 # Reasoning layer
 from garud_drishti.ai_engine.reasoning import (

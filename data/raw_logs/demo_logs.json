@@ -1,0 +1,1602 @@
+[
+  {
+    "timestamp": "2026-03-14T15:52:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T15:53:21.878423",
+    "user_id": "emp_103",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T15:54:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "203.0.113.45",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T15:55:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "185.220.101.1",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T15:56:21.878423",
+    "user_id": "emp_102",
+    "server": "auth-server",
+    "ip": "185.220.101.1",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T15:57:21.878423",
+    "user_id": "emp_104",
+    "server": "loan-db",
+    "ip": "10.0.0.2",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T15:58:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T15:59:21.878423",
+    "user_id": "emp_102",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:00:21.878423",
+    "user_id": "emp_102",
+    "server": "loan-db",
+    "ip": "203.0.113.45",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:01:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:02:21.878423",
+    "user_id": "emp_104",
+    "server": "loan-db",
+    "ip": "203.0.113.45",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:03:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:04:21.878423",
+    "user_id": "emp_102",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:05:21.878423",
+    "user_id": "emp_101",
+    "server": "core-banking",
+    "ip": "10.0.0.5",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:06:21.878423",
+    "user_id": "emp_104",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:07:21.878423",
+    "user_id": "emp_102",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:08:21.878423",
+    "user_id": "emp_103",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:09:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:10:21.878423",
+    "user_id": "emp_103",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:11:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "10.0.0.2",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:12:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:13:21.878423",
+    "user_id": "emp_102",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:14:21.878423",
+    "user_id": "emp_101",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:15:21.878423",
+    "user_id": "emp_104",
+    "server": "core-banking",
+    "ip": "10.0.0.2",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:16:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:17:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:18:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:19:21.878423",
+    "user_id": "emp_104",
+    "server": "core-banking",
+    "ip": "10.0.0.5",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:20:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:21:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:22:21.878423",
+    "user_id": "emp_104",
+    "server": "loan-db",
+    "ip": "10.0.0.2",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:23:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "10.0.0.2",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:24:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:25:21.878423",
+    "user_id": "emp_102",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:26:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "185.220.101.1",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:27:21.878423",
+    "user_id": "emp_102",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:28:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:29:21.878423",
+    "user_id": "emp_102",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:30:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:31:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:32:21.878423",
+    "user_id": "emp_101",
+    "server": "swift-terminal",
+    "ip": "203.0.113.45",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:33:21.878423",
+    "user_id": "emp_104",
+    "server": "swift-terminal",
+    "ip": "203.0.113.45",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:34:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:35:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:36:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:37:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "10.0.0.2",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:38:21.878423",
+    "user_id": "emp_101",
+    "server": "core-banking",
+    "ip": "10.0.0.2",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:39:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:40:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:41:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:42:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:43:21.878423",
+    "user_id": "emp_104",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:44:21.878423",
+    "user_id": "emp_101",
+    "server": "core-banking",
+    "ip": "203.0.113.45",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:45:21.878423",
+    "user_id": "emp_102",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:46:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:47:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:48:21.878423",
+    "user_id": "emp_101",
+    "server": "swift-terminal",
+    "ip": "203.0.113.45",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:49:21.878423",
+    "user_id": "emp_104",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:50:21.878423",
+    "user_id": "emp_104",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:51:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "185.220.101.1",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:52:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:53:21.878423",
+    "user_id": "emp_104",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:54:21.878423",
+    "user_id": "emp_102",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:55:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:56:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:57:21.878423",
+    "user_id": "emp_104",
+    "server": "core-banking",
+    "ip": "203.0.113.45",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T16:58:21.878423",
+    "user_id": "emp_101",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T16:59:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "10.0.0.2",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:00:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:01:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:02:21.878423",
+    "user_id": "emp_102",
+    "server": "loan-db",
+    "ip": "10.0.0.2",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:03:21.878423",
+    "user_id": "emp_103",
+    "server": "loan-db",
+    "ip": "10.0.0.2",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:04:21.878423",
+    "user_id": "emp_102",
+    "server": "loan-db",
+    "ip": "10.0.0.2",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:05:21.878423",
+    "user_id": "emp_104",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:06:21.878423",
+    "user_id": "emp_104",
+    "server": "core-banking",
+    "ip": "10.0.0.5",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:07:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "203.0.113.45",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:08:21.878423",
+    "user_id": "emp_103",
+    "server": "core-banking",
+    "ip": "10.0.0.2",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:09:21.878423",
+    "user_id": "emp_101",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:10:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:11:21.878423",
+    "user_id": "emp_101",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:12:21.878423",
+    "user_id": "emp_103",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:13:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:14:21.878423",
+    "user_id": "emp_104",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:15:21.878423",
+    "user_id": "emp_103",
+    "server": "loan-db",
+    "ip": "10.0.0.2",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:16:21.878423",
+    "user_id": "emp_104",
+    "server": "core-banking",
+    "ip": "10.0.0.5",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:17:21.878423",
+    "user_id": "emp_101",
+    "server": "core-banking",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:18:21.878423",
+    "user_id": "emp_104",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:19:21.878423",
+    "user_id": "emp_104",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:20:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "203.0.113.45",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:21:21.878423",
+    "user_id": "emp_103",
+    "server": "core-banking",
+    "ip": "10.0.0.2",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:22:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:23:21.878423",
+    "user_id": "emp_103",
+    "server": "loan-db",
+    "ip": "10.0.0.2",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:24:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "203.0.113.45",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:25:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:26:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "203.0.113.45",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:27:21.878423",
+    "user_id": "emp_101",
+    "server": "core-banking",
+    "ip": "203.0.113.45",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:28:21.878423",
+    "user_id": "emp_104",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:29:21.878423",
+    "user_id": "emp_103",
+    "server": "loan-db",
+    "ip": "10.0.0.2",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:30:21.878423",
+    "user_id": "emp_102",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:31:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:32:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:33:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:34:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:35:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:36:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "185.220.101.1",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:37:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:38:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:39:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "185.220.101.1",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:40:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "10.0.0.2",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:41:21.878423",
+    "user_id": "emp_103",
+    "server": "loan-db",
+    "ip": "203.0.113.45",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:42:21.878423",
+    "user_id": "emp_101",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:43:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:44:21.878423",
+    "user_id": "emp_103",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:45:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:46:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:47:21.878423",
+    "user_id": "emp_102",
+    "server": "loan-db",
+    "ip": "203.0.113.45",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:48:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:49:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:50:21.878423",
+    "user_id": "emp_102",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:51:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:52:21.878423",
+    "user_id": "emp_104",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:53:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "203.0.113.45",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:54:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T17:55:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:56:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:57:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:58:21.878423",
+    "user_id": "emp_104",
+    "server": "core-banking",
+    "ip": "10.0.0.2",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T17:59:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "185.220.101.1",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:00:21.878423",
+    "user_id": "emp_104",
+    "server": "core-banking",
+    "ip": "203.0.113.45",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:01:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:02:21.878423",
+    "user_id": "emp_104",
+    "server": "loan-db",
+    "ip": "203.0.113.45",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:03:21.878423",
+    "user_id": "emp_102",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:04:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:05:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "185.220.101.1",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:06:21.878423",
+    "user_id": "emp_101",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:07:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:08:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:09:21.878423",
+    "user_id": "emp_102",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:10:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:11:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:12:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "203.0.113.45",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:13:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:14:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:15:21.878423",
+    "user_id": "emp_104",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:16:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "203.0.113.45",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:17:21.878423",
+    "user_id": "emp_102",
+    "server": "loan-db",
+    "ip": "203.0.113.45",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:18:21.878423",
+    "user_id": "emp_103",
+    "server": "loan-db",
+    "ip": "185.220.101.1",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:19:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:20:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:21:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "203.0.113.45",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:22:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:23:21.878423",
+    "user_id": "emp_103",
+    "server": "loan-db",
+    "ip": "185.220.101.1",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:24:21.878423",
+    "user_id": "emp_103",
+    "server": "core-banking",
+    "ip": "203.0.113.45",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:25:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:26:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:27:21.878423",
+    "user_id": "emp_102",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:28:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "203.0.113.45",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:29:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "10.0.0.2",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:30:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "185.220.101.1",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:31:21.878423",
+    "user_id": "emp_103",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:32:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "10.0.0.5",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:33:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:34:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:35:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:36:21.878423",
+    "user_id": "emp_101",
+    "server": "core-banking",
+    "ip": "10.0.0.5",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:37:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:38:21.878423",
+    "user_id": "emp_103",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:39:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:40:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:41:21.878423",
+    "user_id": "emp_103",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:42:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "10.0.0.5",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:43:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:44:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:45:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "10.0.0.2",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:46:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:47:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:48:21.878423",
+    "user_id": "emp_101",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:49:21.878423",
+    "user_id": "emp_102",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:50:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:51:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "203.0.113.45",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:52:21.878423",
+    "user_id": "emp_103",
+    "server": "core-banking",
+    "ip": "10.0.0.2",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:53:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:54:21.878423",
+    "user_id": "emp_104",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:55:21.878423",
+    "user_id": "emp_103",
+    "server": "loan-db",
+    "ip": "203.0.113.45",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:56:21.878423",
+    "user_id": "emp_101",
+    "server": "swift-terminal",
+    "ip": "10.0.0.5",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:57:21.878423",
+    "user_id": "emp_104",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T18:58:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T18:59:21.878423",
+    "user_id": "emp_102",
+    "server": "auth-server",
+    "ip": "203.0.113.45",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T19:00:21.878423",
+    "user_id": "emp_103",
+    "server": "loan-db",
+    "ip": "10.0.0.5",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T19:01:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "185.220.101.1",
+    "action": "privilege_escalation",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T19:02:21.878423",
+    "user_id": "emp_102",
+    "server": "core-banking",
+    "ip": "10.0.0.2",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T19:03:21.878423",
+    "user_id": "emp_103",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T19:04:21.878423",
+    "user_id": "emp_102",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T19:05:21.878423",
+    "user_id": "emp_102",
+    "server": "auth-server",
+    "ip": "10.0.0.5",
+    "action": "export_report",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T19:06:21.878423",
+    "user_id": "emp_101",
+    "server": "loan-db",
+    "ip": "185.220.101.1",
+    "action": "login_failed",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T19:07:21.878423",
+    "user_id": "emp_101",
+    "server": "swift-terminal",
+    "ip": "185.220.101.1",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T19:08:21.878423",
+    "user_id": "emp_101",
+    "server": "swift-terminal",
+    "ip": "203.0.113.45",
+    "action": "data_download",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T19:09:21.878423",
+    "user_id": "emp_104",
+    "server": "loan-db",
+    "ip": "203.0.113.45",
+    "action": "powershell_execution",
+    "risk_flag": "suspicious"
+  },
+  {
+    "timestamp": "2026-03-14T19:10:21.878423",
+    "user_id": "emp_101",
+    "server": "swift-terminal",
+    "ip": "10.0.0.2",
+    "action": "login_success",
+    "risk_flag": "normal"
+  },
+  {
+    "timestamp": "2026-03-14T19:11:21.878423",
+    "user_id": "emp_101",
+    "server": "auth-server",
+    "ip": "10.0.0.2",
+    "action": "login_success",
+    "risk_flag": "normal"
+  }
+]

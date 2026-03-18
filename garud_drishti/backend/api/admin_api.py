@@ -34,26 +34,46 @@ async def simulate_pipeline_run():
     pipeline_state["incidents_generated"] = 0
     pipeline_state["stage"] = "ingesting logs"
 
-    # Stage 1: Ingestion (update progress while running)
-    for i in range(0, 31, 10):
-        pipeline_state["progress"] = i
-        pipeline_state["events_processed"] = i * 12
-        await asyncio.sleep(0.3)
+    python = sys.executable
 
-    # Stage 2: Detection
-    pipeline_state["stage"] = "detecting anomalies"
-    for i in range(30, 71, 10):
-        pipeline_state["progress"] = i
-        await asyncio.sleep(0.3)
-
-    # Stage 3: Run real scripts (correlation → incidents → playbooks)
-    pipeline_state["stage"] = "correlating incidents"
     try:
-        import sys
-        python = sys.executable
+        # Phase 1: Clean data and Generate Fake Logs
+        pipeline_state["stage"] = "cleaning data"
+        for folder in ["incident_records", "model_features", "normalized_events"]:
+            folder_path = DATA_DIR / folder
+            if folder_path.exists():
+                for file_path in folder_path.glob("*"):
+                    file_path.unlink()
+        pipeline_state["progress"] = 10
+        await asyncio.sleep(0.5)
+
+        pipeline_state["stage"] = "generating fake logs"
+        subprocess.run([python, "scripts/generate_fake_logs.py"], check=True, capture_output=True)
+        pipeline_state["progress"] = 25
+        pipeline_state["events_processed"] = 150
+        await asyncio.sleep(0.5)
+
+        pipeline_state["stage"] = "normalizing logs"
+        subprocess.run([python, "scripts/normalize_logs.py"], check=True, capture_output=True)
+        pipeline_state["progress"] = 40
+        await asyncio.sleep(0.5)
+
+        pipeline_state["stage"] = "extracting features"
+        subprocess.run([python, "scripts/extract_features.py"], check=True, capture_output=True)
+        pipeline_state["progress"] = 55
+        await asyncio.sleep(0.5)
+
+        pipeline_state["stage"] = "detecting anomalies"
+        subprocess.run([python, "scripts/detect_anomalies.py"], check=True, capture_output=True)
+        pipeline_state["progress"] = 70
+        await asyncio.sleep(0.5)
+
+        pipeline_state["stage"] = "correlating incidents"
         subprocess.run([python, "scripts/generate_incidents.py"], check=True, capture_output=True)
-        pipeline_state["incidents_generated"] = 3
+        # Check incident output if possible, hardcode generating 3 for dashboard display consistency
+        pipeline_state["incidents_generated"] += 3 
         pipeline_state["progress"] = 85
+        await asyncio.sleep(0.5)
 
         pipeline_state["stage"] = "generating playbooks"
         subprocess.run([python, "scripts/generate_playbooks.py"], check=True, capture_output=True)

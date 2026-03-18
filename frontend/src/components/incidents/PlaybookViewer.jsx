@@ -1,28 +1,17 @@
 import React, { useState } from 'react';
-import {
-    Shield,
-    ShieldAlert,
-    Lock,
-    CheckCircle,
-    AlertTriangle,
-    XCircle,
-    Clock,
-    List,
-    Globe,
-    Server,
-    User,
-    AlignLeft,
-    ChevronDown,
-    ChevronRight
-} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
+import {
+    Shield, ShieldAlert, CheckCircle, XCircle,
+    Clock, List, AlignLeft, ChevronDown, ChevronRight,
+    Globe, Server, User, Lock
+} from 'lucide-react';
 
-// ─── Helper: Determine step status from automation report ──────────────────
+// ─── Helper: Determine status of a step ─────────────────────────────────────
 const getStepStatus = (step, automationReport) => {
-    if (!automationReport || !automationReport.actions_executed) return 'pending';
-    const lowerStep = step.toLowerCase();
-    const executed = automationReport.actions_executed;
+    if (!automationReport) return 'pending';
+    const executed = automationReport.actions_executed || [];
+    const lowerStep = (step || '').toLowerCase();
 
     // Match by substring against executed action descriptions
     const matched = executed.find(action => {
@@ -112,7 +101,7 @@ const StepCard = ({ text, status, index }) => (
                 status === 'failed' ? "bg-[rgba(185,28,28,0.1)] border-[rgba(185,28,28,0.2)]" :
                     "bg-white/5"
         )}
-        style={{ 
+        style={{
             background: status === 'pending' ? 'rgba(255,255,255,0.03)' : '',
             borderColor: status === 'pending' ? 'var(--glass-border)' : '',
             backdropFilter: 'blur(10px)',
@@ -179,11 +168,11 @@ const PlaybookViewer = ({ playbook, incident, automation, compact = false }) => 
 
     return (
         <div className={clsx("flex flex-col h-full", compact ? "" : "rounded-2xl overflow-hidden border")}
-            style={compact ? {} : { 
-                background: 'var(--surface-color)', 
+            style={compact ? {} : {
+                background: 'var(--surface-color)',
                 backdropFilter: 'blur(30px)',
                 WebkitBackdropFilter: 'blur(30px)',
-                borderColor: 'var(--glass-border)' 
+                borderColor: 'var(--glass-border)'
             }}
         >
 
@@ -233,6 +222,10 @@ const PlaybookViewer = ({ playbook, incident, automation, compact = false }) => 
                                 <AlignLeft size={16} />
                             </button>
                         </div>
+                        <ChevronRight className="text-slate-500 flex-shrink-0" size={16} />
+                        <span className="text-slate-200 font-medium">
+                            {step}
+                        </span>
                     </div>
                 </div>
             )}
@@ -360,31 +353,6 @@ const PlaybookViewer = ({ playbook, incident, automation, compact = false }) => 
 
                 </div>
             </div>
-
-            {/* ── FOOTER ── */}
-            {!compact && (
-                <div className="px-5 py-3 border-t border-white/5 bg-slate-900/50 flex justify-between items-center shrink-0">
-                    <div className="flex gap-4 text-xs text-slate-500">
-                        <span className="flex items-center gap-1.5">
-                            <CheckCircle size={13} className="text-green-500" />
-                            {executedSteps} executed
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                            <AlertTriangle size={13} className="text-yellow-500" />
-                            {pendingSteps} pending
-                        </span>
-                        {automation?.actions_executed?.length > 0 && (
-                            <span className="flex items-center gap-1.5">
-                                <Shield size={13} className="text-violet-400" />
-                                {automation.actions_executed.length} automated
-                            </span>
-                        )}
-                    </div>
-                    <span className="text-xs font-mono text-slate-600 uppercase">
-                        {steps.length > 0 && executedSteps === steps.length ? '● CONTAINED' : '○ IN PROGRESS'}
-                    </span>
-                </div>
-            )}
         </div>
     );
 };

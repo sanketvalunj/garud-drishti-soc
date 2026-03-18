@@ -1,14 +1,27 @@
 import React from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-    AlertTriangle, ShieldAlert, Clock, Activity, 
-    ArrowUp, ChevronRight, ExternalLink, Loader2, ArrowRight, Play
+import {
+    AlertTriangle, ShieldAlert, Clock, Activity,
+    ArrowUp, ChevronRight, ExternalLink, Loader2, ArrowRight, Play, RefreshCw
 } from 'lucide-react';
 import { usePipeline } from '../context/PipelineContext';
-import { 
-    BarChart, Bar, Cell, PieChart, Pie, XAxis, Tooltip, ResponsiveContainer, LabelList 
+import {
+    BarChart, Bar, Cell, PieChart, Pie, XAxis, Tooltip, ResponsiveContainer, LabelList
 } from 'recharts';
 import StatCard from '../components/ui/StatCard';
+import api from '../services/api';
+import LiveEventStream from '../components/incidents/LiveEventStream';
+
+// New AI Observability Components
+import AIPipeline from '../components/AIPipeline';
+import AIReasoningPanel from '../components/AIReasoningPanel';
+import LLMReasoningViewer from '../components/LLMReasoningViewer';
+import AttackTimeline from '../components/AttackTimeline';
+import RiskChart from '../components/RiskChart';
+import MitreMapping from '../components/MitreMapping';
+import PlaybookViewer from '../components/incidents/PlaybookViewer';
+import AutomationPanel from '../components/AutomationPanel';
 
 // ─── MOCK DATA ──────────────────────────────────────────────
 const mockIncidents = [
@@ -66,9 +79,9 @@ const StatusBadge = ({ status }) => {
         Contained: 'bg-green-100 text-green-700 border-green-200',
         Escalated: 'bg-[rgba(185,28,28,0.1)] text-[#B91C1C] border-[rgba(185,28,28,0.2)]'
     };
-    const finalClasses = colors[status].includes('border-') 
-        ? `border ${colors[status]}` 
-        : colors[status];
+    const finalClasses = colors[status]?.includes('border-')
+        ? `border ${colors[status]}`
+        : colors[status] || 'bg-gray-100 text-gray-600';
     return (
         <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${finalClasses}`}>
             {status}
@@ -91,14 +104,59 @@ const polarToCartesian = (cx, cy, r, angle) => {
 const Dashboard = () => {
     const navigate = useNavigate();
     const { isRunning, lastRun, runPipeline } = usePipeline();
+    const [stats, setStats] = useState({
+        incidents: 0,
+        activeThreats: 0,
+        highRisk: 0,
+        blockedIps: 0,
+        playbooks: 0,
+        aiDecisions: 0
+    });
+
+    const fetchDashboardData = async () => {
+        try {
+            const [resIncidents, resPlaybooks] = await Promise.all([
+                api.getIncidents().catch(() => ({ incidents: [] })),
+                api.getPlaybooks().catch(() => ({ playbooks: [] }))
+            ]);
+
+            const incidents = resIncidents.incidents || [];
+            const playbooks = resPlaybooks.playbooks || [];
+
+            // Calculate stats
+            const totalIncidents = incidents.length;
+            const highRiskCount = incidents.filter(i => (i.risk_score || 0) > 0.7).length;
+            const activeThreats = incidents.length;
+
+            setStats({
+                incidents: totalIncidents,
+                activeThreats: activeThreats,
+                highRisk: highRiskCount,
+                blockedIps: incidents.reduce((acc, curr) => acc + (curr.entities?.ips?.length || 0), 0),
+                playbooks: playbooks.length,
+                aiDecisions: playbooks.length
+            });
+
+        } catch (error) {
+            console.error("Dashboard data fetch failed", error);
+        }
+    };
+
+
+    useEffect(() => {
+        if (!isRunning) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            fetchDashboardData();
+        }
+    }, [isRunning]);
 
     return (
         <div className="space-y-6">
-            {/* Stat Cards - Moved to Top */}
+                {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                <StatCard 
-                    title="Total Incidents" 
-                    value="47" 
+                <StatCard
+                    title="Total Incidents"
+                    value={stats.incidents || "47"}
                     icon={AlertTriangle}
                     iconStyle={{
                         padding: '10px',
@@ -111,10 +169,11 @@ const Dashboard = () => {
                             <ArrowUp size={14} className="mr-1" /> +12 from yesterday
                         </span>
                     }
+                    onClick={() => navigate('/incidents')}
                 />
-                <StatCard 
-                    title="High Alerts" 
-                    value="23" 
+                <StatCard
+                    title="High Alerts"
+                    value="23"
                     icon={ShieldAlert}
                     iconStyle={{
                         padding: '10px',
@@ -125,9 +184,9 @@ const Dashboard = () => {
                     subtitle="Requires immediate action"
                     valueColor="#B91C1C"
                 />
-                <StatCard 
-                    title="Avg Detection Time" 
-                    value="2.4 min" 
+                <StatCard
+                    title="Avg Detection Time"
+                    value="2.4 min"
                     icon={Clock}
                     iconStyle={{
                         padding: '10px',
@@ -137,9 +196,9 @@ const Dashboard = () => {
                     }}
                     subtitle="68% faster than baseline"
                 />
-                <StatCard 
-                    title="Pipeline Status" 
-                    value="Stable" 
+                <StatCard
+                    title="Pipeline Status"
+                    value="Stable"
                     icon={Activity}
                     iconStyle={{
                         padding: '10px',
@@ -156,9 +215,9 @@ const Dashboard = () => {
             </div>
 
             {/* Pipeline Control - Refactored Hero Card */}
-            <div 
+            <div
                 className="transition-all duration-300"
-                style={{ 
+                style={{
                     background: 'var(--surface-color)',
                     backdropFilter: 'blur(25px)',
                     WebkitBackdropFilter: 'blur(25px)',
@@ -182,12 +241,12 @@ const Dashboard = () => {
 
                     <div className="mt-3 mr-8 lg:mr-16">
                         <div className="h-2 rounded-full overflow-hidden relative" style={{ background: 'var(--bg-primary)' }}>
-                            <div 
-                                className="h-full transition-all duration-700 ease-out bg-[#00AEEF]" 
-                                style={{ 
+                            <div
+                                className="h-full transition-all duration-700 ease-out bg-[#00AEEF]"
+                                style={{
                                     width: isRunning ? '65%' : '100%',
                                     boxShadow: isRunning ? '0 0 12px rgba(0,174,239,0.5)' : 'none'
-                                }} 
+                                }}
                             />
                             {isRunning && (
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full h-full -translate-x-full animate-[shimmer_1.5s_infinite]" />
@@ -200,7 +259,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Right side: Hero Button */}
-                <button 
+                <button
                     onClick={runPipeline}
                     disabled={isRunning}
                     className={`shimmer-btn ${isRunning ? 'opacity-70 cursor-not-allowed' : ''}`}
@@ -238,12 +297,12 @@ const Dashboard = () => {
             {/* ROW 2 — Two columns */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 {/* LEFT: Live Incident Feed */}
-                <div className="xl:col-span-2 rounded-xl shadow-sm border flex flex-col h-[400px]" 
-                    style={{ 
-                        background: 'var(--surface-color)', 
+                <div className="xl:col-span-2 rounded-xl shadow-sm border flex flex-col h-[400px]"
+                    style={{
+                        background: 'var(--surface-color)',
                         backdropFilter: 'blur(20px)',
                         WebkitBackdropFilter: 'blur(20px)',
-                        borderColor: 'var(--glass-border)' 
+                        borderColor: 'var(--glass-border)'
                     }}
                 >
                     <div className="p-4 border-b flex items-center justify-between shrink-0" style={{ borderColor: 'var(--glass-border)' }}>
@@ -258,7 +317,7 @@ const Dashboard = () => {
                     <div className="overflow-y-auto flex-1 p-2 custom-scrollbar">
                         <div className="space-y-[2px]">
                             {mockIncidents.map((inc) => (
-                                <div 
+                                <div
                                     key={inc.id}
                                     onClick={() => navigate(`/incidents/${inc.id}`)}
                                     className="p-3 hover:bg-white/10 rounded-lg cursor-pointer transition-all duration-300 flex items-center justify-between group border border-transparent border-b-white/5 relative z-0 hover:z-10 hover:scale-[1.02] hover:border-white/100 hover:shadow-[0_5px_15px_rgba(255,255,255,0.15)]"
@@ -291,33 +350,33 @@ const Dashboard = () => {
                 </div>
 
                 {/* RIGHT: Threat Fidelity Score Gauge */}
-                <div className="xl:col-span-1 rounded-xl shadow-sm border p-6 flex flex-col items-center" 
-                    style={{ 
-                        background: 'var(--surface-color)', 
+                <div className="xl:col-span-1 rounded-xl shadow-sm border p-6 flex flex-col items-center"
+                    style={{
+                        background: 'var(--surface-color)',
                         backdropFilter: 'blur(20px)',
                         WebkitBackdropFilter: 'blur(20px)',
-                        borderColor: 'var(--glass-border)' 
+                        borderColor: 'var(--glass-border)'
                     }}
                 >
                     <h3 className="font-semibold self-start mb-4" style={{ color: 'var(--text-primary)' }}>Highest Thread Fidelity Score</h3>
-                    
+
                     {/* SVG Gauge */}
                     <div className="relative w-full max-w-[200px] mb-4 mt-2 flex justify-center">
                         <svg viewBox="0 0 200 120" className="w-full h-auto overflow-visible">
-                            <path 
+                            <path
                                 d={describeArc(100, 100, 80, -90, 90)}
-                                fill="none" stroke="#E5E7EB" strokeWidth="14" strokeLinecap="round" 
+                                fill="none" stroke="#E5E7EB" strokeWidth="14" strokeLinecap="round"
                             />
-                            <path 
+                            <path
                                 d={describeArc(100, 100, 80, -90, -90 + (180 * 0.87))}
-                                fill="none" stroke="#00AEEF" strokeWidth="14" strokeLinecap="round" 
+                                fill="none" stroke="#00AEEF" strokeWidth="14" strokeLinecap="round"
                                 className="gauge-arc"
                             />
                             <text x="100" y="95" textAnchor="middle" fontSize="32" fontWeight="700" fill="var(--text-primary)">0.87</text>
                             <text x="100" y="112" textAnchor="middle" fontSize="11" fill="var(--text-muted)">Fidelity Score</text>
                         </svg>
                     </div>
-                    
+
                     <div className="text-center mb-6 mt-2">
                         <span className="text-[10px] font-bold text-[#B91C1C] bg-[rgba(185,28,28,0.1)] border border-[rgba(185,28,28,0.2)] px-3 py-1 rounded-full">
                             High Confidence Threat
@@ -359,12 +418,12 @@ const Dashboard = () => {
             {/* ROW 3 — Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Bar Chart */}
-                <div className="rounded-xl shadow-sm border p-6" 
-                    style={{ 
-                        background: 'var(--surface-color)', 
+                <div className="rounded-xl shadow-sm border p-6"
+                    style={{
+                        background: 'var(--surface-color)',
                         backdropFilter: 'blur(20px)',
                         WebkitBackdropFilter: 'blur(20px)',
-                        borderColor: 'var(--glass-border)' 
+                        borderColor: 'var(--glass-border)'
                     }}
                 >
                     <div className="flex justify-between items-center mb-6">
@@ -375,22 +434,22 @@ const Dashboard = () => {
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={mockSeverityData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }} barCategoryGap="7.5%" barGap={2}>
                                 <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                                <Tooltip 
-                                    cursor={{ fill: 'rgba(255,255,255,0.05)' }} 
-                                    contentStyle={{ 
-                                        borderRadius: '8px', 
-                                        border: '1px solid var(--glass-border)', 
+                                <Tooltip
+                                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                    contentStyle={{
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--glass-border)',
                                         backgroundColor: '#FFFFFF',
-                                        color: '#0F172A', 
+                                        color: '#0F172A',
                                         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                                         fontWeight: '700',
                                         opacity: 1
-                                    }} 
+                                    }}
                                     itemStyle={{ color: '#0F172A' }}
                                 />
-                                <Bar 
-                                    dataKey="value" 
-                                    barSize={72} 
+                                <Bar
+                                    dataKey="value"
+                                    barSize={72}
                                     radius={[6, 6, 0, 0]}
                                     isAnimationActive={true}
                                     animationDuration={500}
@@ -408,12 +467,12 @@ const Dashboard = () => {
                 </div>
 
                 {/* Donut Chart */}
-                <div className="rounded-xl shadow-sm border p-6" 
-                    style={{ 
-                        background: 'var(--surface-color)', 
+                <div className="rounded-xl shadow-sm border p-6"
+                    style={{
+                        background: 'var(--surface-color)',
                         backdropFilter: 'blur(20px)',
                         WebkitBackdropFilter: 'blur(20px)',
-                        borderColor: 'var(--glass-border)' 
+                        borderColor: 'var(--glass-border)'
                     }}
                 >
                     <div className="flex justify-between items-center mb-0">
@@ -438,17 +497,17 @@ const Dashboard = () => {
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
-                                    <Tooltip 
+                                    <Tooltip
                                         wrapperStyle={{ zIndex: 100 }}
-                                        contentStyle={{ 
-                                            borderRadius: '8px', 
-                                            border: '1px solid var(--border-subtle)', 
-                                            backgroundColor: '#FFFFFF', 
-                                            color: '#0F172A', 
+                                        contentStyle={{
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--border-subtle)',
+                                            backgroundColor: '#FFFFFF',
+                                            color: '#0F172A',
                                             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                                             fontWeight: '700',
                                             opacity: 1
-                                        }} 
+                                        }}
                                         itemStyle={{ color: '#0F172A' }}
                                     />
                                 </PieChart>
@@ -456,7 +515,7 @@ const Dashboard = () => {
                             <div style={{
                                 position: 'absolute',
                                 top: '50%',
-                                left: '50%', 
+                                left: '50%',
                                 transform: 'translate(-50%, -50%)',
                                 textAlign: 'center',
                                 pointerEvents: 'none',
@@ -480,12 +539,12 @@ const Dashboard = () => {
             </div>
 
             {/* ROW 4 — Recent Incidents Table */}
-            <div className="rounded-xl shadow-sm border overflow-hidden" 
-                style={{ 
-                    background: 'var(--surface-color)', 
+            <div className="rounded-xl shadow-sm border overflow-hidden"
+                style={{
+                    background: 'var(--surface-color)',
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
-                    borderColor: 'var(--glass-border)' 
+                    borderColor: 'var(--glass-border)'
                 }}
             >
                 <div className="p-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
@@ -519,7 +578,7 @@ const Dashboard = () => {
                                     <td className="px-6 py-4"><StatusBadge status={inc.status} /></td>
                                     <td className="px-6 py-4 font-medium text-xs text-center" style={{ color: 'var(--text-muted)' }}>{inc.time}</td>
                                     <td className="px-6 py-4 text-right">
-                                        <button 
+                                        <button
                                             onClick={() => navigate(`/incidents/${inc.id}`)}
                                             className="text-[#00AEEF] text-sm font-medium hover:underline flex items-center justify-end gap-1 ml-auto border-none bg-transparent"
                                         >
@@ -539,12 +598,12 @@ const Dashboard = () => {
                 <h3 className="font-semibold mb-4 px-1" style={{ color: 'var(--text-secondary)' }}>System Health</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* AI Engine */}
-                    <div className="rounded-xl shadow-sm border p-5 flex flex-col justify-center" 
-                        style={{ 
-                            background: 'var(--surface-color)', 
+                    <div className="rounded-xl shadow-sm border p-5 flex flex-col justify-center"
+                        style={{
+                            background: 'var(--surface-color)',
                             backdropFilter: 'blur(20px)',
                             WebkitBackdropFilter: 'blur(20px)',
-                            borderColor: 'var(--glass-border)' 
+                            borderColor: 'var(--glass-border)'
                         }}
                     >
                         <h4 className="text-xs font-semibold mb-4" style={{ color: 'var(--text-muted)' }}>AI Engine Status</h4>
@@ -562,12 +621,12 @@ const Dashboard = () => {
                     </div>
 
                     {/* Network Nodes */}
-                    <div className="rounded-xl shadow-sm border p-5 flex flex-col justify-center" 
-                        style={{ 
-                            background: 'var(--surface-color)', 
+                    <div className="rounded-xl shadow-sm border p-5 flex flex-col justify-center"
+                        style={{
+                            background: 'var(--surface-color)',
                             backdropFilter: 'blur(20px)',
                             WebkitBackdropFilter: 'blur(20px)',
-                            borderColor: 'var(--glass-border)' 
+                            borderColor: 'var(--glass-border)'
                         }}
                     >
                         <h4 className="text-xs font-semibold mb-4" style={{ color: 'var(--text-muted)' }}>Network Nodes</h4>
@@ -590,8 +649,8 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
-            
-        </div>
+
+        </div >
     );
 };
 
