@@ -74,7 +74,7 @@ const MitreMapping = () => {
                 </button>
                 <div>
                     <h1 className="heading-xl flex items-center gap-3">
-                        <Target className="text-red-500" />
+                        <Target className="text-[#B91C1C]" />
                         Adversary Behavior Mapping
                     </h1>
                     <p className="text-slate-400 text-sm font-mono mt-1">
@@ -97,10 +97,10 @@ const MitreMapping = () => {
                                     layoutId={`tactic-${tactic.id}`}
                                     className={clsx(
                                         "flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all min-w-[140px]",
-                                        isActive ? "bg-red-900/20 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]" : "bg-slate-900 border-slate-700 hover:border-slate-500"
+                                        isActive ? "bg-[rgba(185,28,28,0.1)] border-[#B91C1C] shadow-[0_0_20px_rgba(185,28,28,0.2)]" : "bg-slate-900 border-slate-700 hover:border-slate-500"
                                     )}
                                 >
-                                    <Icon size={24} className={isActive ? "text-red-400" : "text-slate-500"} />
+                                    <Icon size={24} className={isActive ? "text-[#B91C1C]" : "text-slate-500"} />
                                     <div className="text-xs font-bold uppercase text-center">{tactic.name}</div>
                                     <div className="text-[10px] font-mono text-slate-500">{tactic.id}</div>
                                 </motion.div>
@@ -132,8 +132,15 @@ const MitreMapping = () => {
                                     className="space-y-4"
                                 >
                                     {tactic.techniques.map((tech) => (
-                                        <div key={tech.id} className="glass-panel p-6 rounded-2xl border border-slate-700/50 bg-slate-900/50 relative overflow-hidden group">
-                                            <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
+                                        <div key={tech.id} className="p-6 rounded-2xl border relative overflow-hidden group transition-all"
+                                            style={{ 
+                                                background: 'var(--surface-color)', 
+                                                backdropFilter: 'blur(20px)',
+                                                WebkitBackdropFilter: 'blur(20px)',
+                                                borderColor: 'var(--glass-border)' 
+                                            }}
+                                        >
+                                            <div className="absolute top-0 left-0 w-1 h-full bg-[#B91C1C]" />
 
                                             <div className="flex justify-between items-start mb-4">
                                                 <div>
@@ -174,9 +181,16 @@ const MitreMapping = () => {
                 </div>
 
                 {/* 🟡 PANEL 3: ATTACK CHAIN VISUALIZATION */}
-                <div className="lg:col-span-1 glass-panel p-6 rounded-2xl border border-slate-700/50 bg-slate-900/50 h-fit">
+                <div className="lg:col-span-1 p-6 rounded-2xl border h-fit"
+                    style={{ 
+                        background: 'var(--surface-color)', 
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        borderColor: 'var(--glass-border)' 
+                    }}
+                >
                     <h3 className="text-white font-bold mb-6 flex items-center gap-2">
-                        <Target size={18} className="text-red-400" /> Kill Chain Flow
+                        <Target size={18} className="text-[#B91C1C]" /> Kill Chain Flow
                     </h3>
 
                     <div className="relative pl-6 border-l-2 border-slate-800 space-y-8">
@@ -185,7 +199,7 @@ const MitreMapping = () => {
                                 {/* Node */}
                                 <div className={clsx(
                                     "absolute -left-[29px] top-0 w-4 h-4 rounded-full border-2 transition-colors",
-                                    tactic.id === expandedTactic ? "bg-red-500 border-red-900 scale-125" : "bg-slate-900 border-slate-600"
+                                    tactic.id === expandedTactic ? "bg-[#B91C1C] border-[#B91C1C] scale-125" : "bg-slate-900 border-slate-600"
                                 )} />
 
                                 <div className="mb-1 text-xs font-bold uppercase text-slate-500">{tactic.name}</div>

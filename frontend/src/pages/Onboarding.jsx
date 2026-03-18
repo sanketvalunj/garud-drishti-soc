@@ -6,6 +6,7 @@ import {
     CheckCircle2, Circle, Cpu, Database, Activity, Server, Check
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import AnimatedGradientBg from '../components/AnimatedGradientBg';
 
 // ─── Individual Steps ──────────────────────────────────────────
 const WelcomeStep = () => (
@@ -260,13 +261,9 @@ const Onboarding = () => {
     const StepComponent = STEPS[currentStep].component;
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-[#050d1a] relative overflow-hidden px-4">
-            {/* BG Orbs */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-700/10 rounded-full blur-[140px]" />
-                <div className="absolute bottom-[-20%] left-[-10%] w-[50%] h-[50%] bg-violet-700/10 rounded-full blur-[120px]" />
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.7)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.7)_1px,transparent_1px)] bg-[size:80px_80px] opacity-20" />
-            </div>
+        <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-4">
+            {/* ANIMATED GRADIENT BACKGROUND */}
+            <AnimatedGradientBg />
 
             {/* Header Bar */}
             <div className="fixed top-0 inset-x-0 z-10 flex items-center justify-between px-8 py-4 bg-slate-950/70 backdrop-blur-xl border-b border-white/5">
@@ -294,7 +291,7 @@ const Onboarding = () => {
             </div>
 
             {/* Main Content Card */}
-            <div className="z-10 w-full max-w-xl mt-20">
+            <div className="z-10 w-full max-w-xl mt-20 relative">
                 <div className="bg-slate-900/60 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl shadow-blue-950/30 overflow-hidden">
                     <div className="h-0.5 bg-gradient-to-r from-transparent via-blue-500/60 to-transparent" />
 

@@ -9,7 +9,7 @@ import {
     UploadCloud
 } from 'lucide-react';
 import clsx from 'clsx';
-import { MITRE_STAGES, mapIncidentToMitre } from '../utils/mitreMapper';
+import { MITRE_STAGES, mapIncidentToMitre } from '../../utils/mitreMapper';
 
 // Icon Map
 const STAGE_ICONS = {
@@ -55,7 +55,7 @@ const MitreAttackOverlay = ({ incident, mini = false, onStageHover }) => {
                                 className={clsx(
                                     "flex-1 h-full border-r border-slate-900 last:border-0 transition-colors",
                                     isActive
-                                        ? (stage.color === 'red' ? 'bg-red-500' : stage.color === 'orange' ? 'bg-orange-500' : 'bg-blue-500')
+                                        ? (stage.color === 'red' ? 'bg-[#B91C1C]' : stage.color === 'orange' ? 'bg-orange-500' : 'bg-blue-500')
                                         : 'bg-slate-700'
                                 )}
                             />
@@ -84,7 +84,7 @@ const MitreAttackOverlay = ({ incident, mini = false, onStageHover }) => {
                     const stageDetail = coverage.find(c => c.stage === stage.id);
 
                     // Determine Color
-                    const activeColorClass = stage.color === 'red' ? 'text-red-400 border-red-500 bg-red-900/20' :
+                    const activeColorClass = stage.color === 'red' ? 'text-[#B91C1C] border-[#B91C1C] bg-[rgba(185,28,28,0.1)]' :
                         stage.color === 'orange' ? 'text-orange-400 border-orange-500 bg-orange-900/20' :
                             stage.color === 'indigo' ? 'text-indigo-400 border-indigo-500 bg-indigo-900/20' :
                                 stage.color === 'violet' ? 'text-violet-400 border-violet-500 bg-violet-900/20' :
@@ -102,7 +102,7 @@ const MitreAttackOverlay = ({ incident, mini = false, onStageHover }) => {
                                 <motion.div
                                     className={clsx(
                                         "absolute top-[18px] left-[50%] w-full h-1 z-0",
-                                        stage.color === 'red' ? 'bg-red-500' : 'bg-blue-500'
+                                        stage.color === 'red' ? 'bg-[#B91C1C]' : 'bg-blue-500'
                                     )}
                                     initial={{ scaleX: 0 }}
                                     animate={{ scaleX: 1 }}
@@ -130,7 +130,7 @@ const MitreAttackOverlay = ({ incident, mini = false, onStageHover }) => {
                                 {isActive && (
                                     <div className={clsx(
                                         "absolute inset-0 rounded-full animate-ping opacity-20",
-                                        stage.color === 'red' ? 'bg-red-500' : 'bg-blue-500'
+                                        stage.color === 'red' ? 'bg-[#B91C1C]' : 'bg-blue-500'
                                     )} />
                                 )}
                             </motion.div>

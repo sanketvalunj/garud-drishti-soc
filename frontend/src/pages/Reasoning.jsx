@@ -68,7 +68,7 @@ const Reasoning = () => {
     );
 
     if (error) return (
-        <div className="p-10 text-center text-red-400">
+        <div className="p-10 text-center text-[#B91C1C]">
             <AlertTriangle size={48} className="mx-auto mb-4" />
             {error}
         </div>
@@ -96,7 +96,14 @@ const Reasoning = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* 🟢 PANEL 1: PROMPT VIEWER */}
-                <div className="lg:col-span-3 glass-panel rounded-2xl border border-slate-700/50 overflow-hidden">
+                <div className="lg:col-span-3 rounded-2xl border overflow-hidden"
+                    style={{ 
+                        background: 'var(--surface-color)', 
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        borderColor: 'var(--glass-border)' 
+                    }}
+                >
                     <div className="bg-slate-900 px-4 py-2 border-b border-slate-700 flex justify-between items-center">
                         <span className="text-xs font-mono text-slate-400 flex items-center gap-2">
                             <Terminal size={14} /> SYSTEM PROMPT
@@ -111,7 +118,14 @@ const Reasoning = () => {
                 </div>
 
                 {/* 🟣 PANEL 2: AI INTERPRETATION */}
-                <div className="lg:col-span-1 glass-panel p-6 rounded-2xl border border-violet-500/20 bg-violet-900/5 relative overflow-hidden">
+                <div className="lg:col-span-1 p-6 rounded-2xl border relative overflow-hidden"
+                    style={{ 
+                        background: 'rgba(139, 92, 246, 0.05)', 
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        borderColor: 'rgba(139, 92, 246, 0.2)' 
+                    }}
+                >
                     <div className="absolute top-0 right-0 p-3 opacity-10">
                         <Brain size={100} />
                     </div>
@@ -142,7 +156,14 @@ const Reasoning = () => {
                 </div>
 
                 {/* 🟡 PANEL 3: DECISION LOGIC */}
-                <div className="lg:col-span-1 glass-panel p-6 rounded-2xl border border-blue-500/20 bg-blue-900/5">
+                <div className="lg:col-span-1 p-6 rounded-2xl border"
+                    style={{ 
+                        background: 'rgba(59, 130, 246, 0.05)', 
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        borderColor: 'rgba(59, 130, 246, 0.2)' 
+                    }}
+                >
                     <h3 className="text-white font-bold mb-6 flex items-center gap-2">
                         <Cpu size={18} className="text-blue-400" /> Decision Logic
                     </h3>
@@ -171,7 +192,14 @@ const Reasoning = () => {
                 </div>
 
                 {/* 🔵 PANEL 5: CONFIDENCE METER (Placed here for layout balance) */}
-                <div className="lg:col-span-1 glass-panel p-6 rounded-2xl border border-slate-700/50 bg-slate-900/50 flex flex-col items-center justify-center relative">
+                <div className="lg:col-span-1 p-6 rounded-2xl border flex flex-col items-center justify-center relative"
+                    style={{ 
+                        background: 'var(--surface-color)', 
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        borderColor: 'var(--glass-border)' 
+                    }}
+                >
                     <h3 className="absolute top-6 left-6 text-white font-bold text-sm">Confidence</h3>
 
                     <div className="relative w-40 h-40 flex items-center justify-center">
@@ -184,7 +212,7 @@ const Reasoning = () => {
                                 fill="transparent"
                                 className={clsx(
                                     data.decision_logic?.confidence > 0.7 ? "text-green-500" :
-                                        data.decision_logic?.confidence > 0.4 ? "text-yellow-500" : "text-red-500"
+                                        data.decision_logic?.confidence > 0.4 ? "text-yellow-500" : "text-[#B91C1C]"
                                 )}
                                 strokeDasharray={440}
                                 strokeDashoffset={440 - (440 * data.decision_logic?.confidence)}
@@ -207,7 +235,14 @@ const Reasoning = () => {
                 </div>
 
                 {/* 🔴 PANEL 4: RESPONSE STRATEGY */}
-                <div className="lg:col-span-3 glass-panel p-6 rounded-2xl border border-slate-700/50">
+                <div className="lg:col-span-3 p-6 rounded-2xl border"
+                    style={{ 
+                        background: 'var(--surface-color)', 
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        borderColor: 'var(--glass-border)' 
+                    }}
+                >
                     <h3 className="text-white font-bold mb-6 flex items-center gap-2">
                         <ShieldAlert size={18} className="text-emerald-400" /> Recommended Strategy
                     </h3>
@@ -219,8 +254,8 @@ const Reasoning = () => {
                             </h4>
                             <ul className="space-y-3">
                                 {data.recommended_strategy?.containment?.map((action, idx) => (
-                                    <li key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-red-900/10 border border-red-900/20 text-red-200 text-sm">
-                                        <div className="mt-0.5 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-red-500/20 text-[10px] font-bold">!</div>
+                                    <li key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-[rgba(185,28,28,0.1)] border border-[rgba(185,28,28,0.2)] text-red-200 text-sm">
+                                        <div className="mt-0.5 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-[rgba(185,28,28,0.2)] text-[10px] font-bold">!</div>
                                         {action}
                                     </li>
                                 ))}

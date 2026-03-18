@@ -40,16 +40,16 @@ const EntityNode = ({ data }) => {
         <div className={clsx(
             "px-4 py-3 rounded-xl border-2 min-w-[150px] transition-all duration-300 relative",
             bgClass,
-            isHighlighted ? "!border-red-500 !bg-red-900/30 shadow-[0_0_25px_rgba(239,68,68,0.4)] scale-110 z-50" : "hover:border-white/20"
+            isHighlighted ? "!border-[#B91C1C] !bg-[rgba(185,28,28,0.3)] shadow-[0_0_25px_rgba(185,28,28,0.4)] scale-110 z-50" : "hover:border-white/20"
         )}>
             {isHighlighted && (
-                <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 animate-ping" />
+                <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-[#B91C1C] animate-ping" />
             )}
 
             <Handle type="target" position={Position.Top} className="!bg-slate-500 !w-3 !h-3" />
 
             <div className="flex flex-col items-center gap-1">
-                <Icon size={20} className={clsx(colorClass, isHighlighted && "text-red-400")} />
+                <Icon size={20} className={clsx(colorClass, isHighlighted && "text-[#B91C1C]")} />
                 <span className={clsx("text-xs font-bold font-mono text-white", isHighlighted ? "text-red-100" : "")}>{data.label}</span>
                 <span className="text-[10px] uppercase opacity-70 tracking-wider">{data.type || 'Entity'}</span>
             </div>
@@ -122,13 +122,13 @@ const AttackGraph = ({ data, highlightEntity, onNodeClick }) => {
                 labelBgBorderRadius: 4,
                 labelBgStyle: { fill: '#0f172a', fillOpacity: 0.8 },
                 style: {
-                    stroke: isHighRisk ? '#ef4444' : '#6366f1',
+                    stroke: isHighRisk ? '#B91C1C' : '#6366f1',
                     strokeWidth: isHighRisk ? 3 : 2,
                     filter: isHighRisk ? 'drop-shadow(0 0 5px rgba(239, 68, 68, 0.5))' : 'none'
                 },
                 markerEnd: {
                     type: MarkerType.ArrowClosed,
-                    color: isHighRisk ? '#ef4444' : '#6366f1',
+                    color: isHighRisk ? '#B91C1C' : '#6366f1',
                 },
             };
         });

@@ -15,14 +15,14 @@ import {
     AlertCircle
 } from 'lucide-react';
 import clsx from 'clsx';
-import LiveEventStream from '../components/LiveEventStream';
+import LiveEventStream from '../components/incidents/LiveEventStream';
 
 const PipelineStep = ({ title, icon: Icon, status, count, time, index }) => {
     const statusColors = {
         idle: "bg-slate-800 border-slate-700 text-slate-500",
         processing: "bg-blue-900/20 border-blue-500/50 text-blue-400 animate-pulse",
         completed: "bg-green-900/20 border-green-500/50 text-green-400",
-        failed: "bg-red-900/20 border-red-500/50 text-red-400",
+        failed: "bg-[rgba(185,28,28,0.1)] border-[rgba(185,28,28,0.2)] text-[#B91C1C]",
     };
 
     return (
@@ -115,8 +115,8 @@ const Pipeline = () => {
                     onClick={handleRun}
                     disabled={isRunning}
                     className={clsx(
-                        "btn-primary flex items-center gap-2 px-6 py-3 rounded-xl shadow-xl transition-all",
-                        isRunning ? "opacity-50 cursor-not-allowed" : "hover:scale-105"
+                        "flex items-center gap-2 px-6 py-3 rounded-xl shadow-xl transition-all font-bold text-white",
+                        isRunning ? "opacity-50 cursor-not-allowed bg-slate-800" : "hover:scale-105 active:scale-95 bg-[#00AEEF] hover:shadow-[0_0_20px_rgba(0,174,239,0.4)]"
                     )}
                 >
                     {isRunning ? <Loader2 className="animate-spin" /> : <Play fill="currentColor" />}
@@ -128,9 +128,16 @@ const Pipeline = () => {
             <LiveEventStream />
 
             {/* Logs / Terminal Output Mock */}
-            <div className="glass-panel p-6 rounded-2xl bg-black/40 font-mono text-sm text-slate-400 h-48 overflow-y-auto custom-scrollbar">
+            <div className="p-6 rounded-2xl font-mono text-sm text-slate-400 h-48 overflow-y-auto custom-scrollbar border" 
+                style={{ 
+                    background: 'rgba(0,0,0,0.4)', 
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    borderColor: 'var(--glass-border)' 
+                }}
+            >
                 <div className="flex items-center gap-2 mb-4 text-slate-500 border-b border-white/5 pb-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <div className="w-3 h-3 rounded-full bg-[#B91C1C]" />
                     <div className="w-3 h-3 rounded-full bg-yellow-500" />
                     <div className="w-3 h-3 rounded-full bg-green-500" />
                     <span className="ml-2">System Logs</span>

@@ -97,7 +97,7 @@ const buildTimeline = (playbook, incident, automationReport) => {
 
 const StepStatus = ({ status }) => {
     if (status === 'executed') return <CheckCircle size={16} className="text-green-500 shrink-0" />;
-    if (status === 'failed') return <XCircle size={16} className="text-red-500 shrink-0" />;
+    if (status === 'failed') return <XCircle size={16} className="text-[#B91C1C] shrink-0" />;
     return <div className="w-4 h-4 rounded-full border-2 border-yellow-500/70 shrink-0" />;
 };
 
@@ -109,9 +109,15 @@ const StepCard = ({ text, status, index }) => (
         className={clsx(
             "flex items-start gap-3 p-3 rounded-lg border transition-colors",
             status === 'executed' ? "bg-green-900/10 border-green-700/20" :
-                status === 'failed' ? "bg-red-900/10 border-red-700/20" :
-                    "bg-slate-800/40 border-slate-700/50"
+                status === 'failed' ? "bg-[rgba(185,28,28,0.1)] border-[rgba(185,28,28,0.2)]" :
+                    "bg-white/5"
         )}
+        style={{ 
+            background: status === 'pending' ? 'rgba(255,255,255,0.03)' : '',
+            borderColor: status === 'pending' ? 'var(--glass-border)' : '',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)'
+        }}
     >
         <div className="mt-0.5"><StepStatus status={status} /></div>
         <div className="flex-1 min-w-0">
@@ -119,7 +125,7 @@ const StepCard = ({ text, status, index }) => (
             <span className={clsx(
                 "text-[10px] uppercase font-bold mt-1 inline-block",
                 status === 'executed' ? "text-green-500" :
-                    status === 'failed' ? "text-red-500" :
+                    status === 'failed' ? "text-[#B91C1C]" :
                         "text-yellow-500"
             )}>
                 {status === 'executed' ? '✔ Executed' : status === 'failed' ? '✕ Failed' : '◌ Pending'}
@@ -172,7 +178,14 @@ const PlaybookViewer = ({ playbook, incident, automation, compact = false }) => 
     })();
 
     return (
-        <div className={clsx("flex flex-col h-full", compact ? "" : "glass-panel rounded-2xl overflow-hidden")}>
+        <div className={clsx("flex flex-col h-full", compact ? "" : "rounded-2xl overflow-hidden border")}
+            style={compact ? {} : { 
+                background: 'var(--surface-color)', 
+                backdropFilter: 'blur(30px)',
+                WebkitBackdropFilter: 'blur(30px)',
+                borderColor: 'var(--glass-border)' 
+            }}
+        >
 
             {/* ── HEADER CARD ── */}
             {!compact && (
@@ -191,7 +204,7 @@ const PlaybookViewer = ({ playbook, incident, automation, compact = false }) => 
                                 </span>
                                 {riskScore != null && (
                                     <span className="text-xs text-slate-400 font-mono">
-                                        Risk: <span className="text-red-400 font-bold">{riskScore > 1 ? Math.round(riskScore) : Math.round(riskScore * 100)}</span>
+                                        Risk: <span className="text-[#B91C1C] font-bold">{riskScore > 1 ? Math.round(riskScore) : Math.round(riskScore * 100)}</span>
                                     </span>
                                 )}
                             </div>
@@ -270,8 +283,8 @@ const PlaybookViewer = ({ playbook, incident, automation, compact = false }) => 
                                         >
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 {/* Blocked IPs */}
-                                                <div className="p-3 rounded-lg bg-red-900/10 border border-red-800/20">
-                                                    <div className="flex items-center gap-1.5 text-xs font-bold text-red-400 mb-2">
+                                                <div className="p-3 rounded-lg bg-[rgba(185,28,28,0.1)] border border-[rgba(185,28,28,0.2)]">
+                                                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#B91C1C] mb-2">
                                                         <Globe size={12} /> Blocked IPs
                                                     </div>
                                                     {entities.ips.length > 0 ? (
@@ -328,7 +341,7 @@ const PlaybookViewer = ({ playbook, incident, automation, compact = false }) => 
                                         {/* Timeline dot */}
                                         <div className={clsx(
                                             "absolute -left-[25px] top-1 w-3 h-3 rounded-full border-2 border-slate-900",
-                                            entry.type === 'detection' ? "bg-red-500" :
+                                            entry.type === 'detection' ? "bg-[#B91C1C]" :
                                                 entry.type === 'action' || entry.type === 'executed' ? "bg-green-500" :
                                                     entry.type === 'automated' ? "bg-violet-500" :
                                                         "bg-yellow-500/60"

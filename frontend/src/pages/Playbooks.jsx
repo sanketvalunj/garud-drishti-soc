@@ -10,7 +10,7 @@ import {
     RefreshCw
 } from 'lucide-react';
 import clsx from 'clsx';
-import PlaybookViewer from '../components/PlaybookViewer';
+import PlaybookViewer from '../components/incidents/PlaybookViewer';
 
 const Playbooks = () => {
     const location = useLocation();
@@ -137,7 +137,8 @@ const Playbooks = () => {
                         <input
                             type="text"
                             placeholder="Search by ID or threat type..."
-                            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-blue-500/50"
+                            className="w-full bg-white/5 border rounded-lg pl-9 pr-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-slate-500/50"
+                            style={{ borderColor: 'var(--glass-border)' }}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -175,11 +176,17 @@ const Playbooks = () => {
                                     key={pb.incident_id || idx}
                                     onClick={() => handleSelectPlaybook(pb)}
                                     className={clsx(
-                                        "p-4 rounded-xl border transition-all cursor-pointer hover:border-blue-500/30",
+                                        "p-4 rounded-xl border transition-all cursor-pointer",
                                         selectedPlaybook?.incident_id === pb.incident_id
                                             ? "bg-blue-600/10 border-blue-500/50 shadow-[0_0_15px_rgba(37,99,235,0.1)]"
-                                            : "bg-slate-800/30 border-slate-700/30 hover:bg-slate-800/50"
+                                            : "hover:bg-white/5"
                                     )}
+                                    style={{ 
+                                        background: selectedPlaybook?.incident_id === pb.incident_id ? '' : 'rgba(255,255,255,0.03)',
+                                        borderColor: selectedPlaybook?.incident_id === pb.incident_id ? '' : 'var(--glass-border)',
+                                        backdropFilter: 'blur(10px)',
+                                        WebkitBackdropFilter: 'blur(10px)'
+                                    }}
                                 >
                                     <div className="flex justify-between items-start mb-2">
                                         <div className="flex items-center gap-2">
@@ -187,7 +194,7 @@ const Playbooks = () => {
                                                 {pb.incident_id?.substring(0, 8)}
                                             </span>
                                             {matchInc?.risk_score != null && (
-                                                <span className="text-[10px] uppercase font-bold text-red-400 tracking-wider">
+                                                <span className="text-[10px] uppercase font-bold text-[#B91C1C] tracking-wider">
                                                     RISK: {Math.round(matchInc.risk_score * 100)}
                                                 </span>
                                             )}
