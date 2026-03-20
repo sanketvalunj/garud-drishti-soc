@@ -37,7 +37,7 @@ const mockIncidents = [
 
 const mockSeverityData = [
     { name: 'High', value: 23, color: '#B91C1C' },
-    { name: 'Medium', value: 18, color: '#CA8A04' },
+    { name: 'Medium', value: 18, color: '#D97706' },
     { name: 'Low', value: 6, color: '#00AEEF' }
 ];
 
@@ -53,7 +53,7 @@ const mockCategoryData = [
 const SeverityBadge = ({ severity }) => {
     const colors = {
         HIGH: { bg: 'rgba(185,28,28,0.12)', text: '#B91C1C', border: 'rgba(185,28,28,0.2)' },
-        MEDIUM: { bg: 'rgba(234,179,8,0.12)', text: '#CA8A04', border: 'rgba(234,179,8,0.2)' },
+        MEDIUM: { bg: 'rgba(217,119,6,0.12)', text: '#D97706', border: 'rgba(217,119,6,0.2)' },
         LOW: { bg: 'rgba(0,174,239,0.12)', text: '#00AEEF', border: 'rgba(0,174,239,0.2)' }
     };
     const style = colors[severity] || colors.LOW;
@@ -67,7 +67,7 @@ const SeverityBadge = ({ severity }) => {
 const FidelityBadge = ({ score }) => {
     const isCritical = score >= 0.85;
     return (
-        <span className={`font-mono text-xs ${isCritical ? 'text-[#B91C1C] font-semibold' : ''}`} style={{ color: isCritical ? '#B91C1C' : 'var(--text-secondary)' }}>
+        <span className={`text-xs ${isCritical ? 'text-[#B91C1C] font-semibold' : ''}`} style={{ color: isCritical ? '#B91C1C' : 'var(--text-secondary)' }}>
             {score.toFixed(2)}
         </span>
     );
@@ -319,7 +319,7 @@ const Dashboard = () => {
                             {mockIncidents.map((inc) => (
                                 <div
                                     key={inc.id}
-                                    onClick={() => navigate(`/incidents/${inc.id}`)}
+                                    onClick={() => navigate(`/incidents?highlight=${inc.id}`)}
                                     className="p-3 hover:bg-white/10 rounded-lg cursor-pointer transition-all duration-300 flex items-center justify-between group border border-transparent border-b-white/5 relative z-0 hover:z-10 hover:scale-[1.02] hover:border-white/100 hover:shadow-[0_5px_15px_rgba(255,255,255,0.15)]"
                                     style={{ background: 'transparent' }}
                                 >
@@ -331,7 +331,7 @@ const Dashboard = () => {
                                             <p className="font-medium text-sm group-hover:text-[#00AEEF] transition-colors" style={{ color: 'var(--text-primary)' }}>
                                                 {inc.type}
                                             </p>
-                                            <p className="text-xs mt-0.5 font-mono" style={{ color: 'var(--text-muted)' }}>
+                                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                                                 {inc.entity}
                                             </p>
                                         </div>
@@ -386,8 +386,7 @@ const Dashboard = () => {
                     <div className="w-full space-y-4 mt-auto">
                         <div>
                             <div className="flex justify-between items-center text-xs mb-1">
-                                <span className="font-medium tracking-wide" style={{ color: 'var(--text-secondary)' }}>Behavioral Deviation</span>
-                                <span className="font-mono font-bold" style={{ color: 'var(--text-primary)' }}>0.91</span>
+                                <span className="font-bold" style={{ color: 'var(--text-primary)' }}>0.91</span>
                             </div>
                             <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: 'var(--bg-primary)' }}>
                                 <div className="h-full bg-[#00395D] rounded-full" style={{ width: '91%' }} />
@@ -395,8 +394,7 @@ const Dashboard = () => {
                         </div>
                         <div>
                             <div className="flex justify-between items-center text-xs mb-1">
-                                <span className="font-medium tracking-wide" style={{ color: 'var(--text-secondary)' }}>Asset Criticality</span>
-                                <span className="font-mono font-bold" style={{ color: 'var(--text-primary)' }}>0.85</span>
+                                <span className="font-bold" style={{ color: 'var(--text-primary)' }}>0.85</span>
                             </div>
                             <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: 'var(--bg-primary)' }}>
                                 <div className="h-full bg-[#0067A5] rounded-full" style={{ width: '85%' }} />
@@ -404,8 +402,7 @@ const Dashboard = () => {
                         </div>
                         <div>
                             <div className="flex justify-between items-center text-xs mb-1">
-                                <span className="font-medium tracking-wide" style={{ color: 'var(--text-secondary)' }}>Historical Similarity</span>
-                                <span className="font-mono font-bold" style={{ color: 'var(--text-primary)' }}>0.79</span>
+                                <span className="font-bold" style={{ color: 'var(--text-primary)' }}>0.79</span>
                             </div>
                             <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: 'var(--bg-primary)' }}>
                                 <div className="h-full bg-[#00AEEF] rounded-full" style={{ width: '79%' }} />
@@ -565,21 +562,28 @@ const Dashboard = () => {
                         </thead>
                         <tbody className="divide-y" style={{ borderColor: 'var(--glass-border)', color: 'var(--text-secondary)' }}>
                             {mockIncidents.slice(0, 5).map((inc) => (
-                                <tr key={inc.id} className="hover:bg-white/5 transition-colors">
+                                <tr 
+                                    key={inc.id} 
+                                    onClick={() => navigate(`/incidents?highlight=${inc.id}`)}
+                                    className="hover:bg-white/10 cursor-pointer transition-colors"
+                                >
                                     <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2 text-[#00AEEF] font-mono font-semibold">
+                                        <div className="flex items-center gap-2 text-[#00AEEF] font-semibold">
                                             {inc.id}
                                             <ExternalLink size={14} className="opacity-70" />
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 font-medium" style={{ color: 'var(--text-primary)' }}>{inc.type}</td>
-                                    <td className="px-6 py-4 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>{inc.entity}</td>
+                                    <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>{inc.entity}</td>
                                     <td className="px-6 py-4"><FidelityBadge score={inc.score} /></td>
                                     <td className="px-6 py-4"><StatusBadge status={inc.status} /></td>
                                     <td className="px-6 py-4 font-medium text-xs text-center" style={{ color: 'var(--text-muted)' }}>{inc.time}</td>
                                     <td className="px-6 py-4 text-right">
                                         <button
-                                            onClick={() => navigate(`/incidents/${inc.id}`)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/incidents?highlight=${inc.id}`);
+                                            }}
                                             className="text-[#00AEEF] text-sm font-medium hover:underline flex items-center justify-end gap-1 ml-auto border-none bg-transparent"
                                         >
                                             View Details
@@ -608,7 +612,7 @@ const Dashboard = () => {
                     >
                         <h4 className="text-xs font-semibold mb-4" style={{ color: 'var(--text-muted)' }}>AI Engine Status</h4>
                         <div className="flex justify-between items-center mb-2">
-                            <span className="font-mono text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>cryptix-finetuned-7b</span>
+                            <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>cryptix-finetuned-7b</span>
                             <div className="flex items-center gap-1.5 text-xs font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded border border-green-500/20">
                                 <Loader2 size={12} className="animate-spin text-green-500" />
                                 Operational

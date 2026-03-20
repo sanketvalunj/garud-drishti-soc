@@ -36,10 +36,10 @@ const RiskChart = ({ riskScores }) => {
                 backgroundColor: 'rgba(59, 130, 246, 0.2)', // blue-500 with opacity
                 borderColor: 'rgba(59, 130, 246, 1)',
                 borderWidth: 2,
-                pointBackgroundColor: 'rgba(239, 68, 68, 1)', // red-500
+                pointBackgroundColor: '#B91C1C', // red standard
                 pointBorderColor: '#fff',
                 pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: 'rgba(239, 68, 68, 1)',
+                pointHoverBorderColor: '#B91C1C',
                 pointRadius: 4,
             },
         ],
@@ -56,7 +56,7 @@ const RiskChart = ({ riskScores }) => {
                     color: '#94a3b8',
                     font: {
                         size: 13,
-                        family: 'monospace'
+                        family: "'Inter', sans-serif"
                     }
                 },
                 ticks: {

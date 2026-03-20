@@ -14,7 +14,7 @@ const TerminalStream = ({ logs, isPaused, togglePause, onClear }) => {
     }, [logs, isPaused]);
 
     return (
-        <div className="flex flex-col h-full bg-black border-r border-slate-800 font-mono text-xs">
+        <div className="flex flex-col h-full bg-black border-r border-slate-800 text-xs text-slate-300">
             {/* Terminal Header */}
             <div className="flex items-center justify-between p-3 bg-slate-900 border-b border-slate-800">
                 <div className="flex items-center gap-2 text-slate-400">

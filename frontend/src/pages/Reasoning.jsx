@@ -63,7 +63,7 @@ const Reasoning = () => {
     if (loading) return (
         <div className="flex flex-col items-center justify-center h-[50vh] gap-4">
             <Cpu size={48} className="text-blue-500 animate-pulse" />
-            <div className="text-slate-400 font-mono text-sm">Deciphering neural pathways...</div>
+            <div className="text-slate-400 text-sm">Deciphering neural pathways...</div>
         </div>
     );
 
@@ -86,7 +86,7 @@ const Reasoning = () => {
                         <Brain className="text-violet-400" />
                         AI Decision Engine
                     </h1>
-                    <p className="text-slate-400 text-sm font-mono mt-1">
+                    <p className="text-slate-400 text-sm mt-1">
                         Trace ID: {data.incident_id} • Model: {data.model_used}
                         {data.fallback && <span className="ml-3 px-2 py-0.5 bg-amber-500/10 text-amber-500 text-xs rounded border border-amber-500/20">RULE-BASED FALLBACK</span>}
                     </p>
@@ -105,14 +105,14 @@ const Reasoning = () => {
                     }}
                 >
                     <div className="bg-slate-900 px-4 py-2 border-b border-slate-700 flex justify-between items-center">
-                        <span className="text-xs font-mono text-slate-400 flex items-center gap-2">
+                        <span className="text-xs text-slate-400 flex items-center gap-2">
                             <Terminal size={14} /> SYSTEM PROMPT
                         </span>
                         <button className="text-slate-500 hover:text-white transition-colors" title="Copy Prompt">
                             <Copy size={14} />
                         </button>
                     </div>
-                    <div className="p-4 bg-black/50 font-mono text-xs text-slate-300 overflow-x-auto">
+                    <div className="p-4 bg-black/50 text-xs text-slate-300 overflow-x-auto">
                         <pre className="whitespace-pre-wrap">{data.llm_prompt}</pre>
                     </div>
                 </div>
@@ -146,7 +146,7 @@ const Reasoning = () => {
                             <div className="text-xs uppercase text-slate-500 font-bold mb-2">Affected Assets</div>
                             <div className="flex flex-wrap gap-2">
                                 {data.analysis?.affected_assets?.map(asset => (
-                                    <span key={asset} className="px-2 py-1 bg-slate-800 rounded text-xs font-mono text-slate-300 border border-slate-700">
+                                    <span key={asset} className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300 border border-slate-700">
                                         {asset}
                                     </span>
                                 ))}

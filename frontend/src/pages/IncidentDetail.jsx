@@ -25,7 +25,7 @@ import PlaybookViewer from '../components/incidents/PlaybookViewer';
 const SeverityBadge = ({ severity }) => {
     const colors = {
         HIGH: { bg: 'rgba(185,28,28,0.12)', text: '#B91C1C', border: 'rgba(185,28,28,0.2)' },
-        MEDIUM: { bg: 'rgba(234,179,8,0.12)', text: '#CA8A04', border: 'rgba(234,179,8,0.2)' },
+        MEDIUM: { bg: 'rgba(217,119,6,0.12)', text: '#D97706', border: 'rgba(217,119,6,0.2)' },
         LOW: { bg: 'rgba(0,174,239,0.12)', text: '#00AEEF', border: 'rgba(0,174,239,0.2)' }
     };
     const s = severity?.toUpperCase() === 'CRITICAL' ? 'HIGH' : (severity?.toUpperCase() || 'LOW');
@@ -110,7 +110,7 @@ const IncidentDetail = () => {
                         </div>
                         <div className="flex items-center gap-4 text-sm mt-2 font-medium" style={{ color: 'var(--text-secondary)' }}>
                             <span className="flex items-center gap-1.5"><Clock size={16} /> {new Date(incident.timestamp).toLocaleString()}</span>
-                            <span className="font-mono" style={{ color: 'var(--text-muted)' }}>ID: {incident.incident_id}</span>
+                            <span style={{ color: 'var(--text-muted)' }}>ID: {incident.incident_id}</span>
                             <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded font-bold border border-indigo-500/20">
                                 <Activity size={14} /> Investigating
                             </span>
@@ -186,7 +186,7 @@ const IncidentDetail = () => {
                                 />
                             </svg>
                             <div className="absolute inset-x-0 bottom-[-10px] text-center">
-                                <span className="text-4xl font-bold font-mono" style={{ color: 'var(--text-primary)' }}>
+                                <span className="text-4xl font-bold" style={{ color: 'var(--text-primary)' }}>
                                     {(incident.risk_score || 0).toFixed(2)}
                                 </span>
                             </div>
@@ -217,7 +217,7 @@ const IncidentDetail = () => {
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         {incident.entities.users.map(u => (
-                                            <span key={u} className="px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded font-mono text-xs font-semibold border border-blue-500/20">{u}</span>
+                                            <span key={u} className="px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded text-xs font-semibold border border-blue-500/20">{u}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -230,7 +230,7 @@ const IncidentDetail = () => {
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         {incident.entities.assets.map(a => (
-                                            <span key={a} className="px-2.5 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded font-mono text-xs font-semibold border border-indigo-500/20">{a}</span>
+                                            <span key={a} className="px-2.5 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded text-xs font-semibold border border-indigo-500/20">{a}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -243,7 +243,7 @@ const IncidentDetail = () => {
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         {incident.entities.ips.map(ip => (
-                                            <span key={ip} className="px-2.5 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded font-mono text-xs font-semibold border border-amber-500/20">{ip}</span>
+                                            <span key={ip} className="px-2.5 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded text-xs font-semibold border border-amber-500/20">{ip}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -316,7 +316,7 @@ const IncidentDetail = () => {
                             backdropFilter: 'blur(20px)',
                             WebkitBackdropFilter: 'blur(20px)',
                             borderColor: 'var(--glass-border)', 
-                            borderTop: '4px solid #10B981' 
+                            borderTop: '4px solid #15803D' 
                         }}
                     >
                         <div className="flex justify-between items-center mb-6 shrink-0">

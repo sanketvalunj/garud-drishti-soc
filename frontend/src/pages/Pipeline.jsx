@@ -49,7 +49,7 @@ const PipelineStep = ({ title, icon: Icon, status, count, time, index }) => {
 
             <div className="mt-4 text-center">
                 <h3 className="font-semibold text-white">{title}</h3>
-                <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-mono">
+                <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider">
                     {status}
                 </p>
             </div>
@@ -62,11 +62,11 @@ const PipelineStep = ({ title, icon: Icon, status, count, time, index }) => {
                 >
                     <div className="flex justify-between">
                         <span>Processed:</span>
-                        <span className="font-mono text-white">{count}</span>
+                        <span className="text-white">{count}</span>
                     </div>
                     <div className="flex justify-between">
                         <span>Time:</span>
-                        <span className="font-mono text-white">{time}s</span>
+                        <span className="text-white">{time}s</span>
                     </div>
                 </motion.div>
             )}
@@ -128,7 +128,7 @@ const Pipeline = () => {
             <LiveEventStream />
 
             {/* Logs / Terminal Output Mock */}
-            <div className="p-6 rounded-2xl font-mono text-sm text-slate-400 h-48 overflow-y-auto custom-scrollbar border" 
+            <div className="p-6 rounded-2xl text-sm text-slate-400 h-48 overflow-y-auto custom-scrollbar border" 
                 style={{ 
                     background: 'rgba(0,0,0,0.4)', 
                     backdropFilter: 'blur(20px)',

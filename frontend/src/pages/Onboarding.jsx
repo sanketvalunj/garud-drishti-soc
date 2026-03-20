@@ -287,7 +287,7 @@ const Onboarding = () => {
                         </div>
                     ))}
                 </div>
-                <div className="text-xs text-slate-600 font-mono">Step {currentStep + 1} of {STEPS.length}</div>
+                <div className="text-xs text-slate-600">Step {currentStep + 1} of {STEPS.length}</div>
             </div>
 
             {/* Main Content Card */}

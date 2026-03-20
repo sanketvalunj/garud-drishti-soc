@@ -13,7 +13,7 @@ import api from '../services/api';
 const LoadingState = () => (
     <div className="flex flex-col items-center justify-center h-[50vh] gap-4">
         <Cpu size={48} className="text-blue-500 animate-pulse" />
-        <div className="text-slate-400 font-mono text-sm">Deciphering neural pathways...</div>
+        <div className="text-slate-400 text-sm">Deciphering neural pathways...</div>
         <div className="w-48 h-1 bg-slate-800 rounded-full overflow-hidden">
             <motion.div
                 className="h-full bg-gradient-to-r from-blue-500 to-violet-500"
@@ -137,9 +137,9 @@ const LLMReasoning = () => {
                         >
                             <div className="bg-slate-900 px-4 py-2.5 border-b border-slate-700 flex items-center gap-2">
                                 <Terminal size={14} className="text-slate-400" />
-                                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">AI Narrative / System Prompt</span>
+                                <span className="text-xs text-slate-400 uppercase tracking-wider">AI Narrative / System Prompt</span>
                             </div>
-                            <div className="p-4 bg-black/50 font-mono text-xs text-slate-300 overflow-x-auto max-h-48 custom-scrollbar">
+                            <div className="p-4 bg-black/50 text-xs text-slate-300 overflow-x-auto max-h-48 custom-scrollbar">
                                 <pre className="whitespace-pre-wrap">{data.llm_prompt}</pre>
                             </div>
                         </div>
@@ -171,7 +171,7 @@ const LLMReasoning = () => {
                                 <div className="text-xs uppercase text-slate-500 font-bold mb-2">Affected Assets</div>
                                 <div className="flex flex-wrap gap-2">
                                     {(data.analysis?.affected_assets || [data._incident?.asset].filter(Boolean)).map(asset => (
-                                        <span key={asset} className="px-2 py-1 bg-slate-800 rounded text-xs font-mono text-slate-300 border border-slate-700">{asset}</span>
+                                        <span key={asset} className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300 border border-slate-700">{asset}</span>
                                     ))}
                                 </div>
                             </div>

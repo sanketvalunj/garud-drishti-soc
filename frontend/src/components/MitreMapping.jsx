@@ -23,7 +23,7 @@ const MitreMapping = ({ techniques = [] }) => {
                         key={idx}
                         className="flex items-center bg-slate-800/80 border border-slate-700 rounded-lg overflow-hidden hover:border-red-500/50 transition-colors shadow-md group cursor-default"
                     >
-                        <div className="bg-red-500/20 text-red-400 px-3 py-2 font-mono font-bold text-sm border-r border-slate-700 group-hover:bg-red-500/30 transition-colors">
+                        <div className="bg-red-500/20 text-red-400 px-3 py-2 font-bold text-sm border-r border-slate-700 group-hover:bg-red-500/30 transition-colors">
                             {tech.id}
                         </div>
                         <div className="px-4 py-2 text-slate-200 text-sm font-medium">

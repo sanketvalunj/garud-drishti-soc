@@ -25,7 +25,7 @@ const AttackTimeline = ({ timeline = [] }) => {
                         <div className="absolute w-4 h-4 bg-blue-500 rounded-full -left-[33px] top-1 border-4 border-slate-900"></div>
 
                         <div className="bg-slate-800/60 p-4 rounded-lg border border-slate-700/60 shadow-md hover:border-blue-500/50 transition-colors">
-                            <span className="text-xs font-mono text-blue-400 bg-blue-500/10 px-2 py-1 rounded">
+                            <span className="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded">
                                 {item.time}
                             </span>
                             <div className="mt-2 text-slate-200 font-medium tracking-wide">

@@ -181,7 +181,7 @@ const LiveEventStream = () => {
 
                 {/* Event count */}
                 {connected && (
-                    <div className="text-[10px] text-slate-600 mb-2 font-mono">
+                    <div className="text-[10px] text-slate-600 mb-2">
                         {eventCount} events ingested this session
                     </div>
                 )}
@@ -197,7 +197,7 @@ const LiveEventStream = () => {
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0 }}
                                     transition={{ duration: 0.25 }}
-                                    className="text-[11px] font-mono p-2 rounded-lg bg-slate-900/80 border border-slate-800/80"
+                                    className="text-[11px] p-2 rounded-lg bg-slate-900/80 border border-slate-800/80"
                                 >
                                     {/* Severity dot + type */}
                                     <div className="flex items-center gap-1.5 mb-0.5">
@@ -321,7 +321,7 @@ const LiveEventStream = () => {
                                         </div>
                                     )}
                                     <div className="flex justify-between items-start mb-1">
-                                        <span className="text-xs font-mono text-slate-400">{inc.incident_id?.substring(0, 8)}</span>
+                                        <span className="text-xs text-slate-400">{inc.incident_id?.substring(0, 8)}</span>
                                         <span className={clsx(
                                             'text-[10px] px-1.5 py-0.5 rounded font-bold uppercase',
                                             inc.severity === 'Critical' ? 'bg-[rgba(185,28,28,0.1)] text-[#B91C1C]' :

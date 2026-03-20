@@ -118,7 +118,7 @@ const Admin = () => {
                 </div>
                 <div className="text-right">
                     <div className="text-sm font-bold mb-1" style={{ color: 'var(--text-muted)' }}>Version Info</div>
-                    <div className="font-mono text-sm px-3 py-1 rounded border" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'var(--glass-border)', color: 'var(--text-primary)' }}>
+                    <div className="text-sm px-3 py-1 rounded border" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'var(--glass-border)', color: 'var(--text-primary)' }}>
                         v2.4.0-stable
                     </div>
                 </div>
@@ -145,11 +145,11 @@ const Admin = () => {
                     <div className="grid grid-cols-2 gap-4 mt-auto">
                         <div className="p-4 rounded-lg border" style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'var(--glass-border)' }}>
                             <div className="text-xs font-bold mb-1" style={{ color: 'var(--text-muted)' }}>Uptime</div>
-                            <div className="font-mono font-medium text-base" style={{ color: 'var(--text-primary)' }}>{health?.uptime || '--'}</div>
+                            <div className="font-medium text-base" style={{ color: 'var(--text-primary)' }}>{health?.uptime || '--'}</div>
                         </div>
                         <div className="p-4 rounded-lg border" style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'var(--glass-border)' }}>
                             <div className="text-xs font-bold mb-1" style={{ color: 'var(--text-muted)' }}>API Latency</div>
-                            <div className="font-mono font-medium text-base text-green-600">{health?.api_latency_ms || 0}ms</div>
+                            <div className="font-medium text-base text-green-600">{health?.api_latency_ms || 0}ms</div>
                         </div>
                     </div>
                 </Card>
@@ -158,7 +158,7 @@ const Admin = () => {
                 <Card title="AI Engine Status" icon={Brain}>
                     <div className="flex justify-between items-center mb-6">
                         <span className="text-sm font-bold" style={{ color: 'var(--text-muted)' }}>Active Model</span>
-                        <span className="font-mono font-bold text-xs px-3 py-1.5 rounded border" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'var(--glass-border)', color: 'var(--text-primary)' }}>
+                        <span className="font-bold text-xs px-3 py-1.5 rounded border" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'var(--glass-border)', color: 'var(--text-primary)' }}>
                             {model?.model_name || 'Loading...'}
                         </span>
                     </div>
@@ -243,7 +243,7 @@ const Admin = () => {
                     <div className="space-y-3 mb-6">
                         {storage?.files ? Object.entries(storage.files).map(([file, exists]) => (
                             <div key={file} className="flex items-center justify-between p-3 rounded-lg border transition-colors hover:bg-white/10" style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'var(--glass-border)' }}>
-                                <span className="flex items-center gap-3 text-sm font-mono font-medium" style={{ color: 'var(--text-secondary)' }}>
+                                <span className="flex items-center gap-3 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                                     <Database size={16} style={{ color: 'var(--text-muted)' }} /> 
                                     {file}
                                 </span>
@@ -261,7 +261,7 @@ const Admin = () => {
                     <div className="mt-auto pt-4 border-t flex justify-between items-end" style={{ borderColor: 'var(--glass-border)' }}>
                         <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>Total Disk Usage</span>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-xl font-mono font-bold" style={{ color: 'var(--text-primary)' }}>{storage?.disk_usage_mb || 0}</span>
+                            <span className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{storage?.disk_usage_mb || 0}</span>
                             <span className="text-sm font-bold" style={{ color: 'var(--text-muted)' }}>MB</span>
                         </div>
                     </div>
@@ -279,7 +279,7 @@ const Admin = () => {
                                         <div className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>{node.type === 'database' ? 'Database' : node.type === 'gateway' ? 'Gateway' : node.type}</div>
                                     </div>
                                 </div>
-                                <div className="text-xs font-mono font-medium" style={{ color: 'var(--text-muted)' }}>
+                                <div className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
                                     {node.last_seen}
                                 </div>
                             </div>
@@ -291,7 +291,7 @@ const Admin = () => {
 
                 {/* 6. SYSTEM LOGS */}
                 <Card title="System Logs" icon={Terminal} className="xl:col-span-1 border-t-4 border-t-gray-800">
-                    <div className="flex-1 bg-gray-900 rounded-lg p-4 font-mono text-[11px] leading-relaxed space-y-1.5 overflow-y-auto h-[200px] custom-scrollbar shadow-inner relative">
+                    <div className="flex-1 bg-gray-900 rounded-lg p-4 text-[11px] leading-relaxed space-y-1.5 overflow-y-auto h-[200px] custom-scrollbar shadow-inner relative text-slate-300">
                         {logs.length === 0 && (
                             <div className="absolute inset-0 flex items-center justify-center text-gray-500 italic">
                                 Waiting for system events...

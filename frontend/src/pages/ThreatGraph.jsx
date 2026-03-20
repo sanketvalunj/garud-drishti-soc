@@ -39,7 +39,7 @@ const SimpleGraph = ({ nodes, edges, onNodeClick, highlightEntity }) => {
     });
 
     return (
-        <svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} className="font-mono">
+        <svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`}>
             <defs>
                 <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
                     <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" />
@@ -258,7 +258,7 @@ const ThreatGraph = () => {
                             <div className={`p-3 bg-${s.color}-500/10 rounded-xl text-${s.color}-400`}><Icon size={22} /></div>
                             <div>
                                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500">{s.label}</div>
-                                <div className={`text-2xl font-bold text-${s.color}-400 font-mono`}>{s.value}</div>
+                                <div className={`text-2xl font-bold text-${s.color}-400`}>{s.value}</div>
                             </div>
                         </div>
                     );
@@ -287,7 +287,7 @@ const ThreatGraph = () => {
                     </div>
 
                     {/* Status Chip */}
-                    <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700/50 text-[10px] font-mono backdrop-blur-md">
+                    <div className="absolute top-4 right-4 z-10 flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700/50 text-[10px] backdrop-blur-md">
                         <div className={clsx('w-2 h-2 rounded-full', streamStatus === 'live' ? 'bg-green-500 animate-pulse' : streamStatus === 'demo' ? 'bg-amber-500' : 'bg-slate-500')} />
                         <span className="text-slate-300">{streamStatus === 'live' ? 'LIVE' : streamStatus === 'demo' ? 'DEMO' : 'OFFLINE'}</span>
                     </div>
@@ -297,7 +297,7 @@ const ThreatGraph = () => {
                         {graphData.nodes.length === 0 ? (
                             <div className="absolute inset-0 flex items-center justify-center text-slate-600 flex-col gap-3">
                                 <Activity size={40} className="animate-pulse opacity-50" />
-                                <span className="font-mono text-xs uppercase tracking-widest">Awaiting data...</span>
+                                <span className="text-xs uppercase tracking-widest">Awaiting data...</span>
                             </div>
                         ) : (
                             <SimpleGraph
@@ -347,7 +347,7 @@ const ThreatGraph = () => {
                                     </div>
                                     <div className="p-3 bg-slate-800/20 rounded-xl border border-slate-800/50">
                                         <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Last Seen</div>
-                                        <div className="text-xs text-white font-mono">{activeEntity.lastSeen}</div>
+                                        <div className="text-xs text-white">{activeEntity.lastSeen}</div>
                                     </div>
                                 </div>
                                 <div>

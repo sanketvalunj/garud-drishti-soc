@@ -20,7 +20,7 @@ Possible data exfiltration activity.`;
                         LLM Reasoning Output
                     </h3>
                     <div className="flex flex-col items-end gap-1">
-                        <span className="text-xs font-mono bg-blue-500/10 text-blue-400 px-2 py-1 rounded border border-blue-500/20 flex items-center gap-1">
+                        <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-1 rounded border border-blue-500/20 flex items-center gap-1">
                             <Cpu size={12} />
                             LLM Model: Mistral (Ollama)
                         </span>
@@ -30,7 +30,7 @@ Possible data exfiltration activity.`;
                     </div>
                 </div>
 
-                <div className="flex-grow bg-slate-900/60 rounded-xl p-4 border border-slate-700/50 font-mono text-sm leading-relaxed text-slate-300 shadow-inner relative">
+                <div className="flex-grow bg-slate-900/60 rounded-xl p-4 border border-slate-700/50 text-sm leading-relaxed text-slate-300 shadow-inner relative">
                     <div className="absolute top-0 right-0 -mt-2 -mr-2 bg-blue-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow-lg">
                         AI Generated Explanation
                     </div>

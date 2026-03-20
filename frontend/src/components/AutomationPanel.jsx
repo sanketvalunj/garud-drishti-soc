@@ -36,7 +36,7 @@ const AutomationPanel = ({ actions = [] }) => {
             </div>
 
             <div className="mt-4 pt-4 border-t border-slate-700/50 flex items-center justify-between text-xs text-slate-400">
-                <span>Execution Engine: <span className="text-slate-300 font-mono">Garud Automator</span></span>
+                <span>Execution Engine: <span className="text-slate-300">Garud Automator</span></span>
                 <span>Mode: <span className="text-emerald-400">Autonomous</span></span>
             </div>
         </div>
