@@ -1,20 +1,27 @@
 class BusinessImpactAgent:
     def __init__(self):
-        pass
+        self.asset_impact_map = {
+            "core-banking": {"impact": "critical", "score": 10},
+            "database": {"impact": "high", "score": 8},
+            "workstation": {"impact": "moderate", "score": 4},
+            "default": {"impact": "low", "score": 2}
+        }
 
-    def assess(self, incident):
-        # Infer asset from incident, or from timeline events if structured
-        asset = incident.get("asset", "")
-        # sometimes it could be in the first signal
+    def assess(self, incident: dict) -> dict:
+        asset = str(incident.get("asset", "")).lower()
         if not asset and incident.get("signals"):
-            asset = incident["signals"][0].get("asset", "")
+            asset = str(incident["signals"][0].get("asset", "")).lower()
             
-        if "core-banking" in str(incident) or asset == "core-banking":
-            impact = "critical"
-        else:
-            impact = "moderate"
+        incident_context = str(incident).lower()
+        
+        # Determine rule match intelligently
+        matched_rule = self.asset_impact_map["default"]
+        for key, impact_data in self.asset_impact_map.items():
+            if key != "default" and (key in asset or key in incident_context):
+                matched_rule = impact_data
+                break
 
         return {
-            "business_impact": impact,
-            "impact_score": 8 if impact == "critical" else 4
+            "business_impact": matched_rule["impact"],
+            "impact_score": matched_rule["score"]
         }

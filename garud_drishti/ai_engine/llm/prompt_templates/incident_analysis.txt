@@ -1,11 +1,19 @@
-You are a cybersecurity risk analyst.
+You are an elite SOC Analyst AI.
+Analyze the following incident data and determine the associated risk score, severity, and your confidence in this assessment.
 
-Analyze this incident and determine risk_score and severity.
+Incident Data:
+{incident_data}
 
-Incident:
-{incident}
+Attack Chain Context:
+{attack_chain}
 
-Return strictly JSON with the following keys and NO markdown formatting:
-"risk_score": integer between 1 and 10
-"severity": string (low, medium, high, critical)
-"confidence": integer between 1 and 100
+Risk Factors:
+{risk_factors}
+
+Output MUST be purely in JSON format matching this schema:
+{
+  "risk_score": <int 0-10>,
+  "severity": "<low|medium|high|critical>",
+  "confidence": <int 0-100>
+}
+Do NOT wrap the JSON in markdown blocks or provide any other text.

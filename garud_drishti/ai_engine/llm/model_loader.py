@@ -9,8 +9,7 @@ class ModelLoader:
     Responsible for selecting and loading the local LLM backend.
 
     Supports:
-    - Ollama models (preferred offline inference)
-    - Future HuggingFace local models
+    - Ollama models (preferred offline inference) ONLY
     """
 
     def __init__(
@@ -18,6 +17,8 @@ class ModelLoader:
         provider: str = "ollama",
         model_name: str = "llama3"
     ):
+        if provider != "ollama":
+            raise ValueError("Only Ollama is supported in this offline SOC pipeline.")
         self.provider = provider
         self.model_name = model_name
         self.client: Optional[OllamaClient] = None
@@ -35,24 +36,13 @@ class ModelLoader:
         """
         Initialize model client.
         """
-
-        if self.provider == "ollama":
-            if not self._ollama_available():
-                raise RuntimeError(
-                    "Ollama not found. Install it to run local LLM."
-                )
-
-            self.client = OllamaClient(model=self.model_name)
-            return self.client
-
-        # Future: HF support placeholder
-        elif self.provider == "hf":
-            raise NotImplementedError(
-                "HuggingFace local model loading not implemented yet."
+        if not self._ollama_available():
+            raise RuntimeError(
+                "Ollama not found. Install it to run local offline LLM."
             )
 
-        else:
-            raise ValueError(f"Unknown model provider: {self.provider}")
+        self.client = OllamaClient(model=self.model_name)
+        return self.client
 
     # --------------------------------------------------
     # GENERATE TEXT
@@ -61,8 +51,9 @@ class ModelLoader:
         """
         Unified interface for LLM inference.
         """
-
         if not self.client:
             self.load()
 
-        return self.client.generate(prompt)
+        if self.client:
+            return self.client.generate(prompt)
+        return ""
