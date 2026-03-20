@@ -120,7 +120,7 @@ const AttackReplayTimeline = ({ signals = [], onSignalChange }) => {
                                 key={s}
                                 onClick={() => setPlaybackSpeed(s)}
                                 className={clsx(
-                                    "px-3 py-1 rounded-md text-xs font-mono font-bold transition-colors",
+                                    "px-3 py-1 rounded-md text-xs font-bold transition-colors",
                                     playbackSpeed === s ? "bg-slate-700 text-blue-400" : "text-slate-500 hover:text-slate-300"
                                 )}
                             >
@@ -148,7 +148,7 @@ const AttackReplayTimeline = ({ signals = [], onSignalChange }) => {
                                 </div>
                                 <div>
                                     <div className="text-[10px] text-slate-500 uppercase">Timestamp</div>
-                                    <div className="text-sm font-mono text-white">
+                                    <div className="text-sm text-white">
                                         {new Date(currentSignal.timestamp).toLocaleTimeString()}
                                     </div>
                                 </div>
@@ -160,7 +160,7 @@ const AttackReplayTimeline = ({ signals = [], onSignalChange }) => {
                                 </div>
                                 <div>
                                     <div className="text-[10px] text-slate-500 uppercase">User</div>
-                                    <div className="text-sm font-mono text-white truncate max-w-[150px]">
+                                    <div className="text-sm text-white truncate max-w-[150px]">
                                         {currentSignal.user || 'N/A'}
                                     </div>
                                 </div>
@@ -172,7 +172,7 @@ const AttackReplayTimeline = ({ signals = [], onSignalChange }) => {
                                 </div>
                                 <div>
                                     <div className="text-[10px] text-slate-500 uppercase">Asset</div>
-                                    <div className="text-sm font-mono text-white truncate max-w-[150px]">
+                                    <div className="text-sm text-white truncate max-w-[150px]">
                                         {currentSignal.asset || 'N/A'}
                                     </div>
                                 </div>
@@ -229,7 +229,7 @@ const AttackReplayTimeline = ({ signals = [], onSignalChange }) => {
 
                                 <div className="flex justify-between items-start mb-1">
                                     <span className={clsx(
-                                        "text-xs font-mono font-bold",
+                                        "text-xs font-bold",
                                         isActive ? "text-blue-400" : "text-slate-500"
                                     )}>
                                         {new Date(signal.timestamp).toLocaleTimeString()}

@@ -47,7 +47,7 @@
     --accent: #00AEEF;
     --critical: #B91C1C;
     --warning: #F59E0B;
-    --success: #10B981;
+    --success: #15803D;
     --sidebar-bg: #0D1526;
     --header-bg: #111827;
     --input-bg: #1A2235;
@@ -238,4 +238,49 @@
     stroke-dashoffset: 252;
     animation: gauge-draw 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
-}
+
+  @keyframes pulse-highlight {
+    0% { background: rgba(0,174,239,0.2); }
+    100% { background: rgba(0,174,239,0.08); }
+  }
+
+  .pulse-highlight-row {
+    animation: pulse-highlight 2s ease-out forwards;
+  }
+
+  @keyframes pulse-ring {
+    0% { 
+      box-shadow: 0 0 0 0 rgba(0,174,239,0.4);
+    }
+    70% { 
+      box-shadow: 0 0 0 8px rgba(0,174,239,0);
+    }
+    100% { 
+      box-shadow: 0 0 0 0 rgba(0,174,239,0);
+    }
+  }
+
+  /* Dropdown and Input Custom Styles */
+  select option {
+    background: #1A2235;
+    color: #F1F5F9;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  [data-theme="light"] select option {
+    background: #FFFFFF;
+    color: #1F2937;
+  }
+
+  select:focus,
+  input:focus {
+    outline: none !important;
+    border-color: rgba(0, 174, 239, 0.4) !important;
+    box-shadow: 0 0 0 2px rgba(0, 174, 239, 0.1) !important;
+  }
+
+  input::placeholder {
+    color: var(--text-muted);
+  }
+}

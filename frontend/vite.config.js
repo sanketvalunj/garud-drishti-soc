@@ -17,23 +17,7 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       },
-      '/incidents': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-      },
-      '/playbooks': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-      },
-      '/run-pipeline': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-        method: 'POST'
-      },
-      '/health': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true
-      }
     }
   }
 })
+

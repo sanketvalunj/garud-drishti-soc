@@ -119,7 +119,7 @@ const Playbooks = () => {
                         <h2 className="heading-lg text-white">Response Playbooks</h2>
                         <div className="flex items-center gap-2">
                             {lastUpdated && (
-                                <span className="text-[10px] text-slate-500 font-mono">
+                                <span className="text-[10px] text-slate-500">
                                     {lastUpdated.toLocaleTimeString()}
                                 </span>
                             )}
@@ -190,7 +190,7 @@ const Playbooks = () => {
                                 >
                                     <div className="flex justify-between items-start mb-2">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-mono text-xs text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
+                                            <span className="text-xs text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">
                                                 {pb.incident_id?.substring(0, 8)}
                                             </span>
                                             {matchInc?.risk_score != null && (

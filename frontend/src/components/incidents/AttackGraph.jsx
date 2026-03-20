@@ -50,7 +50,7 @@ const EntityNode = ({ data }) => {
 
             <div className="flex flex-col items-center gap-1">
                 <Icon size={20} className={clsx(colorClass, isHighlighted && "text-[#B91C1C]")} />
-                <span className={clsx("text-xs font-bold font-mono text-white", isHighlighted ? "text-red-100" : "")}>{data.label}</span>
+                <span className={clsx("text-xs font-bold text-white", isHighlighted ? "text-red-100" : "")}>{data.label}</span>
                 <span className="text-[10px] uppercase opacity-70 tracking-wider">{data.type || 'Entity'}</span>
             </div>
 
@@ -117,7 +117,7 @@ const AttackGraph = ({ data, highlightEntity, onNodeClick }) => {
                 target: edge.to,
                 animated: true,
                 label: edge.relation || '',
-                labelStyle: { fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: 'monospace' },
+                labelStyle: { fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: "'Inter', sans-serif" },
                 labelBgPadding: [8, 4],
                 labelBgBorderRadius: 4,
                 labelBgStyle: { fill: '#0f172a', fillOpacity: 0.8 },
@@ -157,7 +157,7 @@ const AttackGraph = ({ data, highlightEntity, onNodeClick }) => {
 
             {/* Visual Guide Overlay */}
             <div className="absolute top-4 left-4 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="flex gap-4 text-[10px] font-mono uppercase tracking-widest text-slate-500 bg-slate-900/40 p-2 rounded backdrop-blur-sm border border-slate-700/50">
+                <div className="flex gap-4 text-[10px] uppercase tracking-widest text-slate-500 bg-slate-900/40 p-2 rounded backdrop-blur-sm border border-slate-700/50">
                     <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500" /> Actors</span>
                     <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-violet-500" /> Assets</span>
                     <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500" /> Origins</span>

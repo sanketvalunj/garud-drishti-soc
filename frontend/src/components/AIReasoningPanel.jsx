@@ -29,7 +29,7 @@ const AIReasoningPanel = ({ reasoningData }) => {
                     <div className="space-y-3">
                         <div className="flex justify-between items-center border-b border-slate-700/50 pb-2">
                             <span className="text-sm text-slate-400">Risk Score</span>
-                            <span className="font-mono text-lg font-bold text-white">{riskData.score || riskData.risk_score || defaultData.risk.score}</span>
+                            <span className="text-lg font-bold text-white">{riskData.score || riskData.risk_score || defaultData.risk.score}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-sm text-slate-400">Severity</span>
@@ -51,7 +51,7 @@ const AIReasoningPanel = ({ reasoningData }) => {
                     <div className="space-y-3">
                         <div className="flex justify-between items-center border-b border-slate-700/50 pb-2">
                             <span className="text-sm text-slate-400">Compliance Score</span>
-                            <span className="font-mono text-lg font-bold text-white">{compData.score || compData.compliance_score || defaultData.compliance.score}</span>
+                            <span className="text-lg font-bold text-white">{compData.score || compData.compliance_score || defaultData.compliance.score}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-sm text-slate-400">Policy Violations</span>

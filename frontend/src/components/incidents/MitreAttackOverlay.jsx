@@ -161,7 +161,7 @@ const MitreAttackOverlay = ({ incident, mini = false, onStageHover }) => {
                                         <p className="text-xs text-white leading-relaxed">
                                             {stageDetail?.trigger || "System activity matched this pattern."}
                                         </p>
-                                        <div className="mt-2 pt-2 border-t border-slate-800 text-[10px] text-slate-500 font-mono">
+                                        <div className="mt-2 pt-2 border-t border-slate-800 text-[10px] text-slate-500">
                                             Time: {new Date(stageDetail?.timestamp || incident.timestamp).toLocaleTimeString()}
                                         </div>
                                     </motion.div>

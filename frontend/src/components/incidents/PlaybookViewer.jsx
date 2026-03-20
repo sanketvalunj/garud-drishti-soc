@@ -124,7 +124,7 @@ const StepCard = ({ text, status, index }) => (
 );
 
 const EntityTag = ({ label }) => (
-    <span className="px-2 py-1 bg-slate-800 rounded text-xs font-mono text-slate-300 border border-slate-700 inline-block">
+    <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-300 border border-slate-700 inline-block">
         {label}
     </span>
 );
@@ -182,7 +182,7 @@ const PlaybookViewer = ({ playbook, incident, automation, compact = false }) => 
                     <div className="flex justify-between items-start gap-4">
                         <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                                <span className="font-mono text-sm text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                                <span className="text-sm text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
                                     INC: {incidentId.substring(0, 8)}
                                 </span>
                                 <span className={clsx(
@@ -192,7 +192,7 @@ const PlaybookViewer = ({ playbook, incident, automation, compact = false }) => 
                                     <ShieldAlert size={11} /> {severity.replace(/_/g, ' ')}
                                 </span>
                                 {riskScore != null && (
-                                    <span className="text-xs text-slate-400 font-mono">
+                                    <span className="text-xs text-slate-400">
                                         Risk: <span className="text-[#B91C1C] font-bold">{riskScore > 1 ? Math.round(riskScore) : Math.round(riskScore * 100)}</span>
                                     </span>
                                 )}
@@ -340,7 +340,7 @@ const PlaybookViewer = ({ playbook, incident, automation, compact = false }) => 
                                                         "bg-yellow-500/60"
                                         )} />
                                         <div className="bg-slate-800/30 border border-slate-700/40 rounded-lg p-3">
-                                            <span className="text-[10px] font-mono text-slate-500 block mb-0.5">
+                                            <span className="text-[10px] text-slate-500 block mb-0.5">
                                                 {entry.time.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                             </span>
                                             <p className="text-sm text-slate-200 capitalize">{entry.label}</p>

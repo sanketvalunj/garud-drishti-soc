@@ -63,7 +63,7 @@ const MitreMapping = () => {
         </div>
     );
 
-    if (loading) return <div className="p-10 text-center text-slate-400 font-mono">Loading Threat Intelligence...</div>;
+    if (loading) return <div className="p-10 text-center text-slate-400">Loading Threat Intelligence...</div>;
 
     return (
         <div className="max-w-7xl mx-auto pb-20 space-y-8">
@@ -77,7 +77,7 @@ const MitreMapping = () => {
                         <Target className="text-[#B91C1C]" />
                         Adversary Behavior Mapping
                     </h1>
-                    <p className="text-slate-400 text-sm font-mono mt-1">
+                    <p className="text-slate-400 text-sm mt-1">
                         Trace ID: {mapping?.incident_id} • Framework: MITRE ATT&CK v14
                     </p>
                 </div>
@@ -102,7 +102,7 @@ const MitreMapping = () => {
                                 >
                                     <Icon size={24} className={isActive ? "text-[#B91C1C]" : "text-slate-500"} />
                                     <div className="text-xs font-bold uppercase text-center">{tactic.name}</div>
-                                    <div className="text-[10px] font-mono text-slate-500">{tactic.id}</div>
+                                    <div className="text-[10px] text-slate-500">{tactic.id}</div>
                                 </motion.div>
                                 {idx < mapping.tactics.length - 1 && (
                                     <ArrowRight className="text-slate-700" size={20} />
@@ -146,14 +146,14 @@ const MitreMapping = () => {
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <span className="text-lg font-bold text-white tracking-wide">{tech.name}</span>
-                                                        <span className="text-xs font-mono text-slate-500 bg-slate-800 px-2 py-0.5 rounded">{tech.id}</span>
+                                                        <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded">{tech.id}</span>
                                                     </div>
                                                     <p className="text-sm text-slate-400 italic">"{tech.evidence}"</p>
                                                 </div>
                                                 <div className="text-right">
                                                     <div className="text-sm font-bold text-slate-300 mb-1">Confidence</div>
                                                     <div className={clsx(
-                                                        "text-xl font-mono font-bold",
+                                                        "text-xl font-bold",
                                                         tech.confidence > 0.7 ? "text-green-400" : "text-yellow-400"
                                                     )}>
                                                         {(tech.confidence * 100).toFixed(0)}%
@@ -204,7 +204,7 @@ const MitreMapping = () => {
 
                                 <div className="mb-1 text-xs font-bold uppercase text-slate-500">{tactic.name}</div>
                                 {tactic.techniques.map((tech) => (
-                                    <div key={tech.id} className="mb-2 p-2 bg-slate-800/50 rounded border border-slate-700 text-xs text-white font-mono hover:bg-slate-800 transition-colors">
+                                    <div key={tech.id} className="mb-2 p-2 bg-slate-800/50 rounded border border-slate-700 text-xs text-white hover:bg-slate-800 transition-colors">
                                         {tech.id}: {tech.name}
                                     </div>
                                 ))}
