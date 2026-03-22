@@ -460,7 +460,6 @@ const FidelityCell = ({ score }) => {
             onMouseLeave={() => setHover(false)}
         >
             <span style={{
-                fontFamily: "'Inter', sans-serif",
                 fontSize: '13px',
                 fontWeight: 700,
                 color: getFidelityColor(score),
@@ -956,7 +955,7 @@ const Incidents = () => {
                                     {/* Cell 1: Incident ID */}
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                                         <span
-                                            style={{ color: '#00AEEF', fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                            style={{ color: '#00AEEF', fontSize: 13, fontWeight: 600, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                                             onClick={e => { e.stopPropagation(); navigate(`/incidents/${incident.id}`); }}
                                         >
                                             {incident.id}
@@ -1174,7 +1173,7 @@ const Incidents = () => {
                                                     {/* CTA Button */}
                                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 16 }}>
                                                         <button
-                                                            onClick={() => navigate(`/incidents/${incident.id}`)}
+                                                            onClick={() => navigate(`/incidents/${incident.id}`, { state: { from: 'incidents' } })}
                                                             style={{
                                                                 background: '#00AEEF',
                                                                 color: 'white',
