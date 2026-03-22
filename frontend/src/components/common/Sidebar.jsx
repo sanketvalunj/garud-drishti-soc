@@ -29,12 +29,9 @@ const Sidebar = () => {
     const navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
         { icon: AlertTriangle, label: 'Incidents', path: '/incidents' },
-        { icon: Network, label: 'Threat Graph', path: '/threat-graph' },
         { icon: BookOpen, label: 'Playbooks', path: '/playbooks' },
         { icon: Brain, label: 'LLM Reasoning', path: '/llm-reasoning' },
-        { icon: Zap, label: 'Response', path: '/response' },
         { icon: GitBranch, label: 'Pipeline', path: '/pipeline' },
-        { icon: Map, label: 'MITRE Mapping', path: '/mitre-mapping' },
         { icon: Settings, label: 'Admin', path: '/admin' },
     ];
 

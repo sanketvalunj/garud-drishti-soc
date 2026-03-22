@@ -1,353 +1,2017 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import ReactFlow, { 
+  Background, 
+  Controls, 
+  MarkerType, 
+  useNodesState, 
+  useEdgesState,
+  Handle,
+  Position
+} from 'reactflow'
+import 'reactflow/dist/style.css'
+import { useTheme } from '../context/ThemeContext'
 import {
-    ArrowLeft,
-    Clock,
-    ShieldAlert,
-    Share2,
-    Download,
-    FileText,
-    Server,
-    User,
-    Globe,
-    Brain,
-    Target,
-    BookOpen,
-    Activity,
-    CheckCircle
-} from 'lucide-react';
-import AttackGraph from '../components/incidents/AttackGraph';
-import MitreAttackOverlay from '../components/incidents/MitreAttackOverlay';
-import AttackReplayTimeline from '../components/incidents/AttackReplayTimeline';
-import PlaybookViewer from '../components/incidents/PlaybookViewer';
+  ArrowLeft, Clock, AlertTriangle, Sparkles, GitBranch, Play, Network,
+  Users, Server, Wifi, Shield, ShieldAlert, Brain, Scale, TrendingUp,
+  BookOpen, CheckCircle2, Check, User, Zap, Share2, Download, X, ArrowRight,
+  Lock, ChevronDown, Loader2
+} from 'lucide-react'
 
-const SeverityBadge = ({ severity }) => {
-    const colors = {
-        HIGH: { bg: 'rgba(185,28,28,0.12)', text: '#B91C1C', border: 'rgba(185,28,28,0.2)' },
-        MEDIUM: { bg: 'rgba(217,119,6,0.12)', text: '#D97706', border: 'rgba(217,119,6,0.2)' },
-        LOW: { bg: 'rgba(0,174,239,0.12)', text: '#00AEEF', border: 'rgba(0,174,239,0.2)' }
-    };
-    const s = severity?.toUpperCase() === 'CRITICAL' ? 'HIGH' : (severity?.toUpperCase() || 'LOW');
-    const style = colors[s] || colors.LOW;
-    return (
-        <span className="px-2.5 py-0.5 rounded font-semibold text-xs border" style={{ backgroundColor: style.bg, color: style.text, borderColor: style.border }}>
-            {s}
-        </span>
-    );
-};
+const MAX_ENTITIES_VISIBLE = 2
+
+// ─────────────────────────────────────
+// API INTEGRATION — Replace mock data:
+//
+// const [incident, setIncident] = useState(null)
+// const [loading, setLoading] = useState(true)
+//
+// useEffect(() => {
+//   setLoading(true)
+//   api.getIncident(id)
+//     .then(data => setIncident(data))
+//     .catch(err => console.error(err))
+//     .finally(() => setLoading(false))
+// }, [id])
+//
+// API endpoint: GET /incidents/:id
+// Response shape matches MOCK_INCIDENT below
+// ─────────────────────────────────────
+
+// When API connected:
+// graphNodes and graphEdges will come from
+// GET /incidents/:id response
+// Backend correlation engine builds these
+// from the actual attack graph data
+// Structure must match exactly:
+// graphNodes: [{ id, type, label, compromised, suspected, position }]
+// graphEdges: [{ id, source, target, label }]
+
+const MOCK_INCIDENT = {
+  id: 'INC-2091',
+  type: 'Privilege Escalation',
+  severity: 'high',
+  status: 'investigating',
+  detectedAt: '2026-02-19T12:11:47Z',
+  detectedAgo: '2 min ago',
+  fidelityScore: 0.87,
+
+  narrative: 'User emp_104 initiated activity on auth-server from external IP 203.0.113.45. A PowerShell execution event was observed. Activity then moved from auth-server to loan-db, then to core-banking. A login failed event was observed on swift-terminal. This sequence indicates possible privilege escalation behaviour with lateral movement toward critical banking infrastructure.',
+
+  killChainStage: 4,
+  killChainStages: [
+    'Initial Access',
+    'Execution',
+    'Persistence',
+    'Privilege Escalation',
+    'Lateral Movement',
+    'Exfiltration'
+  ],
+
+  timeline: [
+    {
+      id: 't1',
+      timestamp: '12:11:47',
+      eventType: 'Login Attempt',
+      description: 'External login attempt detected from unusual IP address',
+      entity: '203.0.113.45',
+      severity: 'medium'
+    },
+    {
+      id: 't2',
+      timestamp: '12:11:52',
+      eventType: 'Auth Success',
+      description: 'Authentication successful on auth-server for emp_104',
+      entity: 'auth-server',
+      severity: 'high'
+    },
+    {
+      id: 't3',
+      timestamp: '12:12:15',
+      eventType: 'PowerShell Execution',
+      description: 'Encoded PowerShell command executed with elevated permissions',
+      entity: 'user_laptop_88',
+      severity: 'high'
+    },
+    {
+      id: 't4',
+      timestamp: '12:12:33',
+      eventType: 'Lateral Movement',
+      description: 'Remote service access detected from auth-server to loan-db',
+      entity: 'loan-db',
+      severity: 'high'
+    },
+    {
+      id: 't5',
+      timestamp: '12:13:01',
+      eventType: 'Access Attempt',
+      description: 'Unauthorized access attempt on core-banking system detected',
+      entity: 'core-banking',
+      severity: 'high'
+    },
+    {
+      id: 't6',
+      timestamp: '12:13:45',
+      eventType: 'Login Failed',
+      description: 'Failed login attempt on swift-terminal from internal IP',
+      entity: 'swift-terminal',
+      severity: 'medium'
+    }
+  ],
+
+  entities: {
+    users: ['emp_104', 'emp_101'],
+    servers: [
+      'auth-server',
+      'swift-terminal',
+      'loan-db',
+      'core-banking'
+    ],
+    ips: ['185.220.101.1', '203.0.113.45']
+  },
+
+  fidelityFactors: [
+    { label: 'Behavioral Deviation', score: 0.91 },
+    { label: 'Asset Criticality', score: 0.85 },
+    { label: 'Historical Similarity', score: 0.79 }
+  ],
+
+  mitreTechniques: [
+    {
+      id: 'T1078',
+      name: 'Valid Accounts',
+      tactic: 'Initial Access',
+      confidence: 87
+    },
+    {
+      id: 'T1059',
+      name: 'Command Scripting',
+      tactic: 'Execution',
+      confidence: 91
+    },
+    {
+      id: 'T1068',
+      name: 'Privilege Escalation',
+      tactic: 'Privilege Escalation',
+      confidence: 84
+    }
+  ],
+
+  agentScores: {
+    risk: 0.84,
+    compliance: 0.71,
+    businessImpact: 0.62,
+    finalDecision: 'HIGH'
+  },
+
+  playbook: {
+    title: 'Privilege Escalation Response',
+    generatedAt: '12:14:02',
+    steps: [
+      {
+        id: 1,
+        title: 'Isolate User Account',
+        description: 'Immediately suspend emp_104 account and revoke all active sessions across all systems',
+        priority: 'immediate',
+        type: 'automated',
+        owner: 'IAM Team',
+        estimatedTime: '5 min',
+        status: 'pending'
+      },
+      {
+        id: 2,
+        title: 'Block Source IP',
+        description: 'Add 203.0.113.45 to firewall blocklist at perimeter and internal gateway levels',
+        priority: 'immediate',
+        type: 'automated',
+        owner: 'Network Team',
+        estimatedTime: '2 min',
+        status: 'pending'
+      },
+      {
+        id: 3,
+        title: 'Revoke Auth Sessions',
+        description: 'Terminate all active sessions on auth-server and force re-authentication for all users',
+        priority: 'urgent',
+        type: 'automated',
+        owner: 'Server Admin',
+        estimatedTime: '5 min',
+        status: 'pending'
+      },
+      {
+        id: 4,
+        title: 'Audit Database Access',
+        description: 'Review loan-db access logs for data exfiltration indicators in the last 24 hours',
+        priority: 'within_1hr',
+        type: 'manual',
+        owner: 'Security Analyst',
+        estimatedTime: '30 min',
+        status: 'pending'
+      },
+      {
+        id: 5,
+        title: 'Reset Credentials',
+        description: 'Force password reset for all accounts that accessed affected systems in last 48 hours',
+        priority: 'within_4hr',
+        type: 'manual',
+        owner: 'IAM Team',
+        estimatedTime: '15 min',
+        status: 'pending'
+      },
+      {
+        id: 6,
+        title: 'Monitor Core Banking',
+        description: 'Enable enhanced logging on core-banking for 24 hours post-containment',
+        priority: 'ongoing',
+        type: 'manual',
+        owner: 'Security Analyst',
+        estimatedTime: '24 hrs',
+        status: 'pending'
+      }
+    ]
+  },
+
+  graphNodes: [
+    { id: 'ip1', type: 'ip', 
+      label: '203.0.113.45',
+      compromised: true,
+      position: { x: 0, y: 60 } },
+    { id: 'u1', type: 'user',
+      label: 'emp_104',
+      compromised: true,
+      position: { x: 180, y: 60 } },
+    { id: 's1', type: 'server',
+      label: 'auth-server',
+      compromised: true,
+      position: { x: 360, y: 60 } },
+    { id: 's2', type: 'server',
+      label: 'loan-db',
+      compromised: true,
+      position: { x: 540, y: 0 } },
+    { id: 's3', type: 'server',
+      label: 'core-banking',
+      compromised: true,
+      position: { x: 540, y: 120 } },
+    { id: 's4', type: 'server',
+      label: 'swift-terminal',
+      compromised: false,
+      suspected: true,
+      position: { x: 720, y: 60 } }
+  ],
+  graphEdges: [
+    { id: 'e1', source: 'ip1', target: 'u1', label: 'Login' },
+    { id: 'e2', source: 'u1', target: 's1', label: 'Auth' },
+    { id: 'e3', source: 's1', target: 's2', label: 'Lateral' },
+    { id: 'e4', source: 's1', target: 's3', label: 'Access' },
+    { id: 'e5', source: 's3', target: 's4', label: 'Attempt' }
+  ]
+}
+
+// ─────────────────────────────────────
+// HELPER FUNCTIONS & COMPONENTS
+// ─────────────────────────────────────
+
+const getSeverityStyle = (severity) => ({
+  high: {
+    background: 'rgba(185,28,28,0.08)',
+    color: '#B91C1C',
+    border: '1px solid rgba(185,28,28,0.15)',
+    borderRadius: '20px'
+  },
+  medium: {
+    background: 'rgba(217,119,6,0.08)',
+    color: '#D97706',
+    border: '1px solid rgba(217,119,6,0.15)',
+    borderRadius: '20px'
+  },
+  low: {
+    background: 'rgba(21,128,61,0.08)',
+    color: '#15803D',
+    border: '1px solid rgba(21,128,61,0.15)',
+    borderRadius: '20px'
+  }
+}[severity] || {})
+
+const getStatusDotColor = (status) => ({
+  investigating: '#D97706',
+  escalated: '#B91C1C',
+  contained: '#15803D'
+}[status] || '#D97706')
+
+const getFidelityColor = (score) =>
+  score >= 0.85 ? '#B91C1C'
+  : score >= 0.5 ? '#D97706'
+  : '#15803D'
+
+const getFidelityBg = (score) =>
+  score >= 0.85 ? 'rgba(185,28,28,0.08)'
+  : score >= 0.5 ? 'rgba(217,119,6,0.08)'
+  : 'rgba(21,128,61,0.08)'
+
+const getFidelityBorder = (score) =>
+  score >= 0.85 ? 'rgba(185,28,28,0.15)'
+  : score >= 0.5 ? 'rgba(217,119,6,0.15)'
+  : 'rgba(21,128,61,0.15)'
+
+// SVG gauge helpers
+const polarToCartesian = (cx, cy, r, angle) => {
+  const rad = (angle - 90) * Math.PI / 180
+  return {
+    x: cx + r * Math.cos(rad),
+    y: cy + r * Math.sin(rad)
+  }
+}
+
+const describeArc = (cx, cy, r, start, end) => {
+  const s = polarToCartesian(cx, cy, r, start)
+  const e = polarToCartesian(cx, cy, r, end)
+  const large = end - start <= 180 ? 0 : 1
+  return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`
+}
+
+const CustomNode = ({ data }) => {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+
+  const getIcon = (type) => ({
+    ip: Wifi,
+    user: User,
+    server: Server
+  }[type] || Server)
+
+  const Icon = getIcon(data.type)
+
+  const statusColor = data.compromised
+    ? '#B91C1C'
+    : data.suspected
+      ? '#D97706'
+      : '#15803D'
+
+  return (
+    <div style={{
+      background: isDark
+        ? 'rgba(15,25,40,0.95)'
+        : 'rgba(255,255,255,0.98)',
+      border: '1px solid',
+      borderColor: isDark
+        ? 'rgba(255,255,255,0.08)'
+        : 'rgba(0,0,0,0.08)',
+      borderTop: `3px solid ${statusColor}`,
+      borderRadius: '8px',
+      padding: '10px 14px',
+      minWidth: '110px',
+      textAlign: 'center',
+      boxShadow: isDark
+        ? '0 4px 16px rgba(0,0,0,0.4)'
+        : '0 2px 8px rgba(0,0,0,0.08)',
+      position: 'relative'
+    }}>
+      
+      {/* Required for edges to connect */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          width: 8,
+          height: 8
+        }}
+      />
+
+      <Icon
+        size={13}
+        color={statusColor}
+        style={{ marginBottom: '5px' }}
+      />
+
+      <div style={{
+        fontSize: '8px',
+        color: 'var(--text-muted)',
+        letterSpacing: '0.08em',
+        marginBottom: '4px',
+        textTransform: 'uppercase'
+      }}>
+        {data.type}
+      </div>
+
+      <div style={{
+        fontSize: '11px',
+        fontWeight: '700',
+        color: 'var(--text-color)',
+        whiteSpace: 'nowrap'
+      }}>
+        {data.label}
+      </div>
+
+      {/* Required for edges to connect */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          width: 8,
+          height: 8
+        }}
+      />
+    </div>
+  )
+}
+
+const nodeTypes = {
+  customNode: ({ data }) => {
+    const { resolvedTheme } = useTheme()
+    return <CustomNode data={data} isDark={resolvedTheme === 'dark'} />
+  }
+}
+
+// ─────────────────────────────────────
+// PAGE COMPONENT
+// ─────────────────────────────────────
 
 const IncidentDetail = () => {
-    const { id } = useParams();
-    const location = useLocation();
-    const navigate = useNavigate();
-    const [incident, setIncident] = useState(location.state?.incident || null);
-    const [playbook, setPlaybook] = useState(null);
-    const [loading, setLoading] = useState(!incident);
-    const [highlightedEntity, setHighlightedEntity] = useState(null);
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  const [incident] = useState(MOCK_INCIDENT)
+  const [activeStep, setActiveStep] = useState(null)
+  const [loading] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [showAllEntities, setShowAllEntities] = useState(false)
+  
+  const [showActivateModal, setShowActivateModal] = useState(false)
+  const [showEscalateModal, setShowEscalateModal] = useState(false)
+  const [isActivating, setIsActivating] = useState(false)
+  const [incidentStatus, setIncidentStatus] = useState(incident.status)
+  const [escalateRecipients, setEscalateRecipients] = useState(['ciso'])
+  const [escalateReason, setEscalateReason] = useState(
+    `High fidelity score (${incident.fidelityScore}) requires senior review`
+  )
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
 
-    useEffect(() => {
-        if (!incident) {
-            fetchIncident();
-        } else {
-            fetchPlaybookForIncident(incident.incident_id);
-        }
-    }, [id]);
+  const playbookRef = useRef(null)
 
-    const fetchIncident = async () => {
-        try {
-            const data = await api.getIncidents();
-            const found = data.incidents.find(i => i.incident_id === id);
-            setIncident(found);
-            if (found) {
-                fetchPlaybookForIncident(found.incident_id);
-            }
-            setLoading(false);
-        } catch (e) {
-            console.error("Failed to fetch incident", e);
-            setLoading(false);
-        }
-    };
+  // DYNAMIC GRAPH MAPPING
+  const graphNodes = useMemo(() => {
+    if (!incident?.graphNodes) return []
+    return incident.graphNodes.map(n => ({
+      id: n.id,
+      type: 'customNode',
+      position: n.position,
+      data: {
+        label: n.label,
+        type: n.type,
+        compromised: n.compromised || false,
+        suspected: n.suspected || false
+      }
+    }))
+  }, [incident])
 
-    const fetchPlaybookForIncident = async (incidentId) => {
-        try {
-            const data = await api.getPlaybooks();
-            const found = data.playbooks.find(pb => pb.incident_id === incidentId);
-            setPlaybook(found);
-        } catch (e) {
-            console.error("Failed to fetch playbooks", e);
-        }
+  const graphEdges = useMemo(() => {
+    if (!incident?.graphEdges) return []
+    return incident.graphEdges.map(e => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      label: e.label,
+      type: 'smoothstep',
+      animated: true,
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: '#00AEEF',
+        width: 16,
+        height: 16
+      },
+      style: {
+        stroke: '#00AEEF',
+        strokeWidth: 2,
+        opacity: 0.8
+      },
+      labelStyle: {
+        fontSize: 9,
+        fill: isDark ? '#64748B' : '#94A3B8',
+        fontWeight: '500'
+      },
+      labelBgStyle: {
+        fill: isDark
+          ? 'rgba(6,13,26,0.9)'
+          : 'rgba(248,250,252,0.9)',
+        rx: 3
+      },
+      labelBgPadding: [2, 4]
+    }))
+  }, [incident, isDark])
+  const location = useLocation();
+  const fromPage = location.state?.from || 'incidents';
+
+  const handleBack = () => {
+    if (fromPage === 'playbooks') {
+      navigate('/playbooks');
+    } else {
+      navigate('/incidents');
     }
+  };
 
-    if (loading) return <div className="p-10 text-center" style={{ color: 'var(--text-muted)' }}>Loading incident details...</div>;
-    if (!incident) return <div className="p-10 text-center text-[#B91C1C]">Incident not found</div>;
+  const [nodes, setNodes, onNodesChange] = useNodesState(graphNodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(graphEdges)
 
-    return (
-        <div className="space-y-6 pb-10">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-xl shadow-sm border" 
-                style={{ 
-                    background: 'var(--surface-color)', 
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    borderColor: 'var(--glass-border)' 
-                }}
+  useEffect(() => {
+    setNodes(graphNodes)
+    setEdges(graphEdges)
+  }, [graphNodes, graphEdges, setNodes, setEdges])
+
+  const [stepStatuses, setStepStatuses] = useState(
+    Object.fromEntries(incident.playbook.steps.map(s => [s.id, 'pending']))
+  )
+
+  const toggleStepStatus = (stepId) => {
+    setStepStatuses(prev => ({
+      ...prev,
+      [stepId]: prev[stepId] === 'pending' ? 'completed' : 'pending'
+    }))
+  }
+
+  const handleActivateResponse = async () => {
+    setShowActivateModal(false)
+    
+    // Scroll to playbook section
+    setTimeout(() => {
+      playbookRef.current?.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }, 300)
+    
+    setIsActivating(true)
+    
+    // Get automated steps
+    const automatedSteps = incident.playbook.steps
+      .filter(s => s.type === 'automated')
+    
+    // Execute each automated step with delay
+    for (const step of automatedSteps) {
+      // Show spinner on this step
+      setStepStatuses(prev => ({
+        ...prev,
+        [step.id]: 'running'
+      }))
+      
+      // Simulate execution time
+      await new Promise(resolve => 
+        setTimeout(resolve, 1500)
+      )
+      
+      // Mark as completed
+      setStepStatuses(prev => ({
+        ...prev,
+        [step.id]: 'completed'
+      }))
+    }
+    
+    setIsActivating(false)
+    
+    // Update incident status
+    setIncidentStatus('contained')
+  }
+
+  const handleEscalate = () => {
+    setShowEscalateModal(false)
+    setIncidentStatus('escalated')
+    
+    const recipients = [
+      { id: 'ciso', label: 'CISO' },
+      { id: 'lead', label: 'Security Lead' },
+      { id: 'compliance', label: 'Compliance Officer' }
+    ]
+
+    // Show toast notification
+    setToastMessage(
+      `Incident escalated to ${
+        escalateRecipients
+          .map(r => recipients.find(x => x.id === r)?.label)
+          .filter(Boolean)
+          .join(', ')
+      }`
+    )
+    setShowToast(true)
+    setTimeout(() => setShowToast(false), 4000)
+  }
+
+  const completedStepsCount = Object.values(stepStatuses).filter(s => s === 'completed').length
+
+  const priorityConfig = {
+    immediate: { label: 'Immediate', color: '#B91C1C', bg: 'rgba(185,28,28,0.08)', border: 'rgba(185,28,28,0.15)' },
+    urgent: { label: 'Urgent', color: '#D97706', bg: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.15)' },
+    within_1hr: { label: 'Within 1 hr', color: '#D97706', bg: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.15)' },
+    within_4hr: { label: 'Within 4 hrs', color: '#15803D', bg: 'rgba(21,128,61,0.08)', border: 'rgba(21,128,61,0.15)' },
+    ongoing: { label: 'Ongoing', color: '#00AEEF', bg: 'rgba(0,174,239,0.08)', border: 'rgba(0,174,239,0.15)' }
+  }
+
+  if (loading) return null
+
+  const glassStyle = {
+    background: 'var(--surface-color)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: '1px solid var(--glass-border)',
+    boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+    borderRadius: '12px',
+    padding: '24px',
+    marginBottom: '16px'
+  }
+
+  const completedCount = incident.killChainStage - 1
+  const currentStageName = incident.killChainStages[incident.killChainStage - 1]
+
+  const agents = [
+    { label: 'Risk Agent', score: incident.agentScores.risk, color: '#B91C1C' },
+    { label: 'Compliance Agent', score: incident.agentScores.compliance, color: '#D97706' },
+    { label: 'Business Impact', score: incident.agentScores.businessImpact, color: '#15803D' }
+  ]
+
+  return (
+    <div style={{
+      padding: '0px',
+      minHeight: '100vh',
+      backgroundColor: 'transparent'
+    }}>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        style={{
+            background: 'var(--surface-color)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+            borderRadius: '12px',
+            padding: '24px'
+        }}
+      >
+        {/* TOP BAR */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+          borderBottom: '1px solid var(--glass-border)',
+          paddingBottom: '16px',
+          marginBottom: '20px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleBack}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                background: 'transparent',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '8px',
+                padding: '7px 8px',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-color)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)' }}
             >
-                <div className="flex items-start gap-4">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="p-2 rounded-lg transition-colors mt-1"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
-                        <ArrowLeft size={20} />
-                    </button>
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                                {incident.summary.replace(/_/g, ' ')}
-                            </h1>
-                            <SeverityBadge severity={incident.severity} />
-                        </div>
-                        <div className="flex items-center gap-4 text-sm mt-2 font-medium" style={{ color: 'var(--text-secondary)' }}>
-                            <span className="flex items-center gap-1.5"><Clock size={16} /> {new Date(incident.timestamp).toLocaleString()}</span>
-                            <span style={{ color: 'var(--text-muted)' }}>ID: {incident.incident_id}</span>
-                            <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded font-bold border border-indigo-500/20">
-                                <Activity size={14} /> Investigating
-                            </span>
-                        </div>
-                    </div>
-                </div>
+              <ArrowLeft size={16} />
+            </button>
 
-                <div className="flex gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-semibold transition-colors" style={{ background: 'var(--glass-border)', borderColor: 'var(--glass-border)', color: 'var(--text-secondary)' }}>
-                        <Share2 size={16} /> Share
-                    </button>
-                    {/* <button className="flex items-center gap-2 px-4 py-2 bg-[#00AEEF] hover:bg-blue-400 rounded-lg text-sm font-semibold text-white transition-colors shadow-sm">
-                        <Download size={16} /> Export Report
-                    </button> */}
-                </div>
+            <div style={{ width: '1px', height: '20px', background: 'var(--glass-border)' }} />
+
+            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-color)' }}>
+              {incident.id}
             </div>
 
-            {/* TOP SECTION: Narrative, Gauge, Entities */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* 1. Incident Narrative & Abstract Kill Chain */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="p-6 rounded-xl shadow-sm border h-full flex flex-col" 
-                        style={{ 
-                            background: 'var(--surface-color)', 
-                            backdropFilter: 'blur(20px)',
-                            WebkitBackdropFilter: 'blur(20px)',
-                            borderColor: 'var(--glass-border)' 
-                        }}
-                    >
-                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                            <FileText size={20} className="text-[#00AEEF]" />
-                            Incident Narrative
-                        </h3>
-                        <p className="leading-relaxed text-[15px] flex-1" style={{ color: 'var(--text-secondary)' }}>
-                            {incident.story || "No detailed narrative available for this incident. System flagged anomalous behavior matching known threat signatures."}
-                        </p>
-                        
-                        <div className="mt-6 pt-6 border-t" style={{ borderColor: 'var(--glass-border)' }}>
-                             <h4 className="text-sm font-bold mb-4" style={{ color: 'var(--text-muted)' }}>Kill Chain Progression</h4>
-                             <MitreAttackOverlay incident={incident} mini={true} />
-                        </div>
-                    </div>
-                </div>
-
-                {/* 2. AI Fidelity Score & 3. Entities */}
-                <div className="space-y-6 flex flex-col">
-                    {/* Fidelity Score Gauge */}
-                    <div className="p-6 rounded-xl shadow-sm border text-center flex-1 flex flex-col items-center justify-center" 
-                        style={{ 
-                            background: 'var(--surface-color)', 
-                            backdropFilter: 'blur(20px)',
-                            WebkitBackdropFilter: 'blur(20px)',
-                            borderColor: 'var(--glass-border)' 
-                        }}
-                    >
-                        <h3 className="text-sm font-bold mb-6" style={{ color: 'var(--text-muted)' }}>AI Fidelity Score</h3>
-                        
-                        <div className="relative w-48 h-24 mb-6">
-                            <svg viewBox="0 0 100 50" className="w-full h-full overflow-visible">
-                                {/* Background Arc */}
-                                <path 
-                                    d="M 10 50 A 40 40 0 0 1 90 50" 
-                                    fill="none" stroke="var(--bg-primary)" strokeWidth="12" strokeLinecap="round" 
-                                />
-                                {/* Foreground Arc */}
-                                <path 
-                                    d={`M 10 50 A 40 40 0 0 1 ${10 + 80 * Math.min(1, Math.max(0, incident.risk_score || 0))} ${50 - 40 * Math.sin(Math.PI * Math.min(1, Math.max(0, incident.risk_score || 0)))}`} 
-                                    fill="none" 
-                                    stroke={(incident.risk_score || 0) > 0.7 ? "#B91C1C" : (incident.risk_score || 0) > 0.4 ? "#D97706" : "#15803D"} 
-                                    strokeWidth="12" strokeLinecap="round" 
-                                    className="drop-shadow-sm"
-                                />
-                            </svg>
-                            <div className="absolute inset-x-0 bottom-[-10px] text-center">
-                                <span className="text-4xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                                    {(incident.risk_score || 0).toFixed(2)}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <p className="text-xs font-semibold px-4 mt-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                            {(incident.risk_score || 0) > 0.7 
-                                ? "Critical threat confirmed with high confidence. Immediate isolation recommended."
-                                : "Anomalous behavior detected. Requires further analyst verification."}
-                        </p>
-                    </div>
-
-                    {/* Entities list */}
-                    <div className="p-6 rounded-xl shadow-sm border" 
-                        style={{ 
-                            background: 'var(--surface-color)', 
-                            backdropFilter: 'blur(20px)',
-                            WebkitBackdropFilter: 'blur(20px)',
-                            borderColor: 'var(--glass-border)' 
-                        }}
-                    >
-                        <h3 className="text-sm font-bold mb-4" style={{ color: 'var(--text-muted)' }}>Entities Involved</h3>
-                        <div className="space-y-4">
-                            {incident.entities?.users?.length > 0 && (
-                                <div>
-                                    <div className="flex items-center gap-2 text-xs font-bold mb-2" style={{ color: 'var(--text-muted)' }}>
-                                        <User size={14} /> Users
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {incident.entities.users.map(u => (
-                                            <span key={u} className="px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded text-xs font-semibold border border-blue-500/20">{u}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {incident.entities?.assets?.length > 0 && (
-                                <div>
-                                    <div className="flex items-center gap-2 text-xs font-bold mb-2 mt-4" style={{ color: 'var(--text-muted)' }}>
-                                        <Server size={14} /> Assets
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {incident.entities.assets.map(a => (
-                                            <span key={a} className="px-2.5 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded text-xs font-semibold border border-indigo-500/20">{a}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {incident.entities?.ips?.length > 0 && (
-                                <div>
-                                    <div className="flex items-center gap-2 text-xs font-bold mb-2 mt-4" style={{ color: 'var(--text-muted)' }}>
-                                        <Globe size={14} /> IPs
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {incident.entities.ips.map(ip => (
-                                            <span key={ip} className="px-2.5 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded text-xs font-semibold border border-amber-500/20">{ip}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
+            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-color)' }}>
+              {incident.type}
             </div>
 
-            {/* BOTTOM SECTION: Chronology, Graph, Playbook */}
-            <div className="space-y-6">
-                
-                {/* 4. Event Chronology */}
-                {incident.signals && incident.signals.length > 0 && (
-                    <div className="p-6 rounded-xl shadow-sm border" 
-                        style={{ 
-                            background: 'var(--surface-color)', 
-                            backdropFilter: 'blur(20px)',
-                            WebkitBackdropFilter: 'blur(20px)',
-                            borderColor: 'var(--glass-border)' 
-                        }}
-                    >
-                        <h3 className="text-lg font-bold mb-6 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                            <Clock size={20} className="text-[#00AEEF]" />
-                            Event Chronology
-                        </h3>
-                        {/* We reuse the existing component but might need to restyle it if it's too dark. 
-                            Assuming AttackReplayTimeline handles its own light/dark mode internally or we accept its style 
-                        */}
-                        <div className="rounded-lg p-4 border" style={{ background: 'var(--bg-primary)', borderColor: 'var(--glass-border)' }}>
-                             <AttackReplayTimeline
-                                signals={incident.signals}
-                                onSignalChange={(signal) => setHighlightedEntity(signal?.asset || signal?.source_ip || signal?.user)}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    {/* 5. Detailed Attack Graph / MITRE */}
-                    <div className="p-6 rounded-xl shadow-sm border flex flex-col h-[500px]" 
-                        style={{ 
-                            background: 'var(--surface-color)', 
-                            backdropFilter: 'blur(20px)',
-                            WebkitBackdropFilter: 'blur(20px)',
-                            borderColor: 'var(--glass-border)' 
-                        }}
-                    >
-                        <div className="flex justify-between items-center mb-6 shrink-0">
-                            <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                                <Share2 size={20} className="text-indigo-500" />
-                                Threat Topology
-                            </h3>
-                            <button
-                                onClick={() => navigate(`/mitre/${incident.incident_id}`, { state: { incidentId: incident.incident_id } })}
-                                className="text-sm font-semibold text-[#00AEEF] hover:underline flex items-center gap-1"
-                            >
-                                <Target size={16} /> Full MITRE Map
-                            </button>
-                        </div>
-                        <div className="flex-1 rounded-lg border overflow-hidden relative" style={{ background: 'var(--bg-primary)', borderColor: 'var(--glass-border)' }}>
-                             <AttackGraph data={incident.graph} highlightEntity={highlightedEntity} />
-                        </div>
-                    </div>
-
-                    {/* 6. Response Playbook */}
-                    <div id="playbook-section" className="p-6 rounded-xl shadow-sm border flex flex-col h-[500px]" 
-                        style={{ 
-                            background: 'var(--surface-color)', 
-                            backdropFilter: 'blur(20px)',
-                            WebkitBackdropFilter: 'blur(20px)',
-                            borderColor: 'var(--glass-border)', 
-                            borderTop: '4px solid #15803D' 
-                        }}
-                    >
-                        <div className="flex justify-between items-center mb-6 shrink-0">
-                            <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                                <BookOpen size={20} className="text-green-500" />
-                                Response Playbook
-                            </h3>
-                             <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">
-                                Recommended
-                            </span>
-                        </div>
-                        
-                        <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            {playbook ? (
-                                <PlaybookViewer playbook={playbook} incident={incident} compact={true} />
-                            ) : (
-                                <div className="h-full flex flex-col items-center justify-center rounded-lg border border-dashed" style={{ background: 'var(--bg-primary)', borderColor: 'var(--glass-border)', color: 'var(--text-muted)' }}>
-                                    <BookOpen size={32} className="mb-3 opacity-20" />
-                                    <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>No automated playbook generated yet.</p>
-                                    <button className="mt-3 px-4 py-2 bg-[#0B1F3B] hover:bg-gray-800 text-white text-sm font-semibold rounded-lg transition-all duration-300 shimmer-btn">
-                                        Generate Manually
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
+            <div style={{
+              ...getSeverityStyle(incident.severity),
+              padding: '3px 10px',
+              fontSize: '12px',
+              fontWeight: 600,
+              textTransform: 'capitalize'
+            }}>
+              {incident.severity}
             </div>
+
+            <div style={{
+              background: 'none',
+              border: 'none',
+              padding: '3px 0px',
+              fontSize: '12px',
+              color: 'var(--text-secondary)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              textTransform: 'capitalize'
+            }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: getStatusDotColor(incidentStatus) }} />
+              {incidentStatus}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>
+              <Clock size={12} />
+              {incident.detectedAgo}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {incidentStatus === 'escalated' ? (
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', color: '#D97706' }}>
+                <CheckCircle2 size={14} />
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>Escalated</span>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setShowEscalateModal(true)}
+                style={{
+                  background: 'transparent',
+                  border: '1.5px solid rgba(217,119,6,0.3)',
+                  color: '#D97706',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => { 
+                  e.currentTarget.style.background = '#D97706';
+                  e.currentTarget.style.color = 'white';
+                  const icon = e.currentTarget.querySelector('svg');
+                  if (icon) icon.style.stroke = 'white';
+                }}
+                onMouseLeave={(e) => { 
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#D97706';
+                  const icon = e.currentTarget.querySelector('svg');
+                  if (icon) icon.style.stroke = '#D97706';
+                }}
+              >
+                <AlertTriangle size={14} color="#D97706" style={{ transition: 'stroke 0.15s ease' }} />
+                Escalate
+              </button>
+            )}
+
+            <button
+                onClick={() => setShowActivateModal(true)}
+                style={{
+                  background: '#B91C1C',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 8px rgba(185,28,28,0.35)',
+                  transition: 'all 0.15s ease',
+                  opacity: isActivating ? 0.7 : 1,
+                  pointerEvents: isActivating ? 'none' : 'auto'
+                }}
+                onMouseEnter={(e) => { 
+                    e.currentTarget.style.background = '#991B1B';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(185,28,28,0.5)';
+                }}
+                onMouseLeave={(e) => { 
+                    e.currentTarget.style.background = '#B91C1C';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(185,28,28,0.35)';
+                }}
+              >
+                <Zap size={14} color="white" />
+                {isActivating ? 'Activating...' : 'Activate Response'}
+            </button>
+
+            <button 
+              onClick={() => setShowShareModal(true)}
+              style={{
+                background: 'transparent',
+                color: 'var(--text-muted)',
+                border: 'none',
+                padding: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-color)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)' }}
+            >
+              <Share2 size={18} />
+            </button>
+          </div>
         </div>
-    );
-};
 
-export default IncidentDetail;
+        {/* TWO COLUMN GRID */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '20px', alignItems: 'start' }}>
+          {/* LEFT COLUMN */}
+          <motion.div
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            style={{ 
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+          >
+            {/* AI Narrative */}
+            <div style={{ ...glassStyle, borderLeft: '3px solid rgba(0,174,239,0.3)', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Incident Narrative</div>
+                <div style={{
+                  background: 'rgba(0,174,239,0.08)',
+                  border: '1px solid rgba(0,174,239,0.15)',
+                  borderRadius: '20px',
+                  padding: '3px 10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#00AEEF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <Sparkles size={11} />
+                  AI Generated
+                </div>
+              </div>
+              <div style={{ fontSize: '14px', lineHeight: 1.8, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                {incident.narrative}
+              </div>
+            </div>
+
+            {/* Kill Chain */}
+            <div style={{ ...glassStyle, borderLeft: '3px solid rgba(0,174,239,0.3)', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                <GitBranch size={15} color="#00AEEF" />
+                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Kill Chain Progression</div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                {incident.killChainStages.map((stage, idx) => {
+                  const state = idx < completedCount ? 'completed' : idx === completedCount ? 'current' : 'future'
+                  
+                  return (
+                    <div key={stage} style={{ display: 'flex', alignItems: 'flex-start', flex: idx < incident.killChainStages.length - 1 ? 1 : 'none' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        {state === 'completed' ? (
+                          <div style={{
+                            width: '40px', height: '40px', borderRadius: '50%',
+                            background: '#00AEEF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            boxShadow: '0 0 0 4px rgba(0,174,239,0.15)'
+                          }}>
+                            <Check size={16} color="white" />
+                          </div>
+                        ) : state === 'current' ? (
+                          <div style={{
+                            width: '40px', height: '40px', borderRadius: '50%',
+                            background: 'rgba(0,174,239,0.12)', border: '2px solid #00AEEF',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            animation: 'pulse-ring 2s infinite'
+                          }}>
+                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#00AEEF' }} />
+                          </div>
+                        ) : (
+                          <div style={{
+                            width: '40px', height: '40px', borderRadius: '50%',
+                            background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+                            border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.12)'
+                          }} />
+                        )}
+                        <div style={{
+                          fontSize: '10px', textAlign: 'center', marginTop: '8px',
+                          maxWidth: '64px', lineHeight: 1.3,
+                          color: state === 'future' ? 'var(--text-muted)' : 'var(--text-secondary)'
+                        }}>
+                          {stage}
+                        </div>
+                      </div>
+
+                      {idx < incident.killChainStages.length - 1 && (
+                        <div style={{
+                          flex: 1, height: '2px', marginTop: '19px',
+                          background: state === 'completed' 
+                            ? (idx === completedCount - 1 ? 'linear-gradient(90deg, #00AEEF, rgba(0,174,239,0.2))' : '#00AEEF')
+                            : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.12)'
+                        }} />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  {completedCount} of 6 stages completed · Active: {currentStageName}
+                </div>
+                <div style={{
+                  background: 'rgba(0,174,239,0.08)',
+                  border: '1px solid rgba(0,174,239,0.15)',
+                  borderRadius: '20px',
+                  padding: '2px 10px',
+                  fontSize: '11px',
+                  color: '#00AEEF'
+                }}>
+                  {Math.round((completedCount/6)*100)}% through attack chain
+                </div>
+              </div>
+            </div>
+
+            {/* Event Chronology */}
+            <div style={{ ...glassStyle, marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                <Play size={15} color="#00AEEF" />
+                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Incident Replay & Chronology</div>
+              </div>
+
+              <div style={{ position: 'relative', paddingLeft: '24px' }}>
+                <div style={{
+                  position: 'absolute', left: '8px', top: 0, bottom: 0, width: '1px',
+                  background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+                }} />
+
+                {incident.timeline.map((event) => (
+                  <div key={event.id} style={{ position: 'relative', paddingBottom: '20px' }}>
+                    <div style={{
+                      position: 'absolute', left: '-20px', top: '3px',
+                      width: '12px', height: '12px', borderRadius: '50%',
+                      border: '2px solid var(--bg-color)',
+                      background: event.severity === 'high' ? '#B91C1C' : event.severity === 'medium' ? '#D97706' : '#15803D'
+                    }} />
+
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{event.timestamp}</div>
+                        <div style={{
+                          background: 'var(--surface-color)', border: '1px solid var(--glass-border)',
+                          borderRadius: '4px', padding: '1px 8px', fontSize: '11px', color: 'var(--text-secondary)'
+                        }}>
+                          {event.eventType}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#00AEEF' }}>{event.entity}</div>
+                      </div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                        {event.description}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Attack Correlation Graph */}
+            <div style={{
+              background: 'var(--surface-color)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '20px',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <Network size={15} color="#00AEEF" />
+                    <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Attack Graph Reconstruction</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#B91C1C' }} /> Compromised
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D97706' }} /> Suspected
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(128,128,128,0.3)' }} /> Clean
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ height: '360px', width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--glass-border)', background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)' }}>
+                  <ReactFlow
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  nodeTypes={nodeTypes}
+                  fitView={true}
+                  fitViewOptions={{ 
+                    padding: 0.3,
+                    minZoom: 0.5,
+                    maxZoom: 1.5
+                  }}
+                  minZoom={0.3}
+                  maxZoom={2}
+                  proOptions={{ hideAttribution: true }}
+                  style={{ width: '100%', height: '100%' }}
+                >
+                  <Background
+                    color={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'} 
+                    variant="dots" 
+                    gap={20} 
+                    size={1} 
+                  />
+                  <Controls showInteractive={false} />
+                </ReactFlow>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* RIGHT COLUMN */}
+          <motion.div
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.15 }}
+          >
+            {/* Fidelity Score */}
+            <div style={{ 
+              ...glassStyle, 
+              border: incident.fidelityScore > 0.7 ? '1px solid rgba(185,28,28,0.2)' : 'var(--glass-border)',
+              marginBottom: '16px' 
+            }}>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '20px' }}>AI Fidelity Score</div>
+              
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <svg width="200" height="120" viewBox="0 0 200 120" style={{ overflow: 'visible' }}>
+                  <path
+                    d={describeArc(100, 100, 75, -90, 90)}
+                    fill="none"
+                    stroke={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}
+                    strokeWidth="12"
+                    strokeLinecap="round"
+                  />
+                  <motion.path
+                    d={describeArc(100, 100, 75, -90, -90 + (180 * incident.fidelityScore))}
+                    fill="none"
+                    stroke={getFidelityColor(incident.fidelityScore)}
+                    strokeWidth="12"
+                    strokeLinecap="round"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
+                  />
+                  <text x="100" y="92" textAnchor="middle" fontSize="28" fontWeight="700" fill="var(--text-color)">
+                    {incident.fidelityScore.toFixed(2)}
+                  </text>
+                  <text x="100" y="110" textAnchor="middle" fontSize="11" fill="var(--text-muted)">
+                    Fidelity Score
+                  </text>
+                </svg>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '12px' }}>
+                <div style={{
+                  background: getFidelityBg(incident.fidelityScore),
+                  border: `1px solid ${getFidelityBorder(incident.fidelityScore)}`,
+                  color: getFidelityColor(incident.fidelityScore),
+                  borderRadius: '20px', padding: '4px 14px', fontSize: '12px', fontWeight: 600
+                }}>
+                  {incident.fidelityScore >= 0.85 ? "High Confidence Threat" : incident.fidelityScore >= 0.5 ? "Medium Confidence" : "Low Confidence"}
+                </div>
+              </div>
+
+              <div style={{ marginTop: '20px', borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
+                {incident.fidelityFactors.map((factor) => (
+                  <div key={factor.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{factor.label}</div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{
+                        width: '72px', height: '4px', borderRadius: '2px',
+                        background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+                      }}>
+                        <div style={{
+                          width: `${factor.score * 100}%`, height: '100%', borderRadius: '2px',
+                          background: getFidelityColor(factor.score)
+                        }} />
+                      </div>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: getFidelityColor(factor.score), minWidth: '32px', textAlign: 'right' }}>
+                        {factor.score.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Entities Involved */}
+              <div style={{ ...glassStyle, marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                <Users size={15} color="#00AEEF" />
+                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Entities Involved</div>
+              </div>
+
+              {/* Status Breakdown Summary */}
+              {(() => {
+                const getEntityStatus = (label) => {
+                  const node = incident.graphNodes.find(n => n.label === label)
+                  const status = node?.compromised ? 'Compromised' : node?.suspected ? 'Suspected' : 'Clean'
+                  const dotColor = status === 'Compromised' ? '#B91C1C' : status === 'Suspected' ? '#D97706' : '#15803D'
+                  return { status, dotColor }
+                }
+
+                const allEntities = [
+                  ...incident.entities.users,
+                  ...incident.entities.servers,
+                  ...incident.entities.ips
+                ]
+                
+                const counts = allEntities.reduce((acc, label) => {
+                  const { status } = getEntityStatus(label)
+                  const s = status.toLowerCase()
+                  acc[s] = (acc[s] || 0) + 1
+                  return acc
+                }, { compromised: 0, suspected: 0, clean: 0 })
+
+                const renderRows = (list, limit = Infinity) => {
+                  return list.slice(0, limit).map(item => {
+                    const { status, dotColor } = getEntityStatus(item)
+                    return (
+                      <div key={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-color)' }}>{item}</div>
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>{status}</div>
+                      </div>
+                    )
+                  })
+                }
+
+                const totalCount = allEntities.length
+                const visibleCount = Math.min(incident.entities.users.length, MAX_ENTITIES_VISIBLE) + 
+                                   Math.min(incident.entities.servers.length, MAX_ENTITIES_VISIBLE)
+                const hasHidden = totalCount > visibleCount
+
+                return (
+                  <>
+                    <div style={{ 
+                      borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px', marginBottom: '16px'
+                    }}>
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#B91C1C' }} />
+                          {counts.compromised} compromised
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#D97706' }} />
+                          {counts.suspected} suspected
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#15803D' }} />
+                          {counts.clean} clean
+                        </div>
+                      </div>
+                      
+                      {incident.entities.ips.length > 0 && (
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                          {incident.entities.ips.length} IP addresses — view details
+                        </div>
+                      )}
+                    </div>
+
+                    {/* USERS */}
+                    {incident.entities.users.length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '8px' }}>USERS</div>
+                        {renderRows(incident.entities.users, MAX_ENTITIES_VISIBLE)}
+                      </div>
+                    )}
+
+                    {/* SERVERS */}
+                    {incident.entities.servers.length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '8px' }}>SERVERS</div>
+                        {renderRows(incident.entities.servers, MAX_ENTITIES_VISIBLE)}
+                      </div>
+                    )}
+
+                    {hasHidden && (
+                      <button
+                        onClick={() => setShowAllEntities(true)}
+                        style={{
+                          width: '100%', marginTop: '12px', padding: '8px',
+                          background: 'transparent', border: '1px solid var(--glass-border)',
+                          borderRadius: '8px', color: '#00AEEF', fontSize: '12px', fontWeight: '500',
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.background = 'rgba(0,174,239,0.06)'
+                          e.currentTarget.style.borderColor = 'rgba(0,174,239,0.3)'
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.background = 'transparent'
+                          e.currentTarget.style.borderColor = 'var(--glass-border)'
+                        }}
+                      >
+                        <Users size={13} />
+                        View all {totalCount} entities &rarr;
+                      </button>
+                    )}
+                  </>
+                )
+              })()}
+            </div>
+
+            {/* MITRE ATT&CK */}
+            <div style={{ ...glassStyle, marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <Shield size={15} color="#00AEEF" />
+                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>MITRE ATT&CK</div>
+              </div>
+
+              {incident.mitreTechniques.map(tech => (
+                <div key={tech.id} style={{
+                  background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                  border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '12px 14px', marginBottom: '8px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#00AEEF' }}>{tech.id}</div>
+                      <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-color)' }}>{tech.name}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{tech.tactic}</div>
+                    </div>
+                    <div style={{
+                      background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.15)',
+                      borderRadius: '20px', padding: '2px 8px', fontSize: '11px', fontWeight: 600, color: '#00AEEF'
+                    }}>
+                      {tech.confidence}%
+                    </div>
+                  </div>
+                  <div style={{
+                    marginTop: '10px', height: '3px', borderRadius: '2px',
+                    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
+                  }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${tech.confidence}%` }}
+                      transition={{ duration: 0.5, ease: 'easeOut' }}
+                      style={{ height: '100%', background: '#00AEEF', borderRadius: '2px' }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Multi-Agent Decision */}
+            <div style={{ ...glassStyle, marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <Brain size={15} color="#00AEEF" />
+                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Multi-Agent Reasoning</div>
+              </div>
+
+              {agents.map(agent => (
+                <div key={agent.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', minWidth: '120px' }}>{agent.label}</div>
+                  <div style={{
+                    flex: 1, height: '4px', borderRadius: '2px',
+                    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
+                  }}>
+                    <div style={{
+                      width: `${agent.score * 100}%`, height: '100%', borderRadius: '2px',
+                      background: agent.color, opacity: 0.85
+                    }} />
+                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: agent.color, minWidth: '32px', textAlign: 'right' }}>
+                    {agent.score.toFixed(2)}
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ margin: '16px 0', borderTop: '1px solid var(--glass-border)' }} />
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Voting Engine Decision</div>
+                  <div style={{
+                    ...getSeverityStyle(incident.agentScores.finalDecision.toLowerCase()),
+                    borderRadius: '20px', padding: '4px 14px', fontSize: '12px', fontWeight: 700,
+                    minWidth: '68px', textAlign: 'center'
+                  }}>
+                    {incident.agentScores.finalDecision}
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', fontSize: '11px', color: '#15803D' }}>
+                  <CheckCircle2 size={13} color="#15803D" />
+                  Playbook Generated
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* PLAYBOOK PANEL - Full Width */}
+        <div ref={playbookRef} style={{ ...glassStyle, borderLeft: '3px solid rgba(0,174,239,0.3)', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <BookOpen size={15} color="#00AEEF" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Response Playbook</div>
+                    <div style={{
+                        background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.15)',
+                        borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, color: '#00AEEF',
+                        display: 'flex', alignItems: 'center', gap: '4px'
+                      }}>
+                        <Sparkles size={11} /> AI Generated
+                    </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                        {completedStepsCount} of 6 steps completed
+                    </div>
+                    <div style={{
+                        width: '120px',
+                        height: '3px',
+                        borderRadius: '2px',
+                        background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                        overflow: 'hidden'
+                    }}>
+                        <div style={{
+                            width: `${(completedStepsCount / 6) * 100}%`,
+                            height: '100%',
+                            background: '#15803D',
+                            transition: 'width 0.3s ease'
+                        }} />
+                    </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <button 
+                  onClick={() => alert('Download starting...')}
+                  style={{
+                    background: 'transparent',
+                    color: '#00AEEF',
+                    border: '1.5px solid rgba(0,174,239,0.4)',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    gap: '6px',
+                    alignItems: 'center',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => { 
+                    e.currentTarget.style.background = '#00AEEF'
+                    e.currentTarget.style.color = 'white'
+                  }}
+                  onMouseLeave={(e) => { 
+                    e.currentTarget.style.background = 'transparent'
+                    e.currentTarget.style.color = '#00AEEF'
+                  }}
+                >
+                  <Download size={14} />
+                  Download
+                </button>
+
+                <button style={{
+                  background: 'transparent',
+                  color: '#15803D',
+                  border: '1.5px solid rgba(21,128,61,0.4)',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  gap: '6px',
+                  alignItems: 'center',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => { 
+                  e.currentTarget.style.background = '#15803D'
+                  e.currentTarget.style.color = 'white'
+                }}
+                onMouseLeave={(e) => { 
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.color = '#15803D'
+                }}
+                >
+                  <CheckCircle2 size={14} />
+                  Mark Reviewed
+                </button>
+            </div>
+          </div>
+
+          <div style={{ position: 'relative' }}>
+            {/* Vertical connector line */}
+            <div style={{
+              position: 'absolute',
+              left: '36px',
+              top: '32px',
+              bottom: '32px',
+              width: '1px',
+              background: isDark
+                ? 'rgba(255,255,255,0.06)'
+                : 'rgba(0,0,0,0.06)',
+              zIndex: 0
+            }} />
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', zIndex: 1 }}>
+              {incident.playbook.steps.map((step) => {
+                const stepStatus = stepStatuses[step.id]
+                const isCompleted = stepStatus === 'completed'
+                const isRunning = stepStatus === 'running'
+                const prio = priorityConfig[step.priority]
+
+                return (
+                  <div
+                    key={step.id}
+                    onClick={() => toggleStepStatus(step.id)}
+                    style={{
+                      background: isCompleted
+                        ? (isDark ? 'rgba(21,128,61,0.05)' : 'rgba(21,128,61,0.03)')
+                        : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'),
+                      border: isCompleted 
+                          ? '1px solid rgba(21,128,61,0.3)' 
+                          : '1px solid var(--glass-border)',
+                      borderRadius: '10px', padding: '16px 20px', 
+                      cursor: 'pointer', transition: 'all 0.15s',
+                      position: 'relative',
+                      opacity: isRunning ? 0.9 : 1
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,174,239,0.2)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = isCompleted ? 'rgba(21,128,61,0.3)' : 'var(--glass-border)' }}
+                  >
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                      {/* Step Node (Circle) */}
+                      <div style={{
+                          width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
+                          background: isCompleted 
+                            ? '#15803D' 
+                            : isRunning
+                              ? 'rgba(0,174,239,0.15)'
+                              : (isDark ? '#1E293B' : '#EFF6FF'),
+                          border: isCompleted ? 'none' : isRunning ? '2px solid #00AEEF' : '1px solid rgba(0,174,239,0.2)',
+                          color: isCompleted ? 'white' : '#00AEEF', fontWeight: 700, fontSize: '13px',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          position: 'relative', zIndex: 2
+                      }}>
+                          {isCompleted ? (
+                            <Check size={14} />
+                          ) : isRunning ? (
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                              style={{ display: 'flex' }}
+                            >
+                              <Loader2 size={14} color="#00AEEF" />
+                            </motion.div>
+                          ) : (
+                            step.id
+                          )}
+                      </div>
+
+                      {/* Content Container */}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                          <div style={{ 
+                              fontSize: '13px', fontWeight: 600, marginTop: '7px',
+                              color: isCompleted ? 'var(--text-muted)' : 'var(--text-color)',
+                              textDecoration: isCompleted ? 'line-through' : 'none'
+                          }}>
+                              {step.title}
+                          </div>
+                          
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
+                              {/* Type Badge */}
+                              <div style={{
+                                  background: step.type === 'automated' ? 'rgba(0,174,239,0.08)' : 'rgba(255,255,255,0.06)',
+                                  border: `1px solid ${step.type === 'automated' ? 'rgba(0,174,239,0.15)' : 'var(--glass-border)'}`,
+                                  color: step.type === 'automated' ? '#00AEEF' : 'var(--text-muted)',
+                                  borderRadius: '20px', padding: '3px 10px', fontSize: '10px', fontWeight: 600,
+                                  display: 'flex', gap: '3px', alignItems: 'center'
+                              }}>
+                                  {step.type === 'automated' ? <Zap size={10} /> : <User size={10} />}
+                                  {step.type === 'automated' ? 'Auto' : 'Manual'}
+                              </div>
+
+                              {/* Priority Badge */}
+                              <div style={{
+                                  background: prio.bg,
+                                  border: `1px solid ${prio.border}`,
+                                  color: prio.color,
+                                  borderRadius: '20px', padding: '3px 10px', fontSize: '10px', fontWeight: 600
+                              }}>
+                                  {prio.label}
+                              </div>
+                          </div>
+                        </div>
+
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '12px' }}>
+                          {step.description}
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: '12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                  <User size={11} /> {step.owner}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                  <Clock size={11} /> {step.estimatedTime}
+                              </div>
+                          </div>
+
+                          <div>
+                              {isCompleted ? (
+                                  <div style={{ color: '#15803D', fontSize: '11px', fontWeight: 500, display: 'flex', gap: '3px', alignItems: 'center' }}>
+                                      <CheckCircle2 size={12} /> Completed
+                                  </div>
+                              ) : (
+                                  <button
+                                      onClick={(e) => {
+                                          e.stopPropagation()
+                                          toggleStepStatus(step.id)
+                                      }}
+                                      style={{
+                                          color: '#00AEEF', background: 'transparent', border: 'none',
+                                          fontSize: '11px', fontWeight: 500, cursor: 'pointer'
+                                      }}
+                                  >
+                                      Mark Done
+                                  </button>
+                              )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* SHARE MODAL */}
+      {showShareModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            ...glassStyle,
+            maxWidth: '400px', width: '90%', padding: '24px',
+            background: isDark ? 'rgba(15,25,40,0.95)' : 'rgba(255,255,255,0.95)',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+            position: 'relative', border: '1px solid rgba(255,255,255,0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-color)' }}>Share Incident Report</div>
+              <button 
+                onClick={() => setShowShareModal(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              Select recipients for {incident.id} report
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {['CISO', 'Compliance Team', 'Legal Team', 'External Auditor'].map((name, i) => (
+                <div 
+                  key={name}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px', padding: '12px',
+                    borderRadius: '8px', border: '1px solid var(--glass-border)',
+                    cursor: 'pointer', background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'
+                  }}
+                >
+                  <div style={{
+                    width: '20px', height: '20px', borderRadius: '50%',
+                    border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    {/* Mock checkbox state */}
+                    {i === 0 && <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#00AEEF' }} />}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>{name}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      {i === 0 ? "Chief Information Security Officer" : 
+                       i === 1 ? "Regulatory compliance review" :
+                       i === 2 ? "Legal implications assessment" : "Third-party audit trail"}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                setShowShareModal(false)
+                alert('Report shared successfully. Logged in audit trail.')
+              }}
+              style={{
+                marginTop: '20px', width: '100%',
+                background: '#00AEEF', color: 'white', borderRadius: '8px',
+                padding: '10px', fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer'
+              }}
+            >
+              Share Report
+            </button>
+
+            <div style={{ marginTop: '12px', textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
+              All shares are logged in the immutable audit trail
+            </div>
+          </div>
+        </div>
+      )}
+      {/* MODALS */}
+      <AnimatePresence>
+        {showAllEntities && (
+          <div 
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '20px'
+            }}
+            onClick={() => setShowAllEntities(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              onClick={e => e.stopPropagation()}
+              style={{
+                maxWidth: '520px', width: '100%', maxHeight: '80vh',
+                display: 'flex', flexDirection: 'column',
+                background: isDark ? 'rgba(15,25,40,0.97)' : 'rgba(255,255,255,0.97)',
+                border: '1px solid var(--glass-border)', borderRadius: '14px',
+                overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+              }}
+            >
+              {/* MODAL HEADER */}
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '20px 24px', borderBottom: '1px solid var(--glass-border)', flexShrink: 0
+              }}>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-color)' }}>All Entities Involved</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {(incident.entities.users.length + incident.entities.servers.length + incident.entities.ips.length)} entities across this incident
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {/* Summary chips */}
+                    {(() => {
+                      const compromised = incident.graphNodes.filter(n => n.compromised).length
+                      const suspected = incident.graphNodes.filter(n => n.suspected).length
+                      return (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#B91C1C' }} />
+                            {compromised} Compromised
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#D97706' }} />
+                            {suspected} Suspected
+                          </div>
+                        </>
+                      )
+                    })()}
+                  </div>
+                  <button 
+                    onClick={() => setShowAllEntities(false)}
+                    style={{
+                      background: 'transparent', border: 'none', color: 'var(--text-muted)',
+                      cursor: 'pointer', padding: '4px', borderRadius: '4px', display: 'flex'
+                    }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* MODAL BODY */}
+              <div style={{ overflowY: 'auto', flex: 1, padding: '20px 24px' }}>
+                {(() => {
+                  const getEntityStatus = (label) => {
+                    const node = incident.graphNodes.find(n => n.label === label)
+                    const status = node?.compromised ? 'Compromised' : node?.suspected ? 'Suspected' : 'Clean'
+                    const dotColor = status === 'Compromised' ? '#B91C1C' : status === 'Suspected' ? '#D97706' : '#15803D'
+                    return { status, dotColor }
+                  }
+
+                  const renderRows = (list) => {
+                    return list.map(item => {
+                      const { status, dotColor } = getEntityStatus(item)
+                      return (
+                        <div key={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
+                            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-color)' }}>{item}</div>
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>{status}</div>
+                        </div>
+                      )
+                    })
+                  }
+
+                  return (
+                    <>
+                      {incident.entities.users.length > 0 && (
+                        <div style={{ marginBottom: '16px' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '10px' }}>USERS</div>
+                          {renderRows(incident.entities.users)}
+                        </div>
+                      )}
+                      {incident.entities.servers.length > 0 && (
+                        <div style={{ marginBottom: '16px' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '10px' }}>SERVERS</div>
+                          {renderRows(incident.entities.servers)}
+                        </div>
+                      )}
+                      {incident.entities.ips.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '10px' }}>IP ADDRESSES</div>
+                          {renderRows(incident.entities.ips)}
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
+              </div>
+
+              {/* MODAL FOOTER */}
+              <div style={{ padding: '16px 24px', borderTop: '1px solid var(--glass-border)', flexShrink: 0 }}>
+                <button
+                  onClick={() => setShowAllEntities(false)}
+                  style={{
+                    width: '100%', background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.15)',
+                    color: '#00AEEF', borderRadius: '8px', padding: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer'
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showActivateModal && (
+          <div 
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '20px'
+            }}
+            onClick={() => setShowActivateModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              style={{
+                maxWidth: '420px', width: '100%',
+                background: isDark ? 'rgba(15,25,40,0.97)' : 'rgba(255,255,255,0.97)',
+                border: '1px solid var(--glass-border)', borderRadius: '14px',
+                overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+              }}
+            >
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Zap size={16} color="#B91C1C" />
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-color)' }}>Activate Response Plan</div>
+                </div>
+                <button onClick={() => setShowActivateModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div style={{ padding: '24px' }}>
+                <div style={{ 
+                  background: 'rgba(185,28,28,0.06)', border: '1px solid rgba(185,28,28,0.15)',
+                  borderRadius: '8px', padding: '12px', display: 'flex', gap: '10px', marginBottom: '20px'
+                }}>
+                  <AlertTriangle size={16} color="#B91C1C" style={{ flexShrink: 0 }} />
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    This will execute 3 automated containment steps on live systems. Manual steps will remain pending for analyst action.
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Automated steps to execute:
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {incident.playbook.steps.filter(s => s.type === 'automated').map(step => (
+                    <div key={step.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Zap size={12} color="#00AEEF" />
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{step.title}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ padding: '16px 24px', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button 
+                  onClick={() => setShowActivateModal(false)}
+                  style={{
+                    background: 'transparent', border: '1px solid var(--glass-border)',
+                    color: 'var(--text-muted)', borderRadius: '8px', padding: '9px 16px',
+                    fontSize: '13px', fontWeight: 600, cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleActivateResponse}
+                  style={{
+                    background: '#B91C1C', color: 'white', border: 'none',
+                    borderRadius: '8px', padding: '9px 20px', fontSize: '13px',
+                    fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(185,28,28,0.3)',
+                    display: 'flex', alignItems: 'center', gap: '8px'
+                  }}
+                >
+                  <Zap size={14} />
+                  Activate Response
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showEscalateModal && (
+          <div 
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '20px'
+            }}
+            onClick={() => setShowEscalateModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              style={{
+                maxWidth: '440px', width: '100%',
+                background: isDark ? 'rgba(15,25,40,0.97)' : 'rgba(255,255,255,0.97)',
+                border: '1px solid var(--glass-border)', borderRadius: '14px',
+                overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+              }}
+            >
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <AlertTriangle size={16} color="#D97706" />
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-color)' }}>Escalate Incident</div>
+                </div>
+                <button onClick={() => setShowEscalateModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div style={{ padding: '24px' }}>
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                  Escalating <span style={{ color: 'var(--text-color)', fontWeight: 600 }}>{incident.id}</span> · {incident.type} · Fidelity: {incident.fidelityScore}
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>Escalation reason</div>
+                  <textarea 
+                    value={escalateReason}
+                    onChange={e => setEscalateReason(e.target.value)}
+                    rows={3}
+                    style={{
+                      width: '100%', background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                      border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '12px',
+                      color: 'var(--text-color)', fontSize: '13px', outline: 'none', resize: 'none'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px' }}>Notify</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {[
+                      { id: 'ciso', label: 'CISO' },
+                      { id: 'lead', label: 'Security Lead' },
+                      { id: 'compliance', label: 'Compliance Officer' }
+                    ].map(recipient => {
+                      const isSelected = escalateRecipients.includes(recipient.id)
+                      return (
+                        <div 
+                          key={recipient.id}
+                          onClick={() => {
+                            setEscalateRecipients(prev => 
+                              prev.includes(recipient.id) 
+                                ? prev.filter(r => r !== recipient.id)
+                                : [...prev, recipient.id]
+                            )
+                          }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px',
+                            borderRadius: '8px', border: '1px solid',
+                            borderColor: isSelected ? 'rgba(217,119,6,0.3)' : 'var(--glass-border)',
+                            background: isSelected ? 'rgba(217,119,6,0.05)' : 'transparent',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <div style={{
+                            width: '18px', height: '18px', borderRadius: '50%',
+                            border: '1px solid', borderColor: isSelected ? '#D97706' : 'var(--glass-border)',
+                            background: isSelected ? '#D97706' : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          }}>
+                            {isSelected && <Check size={11} color="white" />}
+                          </div>
+                          <div style={{ fontSize: '13px', color: 'var(--text-color)', fontWeight: isSelected ? 600 : 400 }}>{recipient.label}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ padding: '16px 24px', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button 
+                  onClick={() => setShowEscalateModal(false)}
+                  style={{
+                    background: 'transparent', border: '1px solid var(--glass-border)',
+                    color: 'var(--text-muted)', borderRadius: '8px', padding: '9px 16px',
+                    fontSize: '13px', fontWeight: 600, cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEscalate}
+                  disabled={escalateRecipients.length === 0}
+                  style={{
+                    background: '#D97706', color: 'white', border: 'none',
+                    borderRadius: '8px', padding: '9px 20px', fontSize: '13px',
+                    fontWeight: 700, cursor: 'pointer', opacity: escalateRecipients.length === 0 ? 0.5 : 1,
+                    display: 'flex', alignItems: 'center', gap: '8px'
+                  }}
+                >
+                  <AlertTriangle size={14} />
+                  Escalate Now
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        <AnimatePresence>
+          {showToast && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, x: 0 }}
+              animate={{ opacity: 1, y: 0, x: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000,
+                background: isDark ? 'rgba(15,25,40,0.97)' : 'rgba(255,255,255,0.97)',
+                border: '1px solid rgba(217,119,6,0.3)', borderLeft: '3px solid #D97706',
+                borderRadius: '10px', padding: '12px 16px', display: 'flex', alignItems: 'center',
+                gap: '10px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', maxWidth: '320px'
+              }}
+            >
+              <CheckCircle2 size={16} color="#D97706" />
+              <span style={{ fontSize: '13px', color: 'var(--text-color)', fontWeight: 500 }}>
+                {toastMessage}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </AnimatePresence>
+    </div>
+  )
+}
+
+export default IncidentDetail

@@ -117,7 +117,7 @@ const AttackGraph = ({ data, highlightEntity, onNodeClick }) => {
                 target: edge.to,
                 animated: true,
                 label: edge.relation || '',
-                labelStyle: { fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: "'Inter', sans-serif" },
+                labelStyle: { fill: '#94a3b8', fontSize: 10, fontWeight: 700 },
                 labelBgPadding: [8, 4],
                 labelBgBorderRadius: 4,
                 labelBgStyle: { fill: '#0f172a', fillOpacity: 0.8 },
