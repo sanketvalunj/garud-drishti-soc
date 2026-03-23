@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
 
-const AnimatedGradientBg = () => {
+const AnimatedGradientBg = ({ isLanding = false }) => {
     const { resolvedTheme } = useTheme()
     const [position, setPosition] = useState({
         x1: 0,
@@ -97,16 +97,16 @@ const AnimatedGradientBg = () => {
                     ),
                     radial-gradient(
                         ellipse 80% 70% at ${position.x4}% ${position.y4}%,
-                        ${isDark ? 'rgba(0, 255, 255, 0.15)' : 'rgba(0, 255, 255, 0.12)'},
+                        ${isDark ? (isLanding ? 'rgba(0, 255, 255, 0.2)' : 'rgba(0, 255, 255, 0.15)') : 'rgba(0, 255, 255, 0.12)'},
                         transparent 60%
                     ),
                     radial-gradient(
                         ellipse 70% 60% at ${position.x5}% ${position.y5}%,
-                        ${isDark ? 'rgba(144, 202, 249, 0.2)' : 'rgba(144, 202, 249, 0.15)'},
+                        ${isDark ? (isLanding ? 'rgba(144, 202, 249, 0.2)' : 'rgba(144, 202, 249, 0.2)') : 'rgba(144, 202, 249, 0.15)'},
                         transparent 55%
                     ),
                     ${isDark 
-                        ? 'linear-gradient(135deg, #060D1A 0%, #0A1428 100%)' 
+                        ? (isLanding ? 'linear-gradient(135deg, #020B18 0%, #020B18 100%)' : 'linear-gradient(135deg, #060D1A 0%, #0A1428 100%)')
                         : 'linear-gradient(135deg, #F5F7FA 0%, #EEF2F8 100%)'}
                 `
             }}

@@ -5,6 +5,7 @@ import { PipelineProvider } from './context/PipelineContext';
 import { ThemeProvider } from './context/ThemeContext';
 
 // Pages
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
@@ -25,21 +26,19 @@ import Layout from './layout/Layout';
 
 const AuthOnlyRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/" replace />;
   return children;
 };
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isOnboarded } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!isOnboarded) return <Navigate to="/onboarding" replace />;
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/" replace />;
   return children;
 };
 
 const PublicOnlyRoute = ({ children }) => {
-  const { isAuthenticated, isOnboarded } = useAuth();
-  if (isAuthenticated && !isOnboarded) return <Navigate to="/onboarding" replace />;
-  if (isAuthenticated && isOnboarded) return <Navigate to="/dashboard" replace />;
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return children;
 };
 
@@ -50,36 +49,32 @@ const App = () => {
     <ThemeProvider>
       <PipelineProvider>
         <Routes>
+          {/* Public Landing */}
+          <Route path="/" element={
+            <PublicOnlyRoute><Landing /></PublicOnlyRoute>
+          } />
+
           {/* Public */}
           <Route path="/login" element={
             <PublicOnlyRoute><Login /></PublicOnlyRoute>
           } />
 
-          {/* Onboarding: auth required, but NOT onboarded yet */}
-          <Route path="/onboarding" element={
-            <AuthOnlyRoute><Onboarding /></AuthOnlyRoute>
-          } />
-
-          {/* Protected app shell — requires auth + onboarding */}
-          <Route path="/" element={
-            <ProtectedRoute><Layout /></ProtectedRoute>
-          }>
-            {/* Index → dashboard */}
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="incidents" element={<Incidents />} />
-            <Route path="incidents/:id" element={<IncidentDetail />} />
-            <Route path="playbooks" element={<Playbooks />} />
-            <Route path="pipeline" element={<Pipeline />} />
-            <Route path="threat-graph" element={<ThreatGraph />} />
-            <Route path="mitre/:id" element={<MitreMapping />} />
-            <Route path="reasoning" element={<Reasoning />} />
-            <Route path="llm-reasoning" element={<LLMReasoning />} />
-            <Route path="admin" element={<Admin />} />
+          {/* Protected app shell */}
+          <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/incidents" element={<Incidents />} />
+            <Route path="/incidents/:id" element={<IncidentDetail />} />
+            <Route path="/playbooks" element={<Playbooks />} />
+            <Route path="/pipeline" element={<Pipeline />} />
+            <Route path="/threat-graph" element={<ThreatGraph />} />
+            <Route path="/mitre/:id" element={<MitreMapping />} />
+            <Route path="/reasoning" element={<Reasoning />} />
+            <Route path="/llm-reasoning" element={<LLMReasoning />} />
+            <Route path="/admin" element={<Admin />} />
           </Route>
 
           {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </PipelineProvider>
     </ThemeProvider>

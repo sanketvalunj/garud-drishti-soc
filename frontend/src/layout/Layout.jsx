@@ -10,7 +10,7 @@ const Layout = () => {
     const isDark = resolvedTheme === 'dark';
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', position: 'relative', overflowX: 'hidden' }}>
+        <div style={{ display: 'flex', height: '100vh', position: 'relative', overflow: 'hidden' }}>
             {/* 1. ANIMATED GRADIENT BACKGROUND */}
             <AnimatedGradientBg />
 
@@ -20,7 +20,6 @@ const Layout = () => {
             {/* 3. Main Content Layer (Above Background) */}
             <div style={{
                 flex: 1,
-                marginLeft: '240px',
                 position: 'relative',
                 zIndex: 1,
                 minHeight: '100vh',

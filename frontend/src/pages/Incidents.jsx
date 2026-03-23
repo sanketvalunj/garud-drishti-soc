@@ -9,7 +9,7 @@ import {
 import { useTheme } from '../context/ThemeContext';
 
 // ─── MOCK DATA ──────────────────────────────────────────────
-const mockIncidents = [
+export const mockIncidents = [
     {
         id: 'INC-2091',
         type: 'Privilege Escalation',

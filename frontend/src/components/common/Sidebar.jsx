@@ -1,144 +1,262 @@
-import React from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import {
-    LayoutDashboard,
-    AlertTriangle,
-    Network,
-    BookOpen,
-    Brain,
-    Zap,
-    GitBranch,
-    Map,
-    Settings,
-    LogOut,
-    Shield
-} from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import ThemeToggle from '../ui/ThemeToggle';
+import { NavLink, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { 
+  LayoutGrid, 
+  ShieldAlert, 
+  BookOpen, 
+  GitBranch, 
+  Settings,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  BrainCircuit
+} from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../context/ThemeContext'
+import ThemeToggle from '../ui/ThemeToggle'
+import { useState, Fragment } from 'react'
 
 const Sidebar = () => {
-    const { logout, user } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
+  const { user, logout, hasNavItem } = useAuth()
+  const navigate = useNavigate()
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
+  const navItems = [
+    { 
+      id: 'dashboard',
+      path: '/dashboard', 
+      icon: LayoutGrid, 
+      label: 'Dashboard',
+      description: 'System Overview'
+    },
+    { 
+      id: 'incidents',
+      path: '/incidents', 
+      icon: ShieldAlert, 
+      label: 'Incidents',
+      description: 'Threat Queue'
+    },
+    { 
+      id: 'playbooks',
+      path: '/playbooks', 
+      icon: BookOpen, 
+      label: 'Playbooks',
+      description: 'Response logic'
+    },
+    { 
+      id: 'llmreasoning',
+      path: '/llm-reasoning', 
+      icon: BrainCircuit, 
+      label: 'AI Reasoning',
+      description: 'Agent Logs'
+    },
+    { 
+      id: 'pipeline',
+      path: '/pipeline', 
+      icon: GitBranch, 
+      label: 'AI Pipeline',
+      description: 'Decision flow'
+    },
+    { 
+      id: 'admin',
+      path: '/admin', 
+      icon: Settings, 
+      label: 'Admin',
+      description: 'SOC Command'
+    }
+  ]
 
-    const navItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-        { icon: AlertTriangle, label: 'Incidents', path: '/incidents' },
-        { icon: BookOpen, label: 'Playbooks', path: '/playbooks' },
-        { icon: Brain, label: 'LLM Reasoning', path: '/llm-reasoning' },
-        { icon: GitBranch, label: 'Pipeline', path: '/pipeline' },
-        { icon: Settings, label: 'Admin', path: '/admin' },
-    ];
+  // Filter based on user permissions
+  const visibleNavItems = navItems.filter(item => hasNavItem(item.id))
 
-    return (
-        <aside
-            className="fixed left-0 top-0 bottom-0 w-[240px] flex flex-col z-50 shadow-xl"
-            style={{
-                background: 'linear-gradient(180deg, #003A5C 0%, #002D4A 35%, #002040 65%, #001830 100%)',
-                borderRight: '1px solid rgba(0,174,239,0.08)'
-            }}
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
+
+  return (
+    <motion.div 
+      initial={false}
+      animate={{ width: isCollapsed ? 80 : 260 }}
+      style={{
+        height: '100vh',
+        background: 'linear-gradient(180deg, #00395d 0%, #021425 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        zIndex: 50,
+        boxShadow: '4px 0 24px rgba(0,0,0,0.2)',
+        borderRight: '1px solid rgba(255,255,255,0.05)'
+      }}
+    >
+      {/* Logo Section */}
+      <div style={{ 
+        padding: '24px', 
+        display: 'flex', 
+        flexDirection: isCollapsed ? 'column' : 'row',
+        alignItems: 'center', 
+        gap: isCollapsed ? '16px' : '12px',
+        position: 'relative'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: isCollapsed ? 'auto' : '100%' }}>
+          <div style={{ 
+            width: '36px', 
+            height: '36px', 
+            background: '#00AEEF', 
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: 800,
+            fontSize: '14px',
+            flexShrink: 0
+          }}>CX</div>
+          {!isCollapsed && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{ display: 'flex', flexDirection: 'column' }}
+            >
+              <span style={{ color: 'white', fontWeight: 700, fontSize: '15px', letterSpacing: '0.02em', lineHeight: 1.2 }}>CRYPTIX</span>
+              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', fontWeight: 500 }}>SOC Platform</span>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '9px' }}>v2.4.9</span>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Collapse Toggle */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          style={{
+            position: isCollapsed ? 'relative' : 'absolute',
+            right: isCollapsed ? 'auto' : '16px',
+            top: isCollapsed ? 'auto' : '30px',
+            width: '24px',
+            height: '24px',
+            borderRadius: '50%',
+            background: 'transparent',
+            border: '0.7px solid white',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: 'none',
+            zIndex: 60,
+            flexShrink: 0
+          }}
+          className="hover:bg-white/10 transition-colors"
         >
-            {/* Header / Logo */}
-            <div className="h-16 flex items-center px-6 border-b shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="flex items-center gap-3">
-                    <div style={{
-                        background: 'rgba(0,174,239,0.85)',
-                        color: 'white',
-                        fontWeight: '700',
-                        fontSize: '13px',
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>CX</div>
-                    <div className="flex flex-col">
-                        <h1 style={{ color: 'white', fontWeight: '700', fontSize: '16px' }} className="tracking-tight leading-none">
-                            CRYPTIX
-                        </h1>
-                        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px' }} className="leading-none mt-1">
-                            SOC Platform
-                        </p>
-                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px' }} className="mt-0.5">
-                            v2.4.9
-                        </p>
-                    </div>
+          {isCollapsed ? <ChevronRight size={14} strokeWidth={3} /> : <ChevronLeft size={14} strokeWidth={3} />}
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <div style={{ flex: 1, padding: '12px', overflowY: 'auto', overflowX: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {visibleNavItems.map((item, index) => (
+            <Fragment key={item.path}>
+            <NavLink
+              to={item.path}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px',
+                borderRadius: '10px',
+                color: isActive ? 'white' : 'rgba(255,255,255,0.6)',
+                background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+                textDecoration: 'none',
+                transition: 'all 0.2s',
+                border: isActive ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent'
+              })}
+              className="hover:bg-white/[0.05]"
+            >
+              <item.icon size={20} strokeWidth={isCollapsed ? 2.5 : 2} />
+              {!isCollapsed && (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600 }}>{item.label}</span>
+                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '-2px' }}>{item.description}</span>
                 </div>
+              )}
+            </NavLink>
+            {index < visibleNavItems.length - 1 && (
+              <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.05)', margin: '4px 12px' }} />
+            )}
+            </Fragment>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer / User Info */}
+      <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ padding: '0 4px 12px 4px' }}>
+          <ThemeToggle />
+        </div>
+        
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '12px',
+          background: 'rgba(0,0,0,0.15)',
+          borderRadius: '12px',
+          marginBottom: '8px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, #00AEEF 0%, #0077B6 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontSize: '12px',
+            fontWeight: 700,
+            flexShrink: 0
+          }}>
+            {user?.avatar || 'U'}
+          </div>
+          {!isCollapsed && (
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <span style={{ color: 'white', fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user?.name || 'User'}
+              </span>
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
+                {user?.roleLabel || 'Operator'}
+              </span>
             </div>
+          )}
+        </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto py-4 space-y-0 custom-scrollbar">
-                {navItems.map((item, index) => (
-                    <React.Fragment key={item.path}>
-                        <NavItem item={item} />
-                        {index < navItems.length - 1 && (
-                            <div style={{ margin: '4px 16px', borderTop: '1px solid rgba(255,255,255,0.07)' }} />
-                        )}
-                    </React.Fragment>
-                ))}
-            </nav>
-
-            {/* Footer / User Info */}
-            <div className="p-4 shrink-0 space-y-4" style={{ borderTop: '1px solid rgba(255,255,255,0.07)', background: 'rgba(0,0,0,0.15)' }}>
-                {/* Theme Toggle Button */}
-                <div className="px-1">
-                    <ThemeToggle />
-                </div>
-
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-full bg-[#00AEEF] flex items-center justify-center text-white font-bold text-sm shrink-0">
-                            TU
-                        </div>
-                        <div className="truncate flex flex-col justify-center">
-                            <p className="truncate leading-none" style={{ color: 'white', fontSize: '13px', fontWeight: '500' }}>
-                                testuser
-                            </p>
-                            <p className="truncate mt-1 leading-none" style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px' }}>
-                                Threat Analyst
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={handleLogout}
-                        className="transition-colors shrink-0 group hover:text-white"
-                        title="Logout"
-                    >
-                        <LogOut size={16} className="text-[rgba(255,255,255,0.4)] group-hover:text-white" />
-                    </button>
-                </div>
-            </div>
-        </aside>
-    );
-};
-
-// Internal sub-component for nav items
-const NavItem = ({ item }) => {
-    const location = useLocation();
-    const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path + '/'));
-
-    return (
-        <NavLink
-            to={item.path}
-            className={`flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg transition-all duration-150 group ${isActive
-                ? 'bg-[rgba(0,174,239,0.12)] text-white font-[500]'
-                : 'text-[rgba(255,255,255,0.7)] hover:bg-[rgba(255,255,255,0.06)] hover:text-white'
-                }`}
+        <button
+          onClick={handleLogout}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '12px',
+            background: 'transparent',
+            border: 'none',
+            color: 'rgba(255,255,255,0.6)',
+            cursor: 'pointer',
+            borderRadius: '10px',
+            transition: 'all 0.2s',
+            fontSize: '14px',
+            fontWeight: 600
+          }}
+          className="hover:bg-red-500/10 hover:text-red-300"
         >
-            <item.icon
-                size={20}
-                className={`transition-colors duration-150 ${isActive ? 'text-[#00AEEF]' : 'text-[rgba(255,255,255,0.5)] group-hover:text-white'
-                    }`}
-            />
-            <span>{item.label}</span>
-        </NavLink>
-    );
-};
+          <LogOut size={18} />
+          {!isCollapsed && <span>Logout</span>}
+        </button>
+      </div>
 
-export default Sidebar;
+    </motion.div>
+  )
+}
+
+export default Sidebar

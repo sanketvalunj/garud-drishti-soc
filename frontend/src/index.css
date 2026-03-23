@@ -129,7 +129,7 @@
   }
 
   /* Reset for code elements specifically */
-  code, pre, .font-mono {
+  code, pre, .font-mono, .font-mono * {
     font-family: 'JetBrains Mono', monospace !important;
   }
 }
@@ -293,4 +293,10 @@
   input::placeholder {
     color: var(--text-muted);
   }
-}
+
+  @keyframes blink {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 0; }
+  }
+}
+
