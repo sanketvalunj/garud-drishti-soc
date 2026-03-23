@@ -1,177 +1,310 @@
-"""
-Garud-Drishti — AI SOC Platform
-Log Parser
-
-Parses raw logs in four formats:
-  JSON | Key-Value | CSV | Raw text
-
-Edge cases fixed:
-  EC-01: Truncated/malformed JSON that starts with '{' now falls back
-         to the raw-text parser instead of silently returning None.
-"""
-
+import os
+import sys
 import json
-import re
-import csv
-import io
+import random
 import logging
-from typing import Optional, Dict, Any, List
+import warnings
+from datetime import datetime, timedelta
+from typing import Any
 
-logger = logging.getLogger(__name__)
+import numpy as np
+import pandas as pd
 
-CSV_FIELDS = [
-    "timestamp", "user", "device", "asset", "ip",
-    "event_type", "source", "severity", "session_id",
-    "mitre_technique", "mitre_tactic", "geo_country", "geo_risk",
-    "network_zone", "asset_criticality", "threat_score", "user_risk_score",
-    "attack_chain",
-]
+warnings.filterwarnings("ignore")
 
+# ─────────────────────────────────────────────────────────
+# LOGGING
+# ─────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+log = logging.getLogger("cryptix.log_parser")
 
-# ---------------------------------------------------------------------------
-# Individual format parsers
-# ---------------------------------------------------------------------------
+# ─────────────────────────────────────────────────────────
+# CONFIG (EDIT PATHS HERE)
+# ─────────────────────────────────────────────────────────
+TRAINING_CSV = "data/raw/UNSW_NB15_training-set.csv"
+TESTING_CSV  = "data/raw/UNSW_NB15_testing-set.csv"
+OUTPUT_JSON  = "data/processed/normalized_events.json"
 
-def parse_json(line: str) -> Optional[Dict[str, Any]]:
-    """Parse a JSON log line. Returns None only on truly empty input."""
+OLLAMA_URL = "http://localhost:11434"
+OLLAMA_MODEL = "llama3"
+OLLAMA_TIMEOUT = 30
+
+BASE_TIMESTAMP = datetime(2026, 3, 23, 10, 0, 0)
+
+RANDOM_SEED = 42
+random.seed(RANDOM_SEED)
+np.random.seed(RANDOM_SEED)
+
+# ─────────────────────────────────────────────────────────
+# LLM CACHE
+# ─────────────────────────────────────────────────────────
+LLM_CACHE = {}
+
+# ─────────────────────────────────────────────────────────
+# GEO CACHE (FIXED UEBA CONSISTENCY)
+# ─────────────────────────────────────────────────────────
+USER_GEO = {}
+
+# ─────────────────────────────────────────────────────────
+# LABEL MAPS
+# ─────────────────────────────────────────────────────────
+PROTO_LABELS = {"tcp": "TCP", "udp": "UDP", "icmp": "ICMP", "-": "UNKNOWN"}
+SERVICE_LABELS = {"-": "unknown", "http": "HTTP", "dns": "DNS", "ssh": "SSH"}
+
+# ─────────────────────────────────────────────────────────
+# LOAD + CLEAN
+# ─────────────────────────────────────────────────────────
+def load_and_clean(train_path, test_path):
+    frames = []
+
+    for path, name in [(train_path, "train"), (test_path, "test")]:
+        if os.path.exists(path):
+            df = pd.read_csv(path)
+            df["_source"] = name
+            frames.append(df)
+            log.info(f"{name} loaded: {df.shape}")
+        else:
+            log.warning(f"Missing: {path}")
+
+    if not frames:
+        raise Exception("No CSV files found")
+
+    df = pd.concat(frames, ignore_index=True)
+    df = df.loc[:, ~df.columns.duplicated()]
+
+    for col in df.select_dtypes(include="object"):
+        df[col] = df[col].astype(str).str.strip().replace(
+            {"nan": "unknown", "-": "unknown", "": "unknown"}
+        )
+
+    for col in df.select_dtypes(include=np.number):
+        df[col] = df[col].replace([np.inf, -np.inf], np.nan)
+        df[col] = df[col].fillna(df[col].median())
+
+    return df
+
+# ─────────────────────────────────────────────────────────
+# FLOW → TEXT
+# ─────────────────────────────────────────────────────────
+def flow_to_text(row, user_id, ip):
+    return (
+        f"User {user_id} from IP {ip} initiated a network session. "
+        f"Protocol {row.get('proto')} to {row.get('service')}. "
+        f"Duration {row.get('dur')} seconds. "
+        f"Bytes sent {row.get('sbytes')}, received {row.get('dbytes')}."
+    )
+
+# ─────────────────────────────────────────────────────────
+# OLLAMA ENRICH (FIXED PARSING)
+# ─────────────────────────────────────────────────────────
+def _ollama_enrich(text, attack_cat):
     try:
-        data = json.loads(line.strip())
-        if isinstance(data, dict):
-            return data
-    except (json.JSONDecodeError, ValueError):
-        pass
-    return None
+        import urllib.request
 
+        payload = json.dumps({
+            "model": OLLAMA_MODEL,
+            "prompt": f"Return JSON with mitre_id, threat_type, action:\n{text}",
+            "stream": False
+        }).encode()
 
-def parse_kv(line: str) -> Optional[Dict[str, Any]]:
-    """Parse key=value log line. Handles quoted and unquoted values."""
-    result: Dict[str, Any] = {}
-    pattern = re.compile(r'(\w+)=(?:"([^"]*?)"|(\S+))')
-    for key, quoted, bare in pattern.findall(line):
-        result[key] = quoted if quoted else bare
-    return result if result else None
+        req = urllib.request.Request(
+            f"{OLLAMA_URL}/api/generate",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+        )
 
+        with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as r:
+            out = json.loads(r.read())
 
-def parse_csv(line: str, header: List[str] = None) -> Optional[Dict[str, Any]]:
-    """Parse a CSV log line using the known field list."""
-    fields   = header or CSV_FIELDS
-    stripped = line.strip()
-    if stripped.startswith("timestamp"):      # skip header row
-        return None
-    try:
-        reader = csv.reader(io.StringIO(stripped))
-        row = next(reader, None)
-        if row:
-            return {fields[i]: row[i] for i in range(min(len(fields), len(row)))}
-    except Exception:
-        pass
-    return None
+        raw = out.get("response", "").strip()
 
+        # ✅ FIX: handle markdown JSON
+        if "```" in raw:
+            raw = raw.split("```")[1].strip()
+            if raw.startswith("json"):
+                raw = raw[4:].strip()
 
-_RAW_PATTERNS: List[re.Pattern] = [
-    re.compile(
-        r"\[(?P<timestamp>[^\]]+)\]\s+User\s+(?P<user>\S+)\s+triggered\s+(?P<event_type>\S+)"
-        r"\s+from\s+(?P<ip>\S+)\s+on\s+(?P<asset>\S+)"
-    ),
-    re.compile(r"User\s+(?P<user>\S+)\s+(?P<event_type>login[\w_]+)\s+from\s+(?P<ip>\S+)"),
-    re.compile(r"(?P<user>emp_\d+)\s+performed\s+(?P<event_type>\S+)\s+on\s+(?P<asset>\S+)"),
-    re.compile(
-        r"(?:ALERT|WARN|INFO|ERROR):\s+(?P<event_type>\S+)\s+detected\s+for\s+(?P<user>emp_\d+)"
-    ),
-]
+        return json.loads(raw)
 
+    except Exception as e:
+        log.debug(f"Ollama failed: {e}")
+        return {
+            "mitre_id": None,
+            "threat_type": attack_cat,
+            "action": "alert"
+        }
 
-def parse_raw(line: str) -> Optional[Dict[str, Any]]:
-    """Pattern-match free-text log lines. Always returns at least a minimal dict."""
-    stripped = line.strip()
-    for pattern in _RAW_PATTERNS:
-        m = pattern.search(stripped)
-        if m:
-            result = m.groupdict()
-            result.update({"_raw": stripped, "source": "RAW"})
-            return result
-    return {"_raw": stripped, "source": "RAW", "event_type": "unknown"}
+# ─────────────────────────────────────────────────────────
+# CACHED ENRICH
+# ─────────────────────────────────────────────────────────
+def cached_enrich(text, attack_cat):
+    key = f"{attack_cat.lower()}"   # improved key
 
+    if key in LLM_CACHE:
+        return LLM_CACHE[key]
 
-# ---------------------------------------------------------------------------
-# Auto-detecting dispatcher
-# ---------------------------------------------------------------------------
-
-def detect_format(line: str) -> str:
-    stripped = line.strip()
-    if stripped.startswith("{"):
-        return "json"
-    if re.match(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2},", stripped):
-        return "csv"
-    if re.search(r'\w+=(?:"[^"]*"|\S+)', stripped) and "=" in stripped:
-        return "kv"
-    return "raw"
-
-
-def parse_log_line(line: str) -> Optional[Dict[str, Any]]:
-    """
-    Auto-detect format and parse a single log line.
-
-    EC-01 fix: Lines that start with '{' are tried as JSON first.
-    If JSON parsing fails (truncated, malformed), the line is retried
-    with the raw-text parser rather than being silently dropped.
-    """
-    if not line.strip():
-        return {"_raw": "", "source": "RAW", "event_type": "unknown", "_format": "raw"}
-
-    fmt = detect_format(line)
-
-    parsers = {"json": parse_json, "kv": parse_kv, "csv": parse_csv, "raw": parse_raw}
-    result  = parsers[fmt](line)
-
-    # EC-01: JSON parse failed on a {-prefixed line — fall back to raw parser
-    if result is None and fmt == "json":
-        logger.debug("JSON parse failed, falling back to raw parser: %.120s", line)
-        result = parse_raw(line)
-        if result:
-            result["_format"]       = "raw"
-            result["_json_fallback"] = True
-            return result
-
-    if result is not None:
-        result["_format"] = fmt
-    else:
-        logger.debug("Failed to parse line [fmt=%s]: %.120s", fmt, line)
-
+    result = _ollama_enrich(text, attack_cat)
+    LLM_CACHE[key] = result
     return result
 
+# ─────────────────────────────────────────────────────────
+# ANOMALY DETECTION (FIXED)
+# ─────────────────────────────────────────────────────────
+def compute_anomaly(df):
+    from sklearn.ensemble import IsolationForest
 
-def parse_file(path: str, encoding: str = "utf-8") -> List[Dict[str, Any]]:
-    """Parse all log lines from a file. Skips blank lines."""
-    parsed, errors = [], 0
-    with open(path, "r", encoding=encoding, errors="replace") as fh:
-        for lineno, line in enumerate(fh, start=1):
-            if not line.strip():
-                continue
-            result = parse_log_line(line)
-            if result:
-                result.update({"_source_file": path, "_line": lineno})
-                parsed.append(result)
-            else:
-                errors += 1
-    logger.info("Parsed %d lines from %s (%d errors)", len(parsed), path, errors)
-    return parsed
+    X = df.select_dtypes(include=np.number).fillna(0)
 
+    model = IsolationForest(
+        contamination=0.1,
+        random_state=RANDOM_SEED,
+        n_jobs=-1
+    )
 
+    model.fit(X)
+
+    scores = -model.score_samples(X)
+
+    # ✅ FIX: safe normalization
+    denom = (scores.max() - scores.min())
+    if denom == 0:
+        scores = np.full(len(scores), 0.5)
+    else:
+        scores = (scores - scores.min()) / denom
+
+    return scores
+
+# ─────────────────────────────────────────────────────────
+# IDENTITY
+# ─────────────────────────────────────────────────────────
+_USER_IP = {}
+
+def assign_identity(i, attack_cat):
+    user = f"user_{i % 1000}"
+
+    if user not in _USER_IP:
+        _USER_IP[user] = f"10.0.0.{(i % 254)+1}"
+
+    return user, _USER_IP[user], f"device_{i % 200}"
+
+# ─────────────────────────────────────────────────────────
+# GEO (FIXED CONSISTENCY)
+# ─────────────────────────────────────────────────────────
+CITIES = [
+    ("Pune", 18.52, 73.85),
+    ("Mumbai", 19.07, 72.87),
+    ("Delhi", 28.61, 77.20),
+    ("Bangalore", 12.97, 77.59),
+]
+
+def generate_geo(ip, user):
+    if user not in USER_GEO:
+        USER_GEO[user] = random.choice(CITIES)
+
+    city = USER_GEO[user]
+
+    return {
+        "country": "IN",
+        "city": city[0],
+        "lat": city[1],
+        "lon": city[2]
+    }
+
+# ─────────────────────────────────────────────────────────
+# CONFIDENCE
+# ─────────────────────────────────────────────────────────
+def compute_confidence(label, score):
+    try:
+        label = int(label)
+    except:
+        return 0.5
+
+    if label == 1:
+        return round(0.7 + score * 0.3, 2)
+
+    return round(0.3 * (1 - score), 2)
+
+# ─────────────────────────────────────────────────────────
+# BUILD EVENTS (FIXED LOOP)
+# ─────────────────────────────────────────────────────────
+def build_events(df, scores):
+    events = []
+
+    for i, (idx, row) in enumerate(df.iterrows()):   # ✅ FIXED
+        user, ip, device = assign_identity(i, row.get("attack_cat", "Normal"))
+
+        delta = random.randint(1, 10)
+        ts = BASE_TIMESTAMP + timedelta(seconds=i * delta)
+
+        session_id = f"sess_{user}_{i//10}"
+
+        text = flow_to_text(row, user, ip)
+        enrich = cached_enrich(text, row.get("attack_cat", "Normal"))
+
+        event = {
+            "timestamp": ts.isoformat() + "Z",
+            "event_id": f"evt_{i}",
+
+            "user_id": user,
+            "src_ip": ip,
+            "device_id": device,
+            "session_id": session_id,
+
+            "geo_location": generate_geo(ip, user),
+
+            "event_type": "network_session",
+            "protocol": row.get("proto"),
+            "resource": row.get("service"),
+
+            "bytes_transferred": int(row.get("sbytes", 0)),
+            "bytes_received": int(row.get("dbytes", 0)),
+
+            "session_duration": float(row.get("dur", 0)),
+
+            "attack_category": row.get("attack_cat"),
+            "label": int(row.get("label", 0)),
+
+            "mitre_id": enrich.get("mitre_id"),
+            "threat_type": enrich.get("threat_type"),
+            "action": enrich.get("action"),
+
+            "flow_description": text,
+
+            "anomaly_score": round(scores[i], 4),
+            "confidence": compute_confidence(row.get("label"), scores[i]),
+        }
+
+        events.append(event)
+
+    return events
+
+# ─────────────────────────────────────────────────────────
+# MAIN PIPELINE
+# ─────────────────────────────────────────────────────────
+def run_pipeline():
+    log.info("START PIPELINE")
+
+    df = load_and_clean(TRAINING_CSV, TESTING_CSV)
+    log.info(f"Total rows: {len(df)}")
+
+    scores = compute_anomaly(df)
+
+    events = build_events(df, scores)
+
+    os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
+
+    with open(OUTPUT_JSON, "w") as f:
+        json.dump(events, f, indent=2)
+
+    log.info(f"Saved → {OUTPUT_JSON}")
+    log.info("PIPELINE COMPLETE")
+
+# ─────────────────────────────────────────────────────────
+# ENTRY
+# ─────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    samples = [
-        # Valid JSON
-        '{"timestamp":"2026-03-15T10:11:22","user":"emp_101","event_type":"login_success","source":"IAM"}',
-        # Truncated JSON (EC-01) — should fall back to raw
-        '{"user":"emp_101","event_type":"login_failed"',
-        # KV
-        'user="emp_102" event_type="login_failed" ip="149.178.148.81" source="IAM"',
-        # CSV
-        '2026-03-15T10:11:22,emp_103,hr-desktop,,10.0.0.5,data_access,APP,medium,abc123',
-        # Raw text
-        '[2026-03-15T10:11:22] User emp_104 triggered privilege_escalation from 10.0.0.5 on auth-server',
-    ]
-    for s in samples:
-        r = parse_log_line(s)
-        print(f"fmt={r.get('_format'):4s} fallback={r.get('_json_fallback',False)}  "
-              f"event={r.get('event_type')} user={r.get('user')}")
+    run_pipeline()
