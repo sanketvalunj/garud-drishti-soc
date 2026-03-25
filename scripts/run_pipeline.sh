@@ -1,0 +1,66 @@
+#!/bin/bash
+
+echo "🦅 Launching Garud-Drishti Full Prototype..."
+echo "------------------------------------------"
+
+cd "$(dirname "$0")/.."
+
+# -----------------------
+# Activate virtual env
+# -----------------------
+if [ -d "venv" ]; then
+    source venv/bin/activate
+    echo "✅ Virtual environment activated"
+else
+    echo "❌ venv not found"
+    exit 1
+fi
+
+# -----------------------
+# Ensure imports work
+# -----------------------
+export PYTHONPATH=.
+echo "✅ PYTHONPATH set"
+
+# -----------------------
+# Clean previous outputs
+# -----------------------
+echo "🧹 Cleaning previous data..."
+rm -rf data/incident_records/*
+rm -rf data/model_features/*
+rm -rf data/normalized_events/*
+echo "✅ Clean state ready"
+
+# -----------------------
+# Run pipeline scripts
+# -----------------------
+echo ""
+echo "⚙️ Running SOC pipeline..."
+
+python scripts/generate_fake_logs.py || exit 1
+python scripts/normalize_logs.py || exit 1
+python scripts/extract_features.py || exit 1
+python scripts/detect_anomalies.py || exit 1
+python scripts/generate_incidents.py || exit 1
+python scripts/generate_playbooks.py || exit 1
+
+echo "✅ Pipeline completed"
+
+# -----------------------
+# Start AI engine
+# -----------------------
+echo ""
+echo "🧠 Starting AI Engine..."
+bash scripts/start_ai_engine.sh &
+sleep 2
+
+# -----------------------
+# Start backend
+# -----------------------
+echo ""
+echo "🌐 Starting Backend..."
+echo "Dashboard: http://127.0.0.1:8000"
+echo "Docs:      http://127.0.0.1:8000/docs"
+echo ""
+
+bash scripts/start_backend.sh

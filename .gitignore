@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+app_env/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# Generated data
+garud_drishti/backend/data/processed/

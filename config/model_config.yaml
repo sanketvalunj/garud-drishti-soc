@@ -1,0 +1,16 @@
+llm:
+  provider: "ollama"
+  model_name: "llama3"
+  temperature: 0.2
+  timeout: 120
+  retries: 2
+
+ml:
+  anomaly_model: "isolation_forest"
+  contamination: 0.05
+  random_state: 42
+
+playbook:
+  max_steps: 6
+  allow_automation: false
+  default_severity: "Medium"

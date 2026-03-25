@@ -1,0 +1,89 @@
+{
+  "ingestion_health": {
+    "generated_at": "2026-03-25T16:05:00.561442+00:00",
+    "parsing_time_sec": 2.2479,
+    "mapping_time_sec": 1.1537,
+    "validation_time_sec": 1.1198,
+    "total_pipeline_time_sec": 6.7153,
+    "events_per_second": 3259.0,
+    "total_events": 21754,
+    "valid_events": 10864,
+    "repaired_events": 0,
+    "fallback_events": 0,
+    "duplicates_removed": 10890,
+    "unknown_event_types": {
+      "count": 20,
+      "details": {
+        "unknown [from ENT-001]": 1,
+        "unknown [from ENT-002]": 1,
+        "unknown [from ENT-003]": 1,
+        "unknown [from ENT-004]": 1,
+        "unknown [from ENT-005]": 1,
+        "unknown [from ENT-006]": 1,
+        "unknown [from ENT-007]": 1,
+        "unknown [from ENT-008]": 1,
+        "unknown [from ENT-009]": 1,
+        "unknown [from ENT-010]": 1,
+        "unknown [from ENT-011]": 1,
+        "unknown [from ENT-012]": 1,
+        "unknown [from ENT-013]": 1,
+        "unknown [from ENT-014]": 1,
+        "unknown [from ENT-015]": 1,
+        "unknown [from ENT-016]": 1,
+        "unknown [from ENT-017]": 1,
+        "unknown [from ENT-018]": 1,
+        "unknown [from ENT-019]": 1,
+        "unknown [from ENT-020]": 1
+      }
+    },
+    "missing_users": {
+      "count": 20,
+      "event_ids": [
+        "d276413d-9117-4933-9a87-85cee5a70093",
+        "74841040-c083-48e9-a7ce-5af349838c2b",
+        "9ef8163e-a5aa-46b2-a7f6-7cd158a3e53c",
+        "a41f6e63-310d-4b72-89ce-b77e59ab6042",
+        "20435e9e-f963-484d-a22e-23d72ed55364",
+        "a2bf2fcf-4bc1-444c-9488-37df8cf47ae2",
+        "15243c61-22d5-427e-bcc2-b4a282dd97c9",
+        "85a4d6d7-fd81-42e8-a468-1d6b3a37edc5",
+        "557fd9dc-74db-488e-94af-a6b4b8b0d02a",
+        "ee47a2ce-0707-4dc3-a590-69cda33c1598",
+        "86304a01-43aa-47e7-8dfc-fdae2b2025dd",
+        "b720b4c2-de35-489d-80a2-e31e0426f610",
+        "1a9ee67d-7139-43ef-b952-4cdeca96616b",
+        "dc989195-2714-4d7c-a960-2feedb6e8f4f",
+        "5b98d9a3-b84b-4867-8ed6-6a9c7cdbad2c",
+        "ebb8edfd-55de-41b8-a4c3-cbade1764811",
+        "f4d201bf-466d-4934-8bdf-59a0fcec88e5",
+        "43b9dded-d06b-4e9c-85ce-f0d3bb1e4348",
+        "ecadc3ff-8579-40c4-b360-7f517068fe4f",
+        "558011fe-8732-468b-a4a9-0b52e21fa04a"
+      ]
+    },
+    "by_source": {
+      "BANKING": 1818,
+      "IAM": 3964,
+      "SIEM": 1934,
+      "FIREWALL": 7314,
+      "EDR": 6704,
+      "UNKNOWN": 20
+    },
+    "by_category": {
+      "application": 1818,
+      "authentication": 3964,
+      "detection": 1934,
+      "network": 7314,
+      "endpoint": 6704,
+      "unknown": 20
+    },
+    "by_severity": {
+      "low": 19290,
+      "medium": 462,
+      "critical": 78,
+      "info": 1802,
+      "high": 122
+    },
+    "errors": []
+  }
+}

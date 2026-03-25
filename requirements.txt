@@ -1,0 +1,32 @@
+# ═══════════════════════════════════════════
+# Garud-Drishti AI SOC Platform
+# Python Dependencies
+# ═══════════════════════════════════════════
+
+# Web Framework
+fastapi
+uvicorn[standard]
+pydantic
+pydantic[email]          # Enables EmailStr validation
+
+# Authentication & Security
+python-jose[cryptography] # JWT encoding/decoding (HMAC + RSA support)
+bcrypt                    # Password hashing (constant-time, salted)
+passlib[bcrypt]           # Optional helper; bcrypt used directly here
+
+# Data Processing
+pandas
+numpy
+
+# Storage
+elasticsearch>=8.0.0
+
+# Utilities
+python-dotenv
+tqdm
+
+# Scheduler
+apscheduler
+tzlocal
+
+scikit-learn

@@ -1,0 +1,28 @@
+system:
+  name: "Garud-Drishti SOC"
+  environment: "offline"
+  debug: true
+
+pipeline:
+  enable_ingestion: true
+  enable_detection: true
+  enable_correlation: true
+  enable_reasoning: true
+  enable_playbook: true
+  enable_automation: false   # keep off for demo safety
+
+paths:
+  raw_logs: "data/raw_logs/"
+  normalized_events: "data/normalized_events/"
+  features: "data/model_features/"
+  incidents: "data/incident_records/"
+  graphs: "data/graphs/"
+
+ueba:
+  enabled: true
+  baseline_days: 14
+  sensitivity: "medium"
+
+logging:
+  level: "INFO"
+  file: "logs/system.log"
