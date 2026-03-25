@@ -12,6 +12,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
 import {
   ArrowLeft, Clock, AlertTriangle, Sparkles, GitBranch, Play, Network,
   Users, Server, Wifi, Shield, ShieldAlert, Brain, Scale, TrendingUp,
@@ -233,31 +234,31 @@ const MOCK_INCIDENT = {
   },
 
   graphNodes: [
-    { id: 'ip1', type: 'ip', 
+    { id: 'ip1', type: 'ip',
       label: '203.0.113.45',
       compromised: true,
-      position: { x: 0, y: 60 } },
+      position: { x: 280, y: 0 } },
     { id: 'u1', type: 'user',
       label: 'emp_104',
       compromised: true,
-      position: { x: 180, y: 60 } },
+      position: { x: 280, y: 120 } },
     { id: 's1', type: 'server',
       label: 'auth-server',
       compromised: true,
-      position: { x: 360, y: 60 } },
+      position: { x: 280, y: 240 } },
     { id: 's2', type: 'server',
       label: 'loan-db',
       compromised: true,
-      position: { x: 540, y: 0 } },
+      position: { x: 100, y: 360 } },
     { id: 's3', type: 'server',
       label: 'core-banking',
       compromised: true,
-      position: { x: 540, y: 120 } },
+      position: { x: 460, y: 360 } },
     { id: 's4', type: 'server',
       label: 'swift-terminal',
       compromised: false,
       suspected: true,
-      position: { x: 720, y: 60 } }
+      position: { x: 460, y: 480 } }
   ],
   graphEdges: [
     { id: 'e1', source: 'ip1', target: 'u1', label: 'Login' },
@@ -368,53 +369,34 @@ const CustomNode = ({ data }) => {
       position: 'relative'
     }}>
       
-      {/* Required for edges to connect */}
+      {/* Top handle — target (incoming edges) */}
       <Handle
         type="target"
-        position={Position.Left}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          width: 8,
-          height: 8
-        }}
+        position={Position.Top}
+        style={{ background: 'transparent', border: 'none', width: 8, height: 8 }}
       />
 
-      <Icon
-        size={13}
-        color={statusColor}
-        style={{ marginBottom: '5px' }}
-      />
+      <Icon size={13} color={statusColor} style={{ marginBottom: '5px' }} />
 
       <div style={{
-        fontSize: '8px',
-        color: 'var(--text-muted)',
-        letterSpacing: '0.08em',
-        marginBottom: '4px',
-        textTransform: 'uppercase'
+        fontSize: '8px', color: 'var(--text-muted)',
+        letterSpacing: '0.08em', marginBottom: '4px', textTransform: 'uppercase'
       }}>
         {data.type}
       </div>
 
       <div style={{
-        fontSize: '11px',
-        fontWeight: '700',
-        color: 'var(--text-color)',
-        whiteSpace: 'nowrap'
+        fontSize: '11px', fontWeight: '700',
+        color: 'var(--text-color)', whiteSpace: 'nowrap'
       }}>
         {data.label}
       </div>
 
-      {/* Required for edges to connect */}
+      {/* Bottom handle — source (outgoing edges) */}
       <Handle
         type="source"
-        position={Position.Right}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          width: 8,
-          height: 8
-        }}
+        position={Position.Bottom}
+        style={{ background: 'transparent', border: 'none', width: 8, height: 8 }}
       />
     </div>
   )
@@ -436,12 +418,19 @@ const IncidentDetail = () => {
   const navigate = useNavigate()
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
+  const { user } = useAuth()
+
+  const RECIPIENTS = [
+    { id: 'ciso', label: 'CISO' },
+    { id: 'lead', label: 'Security Lead' },
+    { id: 'compliance', label: 'Compliance Officer' }
+  ]
   const [incident] = useState(MOCK_INCIDENT)
   const [activeStep, setActiveStep] = useState(null)
   const [loading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showAllEntities, setShowAllEntities] = useState(false)
-  
+
   const [showActivateModal, setShowActivateModal] = useState(false)
   const [showEscalateModal, setShowEscalateModal] = useState(false)
   const [isActivating, setIsActivating] = useState(false)
@@ -452,6 +441,15 @@ const IncidentDetail = () => {
   )
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+
+  // Change 1 — Activation Terminal
+  const [showActivationTerminal, setShowActivationTerminal] = useState(false)
+  const [terminalLines, setTerminalLines] = useState([])
+  const terminalBodyRef = useRef(null)
+
+  // Change 2 — Narrative typing animation
+  const [displayedNarrative, setDisplayedNarrative] = useState('')
+  const fullNarrative = incident.narrative
 
   const playbookRef = useRef(null)
 
@@ -524,6 +522,27 @@ const IncidentDetail = () => {
     setEdges(graphEdges)
   }, [graphNodes, graphEdges, setNodes, setEdges])
 
+  // Typing animation for narrative (Change 2)
+  useEffect(() => {
+    let i = 0
+    const interval = setInterval(() => {
+      if (i < fullNarrative.length) {
+        setDisplayedNarrative(fullNarrative.slice(0, i + 1))
+        i++
+      } else {
+        clearInterval(interval)
+      }
+    }, 18)
+    return () => clearInterval(interval)
+  }, [fullNarrative])
+
+  // Auto-scroll terminal body on new lines
+  useEffect(() => {
+    if (terminalBodyRef.current) {
+      terminalBodyRef.current.scrollTop = terminalBodyRef.current.scrollHeight
+    }
+  }, [terminalLines])
+
   const [stepStatuses, setStepStatuses] = useState(
     Object.fromEntries(incident.playbook.steps.map(s => [s.id, 'pending']))
   )
@@ -535,67 +554,68 @@ const IncidentDetail = () => {
     }))
   }
 
+  const addTerminalLine = (line, delay) => {
+    setTimeout(() => {
+      setTerminalLines(prev => [...prev, line])
+    }, delay)
+  }
+
   const handleActivateResponse = async () => {
     setShowActivateModal(false)
-    
-    // Scroll to playbook section
-    setTimeout(() => {
-      playbookRef.current?.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      })
-    }, 300)
-    
+    setShowActivationTerminal(true)
+    setTerminalLines([])
     setIsActivating(true)
-    
-    // Get automated steps
-    const automatedSteps = incident.playbook.steps
-      .filter(s => s.type === 'automated')
-    
-    // Execute each automated step with delay
-    for (const step of automatedSteps) {
-      // Show spinner on this step
-      setStepStatuses(prev => ({
-        ...prev,
-        [step.id]: 'running'
-      }))
-      
-      // Simulate execution time
-      await new Promise(resolve => 
-        setTimeout(resolve, 1500)
-      )
-      
-      // Mark as completed
-      setStepStatuses(prev => ({
-        ...prev,
-        [step.id]: 'completed'
-      }))
-    }
-    
+
+    addTerminalLine('$ cryptix-response --incident INC-2091', 100)
+    addTerminalLine('> Initializing response engine...', 200)
+    addTerminalLine('> Connecting to IAM API...', 600)
+    addTerminalLine('> [STEP 1] Isolating emp_104...', 1000)
+
+    setStepStatuses(prev => ({ ...prev, [1]: 'running' }))
+    await new Promise(r => setTimeout(r, 1500))
+    setStepStatuses(prev => ({ ...prev, [1]: 'completed' }))
+    addTerminalLine('[OK] emp_104 suspended -- sessions revoked', 2600)
+
+    addTerminalLine('> [STEP 2] Blocking 203.0.113.45...', 2800)
+    setStepStatuses(prev => ({ ...prev, [2]: 'running' }))
+    await new Promise(r => setTimeout(r, 1500))
+    setStepStatuses(prev => ({ ...prev, [2]: 'completed' }))
+    addTerminalLine('[OK] IP blocked at perimeter firewall', 4400)
+
+    addTerminalLine('> [STEP 3] Revoking auth sessions...', 4600)
+    setStepStatuses(prev => ({ ...prev, [3]: 'running' }))
+    await new Promise(r => setTimeout(r, 1500))
+    setStepStatuses(prev => ({ ...prev, [3]: 'completed' }))
+    addTerminalLine('[OK] All sessions on auth-server terminated', 6200)
+
+    addTerminalLine('', 6400)
+    addTerminalLine('> Automated steps complete.', 6600)
+    addTerminalLine('> Manual steps require analyst action.', 6900)
+    addTerminalLine('[OK] Incident status -> CONTAINED', 7200)
+    addTerminalLine('> Audit trail updated.', 7500)
+
     setIsActivating(false)
-    
-    // Update incident status
     setIncidentStatus('contained')
+
+    setTimeout(() => {
+      playbookRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 300)
   }
+
+  const escalationTarget = user?.role === 'tier1' ? 'Tier 2' : 'Tier 3'
 
   const handleEscalate = () => {
     setShowEscalateModal(false)
     setIncidentStatus('escalated')
     
-    const recipients = [
-      { id: 'ciso', label: 'CISO' },
-      { id: 'lead', label: 'Security Lead' },
-      { id: 'compliance', label: 'Compliance Officer' }
-    ]
+    const notifiedList = escalateRecipients
+      .map(r => RECIPIENTS.find(x => x.id === r)?.label)
+      .filter(Boolean)
+      .join(', ')
 
     // Show toast notification
     setToastMessage(
-      `Incident escalated to ${
-        escalateRecipients
-          .map(r => recipients.find(x => x.id === r)?.label)
-          .filter(Boolean)
-          .join(', ')
-      }`
+      `Incident escalated to ${escalationTarget}${notifiedList ? ` — notified ${notifiedList}` : ''}`
     )
     setShowToast(true)
     setTimeout(() => setShowToast(false), 4000)
@@ -612,6 +632,20 @@ const IncidentDetail = () => {
   }
 
   if (loading) return null
+
+  // Change 4 — Plain English explanation helper
+  const getPlainEnglishExplanation = (score, factors) => {
+    const deviation = factors.find(f => f.label === 'Behavioral Deviation')?.score || 0
+    const criticality = factors.find(f => f.label === 'Asset Criticality')?.score || 0
+    const similarity = factors.find(f => f.label === 'Historical Similarity')?.score || 0
+    return `CRYPTIX is ${Math.round(score * 100)}% confident this is a real attack. The user's behavior was ${
+      deviation >= 0.8 ? 'extremely unusual' : deviation >= 0.5 ? 'suspicious' : 'slightly unusual'
+    } compared to their baseline (${Math.round(deviation * 100)}% deviation). The systems targeted are ${
+      criticality >= 0.8 ? 'business-critical' : 'important'
+    } banking infrastructure (${Math.round(criticality * 100)}% criticality). This pattern closely matches ${
+      similarity >= 0.7 ? 'known attack signatures' : 'some known patterns'
+    } in our threat database (${Math.round(similarity * 100)}% match).`
+  }
 
   const glassStyle = {
     background: 'var(--surface-color)',
@@ -726,44 +760,47 @@ const IncidentDetail = () => {
           </div>
 
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            {incidentStatus === 'escalated' ? (
-              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', color: '#D97706' }}>
-                <CheckCircle2 size={14} />
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>Escalated</span>
-              </div>
-            ) : (
-              <button 
-                onClick={() => setShowEscalateModal(true)}
-                style={{
-                  background: 'transparent',
-                  border: '1.5px solid rgba(217,119,6,0.3)',
-                  color: '#D97706',
-                  borderRadius: '8px',
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  transition: 'all 0.15s ease'
-                }}
-                onMouseEnter={(e) => { 
-                  e.currentTarget.style.background = '#D97706';
-                  e.currentTarget.style.color = 'white';
-                  const icon = e.currentTarget.querySelector('svg');
-                  if (icon) icon.style.stroke = 'white';
-                }}
-                onMouseLeave={(e) => { 
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#D97706';
-                  const icon = e.currentTarget.querySelector('svg');
-                  if (icon) icon.style.stroke = '#D97706';
-                }}
-              >
-                <AlertTriangle size={14} color="#D97706" style={{ transition: 'stroke 0.15s ease' }} />
-                Escalate
-              </button>
+            {/* Role-based escalation: Tier 1 → Tier 2, Tier 2 → Tier 3, Tier 3 → hidden */}
+            {user?.role !== 'tier3' && (
+              incidentStatus === 'escalated' ? (
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', color: '#D97706' }}>
+                  <CheckCircle2 size={14} />
+                  <span style={{ fontSize: '13px', fontWeight: 600 }}>Escalated</span>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setShowEscalateModal(true)}
+                  style={{
+                    background: 'transparent',
+                    border: '1.5px solid rgba(217,119,6,0.3)',
+                    color: '#D97706',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => { 
+                    e.currentTarget.style.background = '#D97706';
+                    e.currentTarget.style.color = 'white';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.stroke = 'white';
+                  }}
+                  onMouseLeave={(e) => { 
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = '#D97706';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.stroke = '#D97706';
+                  }}
+                >
+                  <AlertTriangle size={14} color="#D97706" style={{ transition: 'stroke 0.15s ease' }} />
+                  Escalate
+                </button>
+              )
             )}
 
             <button
@@ -833,26 +870,45 @@ const IncidentDetail = () => {
           >
             {/* AI Narrative */}
             <div style={{ ...glassStyle, borderLeft: '3px solid rgba(0,174,239,0.3)', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Incident Narrative</div>
                 <div style={{
-                  background: 'rgba(0,174,239,0.08)',
-                  border: '1px solid rgba(0,174,239,0.15)',
-                  borderRadius: '20px',
-                  padding: '3px 10px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: '#00AEEF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
+                  background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.15)',
+                  borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, color: '#00AEEF',
+                  display: 'flex', alignItems: 'center', gap: '4px'
                 }}>
                   <Sparkles size={11} />
                   AI Generated
                 </div>
               </div>
+
+              {/* Ollama Attribution Row (Change 2) */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12,
+                padding: '8px 12px', borderRadius: 8,
+                background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                border: '1px solid var(--glass-border)'
+              }}>
+                <Brain size={12} color="#00AEEF" />
+                <span style={{ fontSize: 10, color: '#00AEEF', fontWeight: 600 }}>Generated by Ollama</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>·</span>
+                <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)' }}>Llama 3.1 8B</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>·</span>
+                <span style={{ fontSize: 10, color: '#15803D', fontWeight: 600 }}>Offline</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>·</span>
+                <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)' }}>2,847 tokens</span>
+              </div>
+
               <div style={{ fontSize: '14px', lineHeight: 1.8, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                {incident.narrative}
+                {displayedNarrative}
+                {displayedNarrative.length < fullNarrative.length && (
+                  <span style={{
+                    display: 'inline-block', width: '2px', height: '14px',
+                    background: 'var(--text-color)',
+                    animation: 'blink 0.7s step-end infinite',
+                    verticalAlign: 'text-bottom', marginLeft: 2
+                  }} />
+                )}
               </div>
             </div>
 
@@ -985,7 +1041,8 @@ const IncidentDetail = () => {
               padding: '20px',
               marginBottom: '20px',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              flex: 1
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -1005,24 +1062,25 @@ const IncidentDetail = () => {
                   </div>
                 </div>
 
-                <div style={{ height: '360px', width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--glass-border)', background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)' }}>
+                <div style={{ flex: 1, minHeight: 420, width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--glass-border)', background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)', position: 'relative' }}>
+                  {/* Entry Point label */}
+                  <div style={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: 'var(--text-muted)', zIndex: 10, pointerEvents: 'none', letterSpacing: '0.05em' }}>Entry Point ↓</div>
+                  {/* Target Systems label */}
+                  <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: 'var(--text-muted)', zIndex: 10, pointerEvents: 'none', letterSpacing: '0.05em' }}>↓ Target Systems</div>
                   <ReactFlow
-                  nodes={nodes}
-                  edges={edges}
-                  onNodesChange={onNodesChange}
-                  onEdgesChange={onEdgesChange}
-                  nodeTypes={nodeTypes}
-                  fitView={true}
-                  fitViewOptions={{ 
-                    padding: 0.3,
-                    minZoom: 0.5,
-                    maxZoom: 1.5
-                  }}
-                  minZoom={0.3}
-                  maxZoom={2}
-                  proOptions={{ hideAttribution: true }}
-                  style={{ width: '100%', height: '100%' }}
-                >
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    nodeTypes={nodeTypes}
+                    fitView={true}
+                    fitViewOptions={{ padding: 0.15 }}
+                    onInit={(instance) => { setTimeout(() => { instance.fitView({ padding: 0.15 }) }, 100) }}
+                    minZoom={0.3}
+                    maxZoom={2}
+                    proOptions={{ hideAttribution: true }}
+                    style={{ width: '100%', height: '100%' }}
+                  >
                   <Background
                     color={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'} 
                     variant="dots" 
@@ -1088,6 +1146,7 @@ const IncidentDetail = () => {
                 </div>
               </div>
 
+              {/* Factors */}
               <div style={{ marginTop: '20px', borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
                 {incident.fidelityFactors.map((factor) => (
                   <div key={factor.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -1108,6 +1167,14 @@ const IncidentDetail = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Plain English Explanation (Change 4) */}
+              <div style={{ borderTop: '1px solid var(--glass-border)', marginTop: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10, marginTop: 14 }}>How this score was calculated</div>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
+                  {getPlainEnglishExplanation(incident.fidelityScore, incident.fidelityFactors)}
+                </p>
               </div>
             </div>
 
@@ -1318,6 +1385,92 @@ const IncidentDetail = () => {
             </div>
           </motion.div>
         </div>
+
+        {/* ACTIVATION TERMINAL (Change 1) — shown above playbook */}
+        <AnimatePresence>
+          {showActivationTerminal && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              style={{ marginBottom: 20, overflow: 'hidden' }}
+            >
+              <div style={{
+                background: '#0A0F1A', border: '1px solid rgba(0,174,239,0.2)',
+                borderRadius: 12, overflow: 'hidden'
+              }}>
+                {/* Terminal header */}
+                <div style={{
+                  background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.08)',
+                  padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12
+                }}>
+                  <div style={{ 
+                    display: 'flex', gap: 6, fontSize: '10px', color: 'rgba(255,255,255,0.2)', 
+                    fontFamily: "'JetBrains Mono', monospace" 
+                  }} className="font-mono">
+                    [ TERMINAL ]
+                  </div>
+                  <span style={{ 
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.4)', 
+                    letterSpacing: '0.05em' 
+                  }} className="font-mono">
+                    CRYPTIX INTERACTIVE SHELL v1.0.4 -- INC-2091
+                  </span>
+                </div>
+                {/* Terminal body */}
+                <div ref={terminalBodyRef} style={{
+                  padding: '16px 20px', maxHeight: 200, overflowY: 'auto',
+                  fontFamily: "'JetBrains Mono', monospace", fontSize: 13, lineHeight: 1.6
+                }} className="font-mono">
+                  {terminalLines.map((line, i) => (
+                    line === '' ? (
+                      <div key={i} style={{ height: 8 }} />
+                    ) : (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -4 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.15 }}
+                        style={{
+                          fontFamily: "inherit",
+                          color: line.startsWith('[OK]') ? '#4EC9B0'
+                            : line.startsWith('$') ? '#00AEEF'
+                            : line.startsWith('>') ? 'rgba(204,204,204,0.9)'
+                            : 'rgba(204,204,204,0.7)'
+                        }}
+                      >
+                        {line}
+                      </motion.div>
+                    )
+                  ))}
+                  {isActivating && (
+                    <span style={{
+                      display: 'inline-block', width: 8, height: 14,
+                      background: '#00AEEF',
+                      fontFamily: 'inherit',
+                      animation: 'blink 1s step-end infinite',
+                      verticalAlign: 'text-bottom', marginLeft: 4
+                    }} />
+                  )}
+                  {!isActivating && (
+                    <div style={{ marginTop: 8, textAlign: 'right' }}>
+                      <button
+                        onClick={() => setShowActivationTerminal(false)}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: 'rgba(255,255,255,0.3)', fontSize: 11
+                        }}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* PLAYBOOK PANEL - Full Width */}
         <div ref={playbookRef} style={{ ...glassStyle, borderLeft: '3px solid rgba(0,174,239,0.3)', marginBottom: '20px' }}>
@@ -1889,7 +2042,9 @@ const IncidentDetail = () => {
               <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <AlertTriangle size={16} color="#D97706" />
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-color)' }}>Escalate Incident</div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-color)' }}>
+                    Escalate Incident
+                  </div>
                 </div>
                 <button onClick={() => setShowEscalateModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                   <X size={18} />
@@ -1916,13 +2071,9 @@ const IncidentDetail = () => {
                 </div>
 
                 <div>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px' }}>Notify</div>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px' }}>Notify (optional)</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {[
-                      { id: 'ciso', label: 'CISO' },
-                      { id: 'lead', label: 'Security Lead' },
-                      { id: 'compliance', label: 'Compliance Officer' }
-                    ].map(recipient => {
+                    {RECIPIENTS.map(recipient => {
                       const isSelected = escalateRecipients.includes(recipient.id)
                       return (
                         <div 
@@ -1971,16 +2122,15 @@ const IncidentDetail = () => {
                 </button>
                 <button
                   onClick={handleEscalate}
-                  disabled={escalateRecipients.length === 0}
                   style={{
                     background: '#D97706', color: 'white', border: 'none',
                     borderRadius: '8px', padding: '9px 20px', fontSize: '13px',
-                    fontWeight: 700, cursor: 'pointer', opacity: escalateRecipients.length === 0 ? 0.5 : 1,
+                    fontWeight: 700, cursor: 'pointer', opacity: 1,
                     display: 'flex', alignItems: 'center', gap: '8px'
                   }}
                 >
                   <AlertTriangle size={14} />
-                  Escalate Now
+                  Escalate
                 </button>
               </div>
             </motion.div>

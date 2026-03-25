@@ -58,11 +58,11 @@ const Sidebar = () => {
       description: 'Decision flow'
     },
     { 
-      id: 'admin',
-      path: '/admin', 
+      id: 'activity',
+      path: '/activity', 
       icon: Settings, 
-      label: 'Admin',
-      description: 'SOC Command'
+      label: 'My Activity',
+      description: 'Performance Metrics'
     }
   ]
 
@@ -191,70 +191,8 @@ const Sidebar = () => {
 
       {/* Footer / User Info */}
       <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-        <div style={{ padding: '0 4px 12px 4px' }}>
-          <ThemeToggle />
-        </div>
-        
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '12px',
-          background: 'rgba(0,0,0,0.15)',
-          borderRadius: '12px',
-          marginBottom: '8px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '8px',
-            background: 'linear-gradient(135deg, #00AEEF 0%, #0077B6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '12px',
-            fontWeight: 700,
-            flexShrink: 0
-          }}>
-            {user?.avatar || 'U'}
-          </div>
-          {!isCollapsed && (
-            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-              <span style={{ color: 'white', fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user?.name || 'User'}
-              </span>
-              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
-                {user?.roleLabel || 'Operator'}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={handleLogout}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '12px',
-            background: 'transparent',
-            border: 'none',
-            color: 'rgba(255,255,255,0.6)',
-            cursor: 'pointer',
-            borderRadius: '10px',
-            transition: 'all 0.2s',
-            fontSize: '14px',
-            fontWeight: 600
-          }}
-          className="hover:bg-red-500/10 hover:text-red-300"
-        >
-          <LogOut size={18} />
-          {!isCollapsed && <span>Logout</span>}
-        </button>
+        <ThemeToggle />
       </div>
-
     </motion.div>
   )
 }

@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
     Search, ExternalLink,
     ShieldOff, CheckCircle2, Sparkles,
-    GitBranch, Clock, ArrowRight, ChevronDown, ChevronUp, Check
+    GitBranch, Clock, ArrowRight, ChevronDown, ChevronUp, Check, Brain
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -24,7 +24,12 @@ export const mockIncidents = [
         summary: 'User emp_104 initiated suspicious activity from external IP, moved laterally to core-banking via auth-server.',
         killChainStage: 3,
         entities: ['emp_104', 'auth-server', 'core-banking', '203.0.113.45'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.91 },
+            { label: 'Criticality', score: 0.85 },
+            { label: 'Similarity', score: 0.79 }
+        ]
     },
     {
         id: 'INC-2090',
@@ -40,7 +45,12 @@ export const mockIncidents = [
         summary: 'Unusual remote service usage detected between auth-server and loan-db-01.',
         killChainStage: 2,
         entities: ['auth-server', 'loan-db-01'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.68 },
+            { label: 'Criticality', score: 0.72 },
+            { label: 'Similarity', score: 0.55 }
+        ]
     },
     {
         id: 'INC-2089',
@@ -56,7 +66,12 @@ export const mockIncidents = [
         summary: 'Large data transfer detected from db_admin to external IP outside business hours.',
         killChainStage: 5,
         entities: ['db_admin', '198.51.100.22'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.94 },
+            { label: 'Criticality', score: 0.90 },
+            { label: 'Similarity', score: 0.88 }
+        ]
     },
     {
         id: 'INC-2088',
@@ -72,7 +87,12 @@ export const mockIncidents = [
         summary: 'Multiple failed login attempts detected on VPN gateway from single IP.',
         killChainStage: 1,
         entities: ['vpn_gateway', '203.0.113.99'],
-        playbookGenerated: false
+        playbookGenerated: false,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.42 },
+            { label: 'Criticality', score: 0.48 },
+            { label: 'Similarity', score: 0.40 }
+        ]
     },
     {
         id: 'INC-2087',
@@ -88,7 +108,12 @@ export const mockIncidents = [
         summary: 'Login from unusual location detected for emp_221 outside working hours.',
         killChainStage: 1,
         entities: ['emp_221', '10.0.0.45'],
-        playbookGenerated: false
+        playbookGenerated: false,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.35 },
+            { label: 'Criticality', score: 0.40 },
+            { label: 'Similarity', score: 0.32 }
+        ]
     },
     {
         id: 'INC-2086',
@@ -104,7 +129,12 @@ export const mockIncidents = [
         summary: 'Service account used to escalate privileges on file server.',
         killChainStage: 3,
         entities: ['svc_account_01', 'file-server-02'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.80 },
+            { label: 'Criticality', score: 0.75 },
+            { label: 'Similarity', score: 0.72 }
+        ]
     },
     {
         id: 'INC-2085',
@@ -120,7 +150,12 @@ export const mockIncidents = [
         summary: 'Powershell execution detected with encoded command on user endpoint.',
         killChainStage: 2,
         entities: ['user_laptop_88', '10.0.1.88'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.93 },
+            { label: 'Criticality', score: 0.89 },
+            { label: 'Similarity', score: 0.85 }
+        ]
     },
     {
         id: 'INC-2084',
@@ -136,7 +171,12 @@ export const mockIncidents = [
         summary: 'Unusual script execution on production web server.',
         killChainStage: 2,
         entities: ['web_server_prod'],
-        playbookGenerated: false
+        playbookGenerated: false,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.44 },
+            { label: 'Criticality', score: 0.38 },
+            { label: 'Similarity', score: 0.40 }
+        ]
     },
     {
         id: 'INC-2083',
@@ -152,7 +192,12 @@ export const mockIncidents = [
         summary: 'Sensitive financial records accessed and transferred externally.',
         killChainStage: 5,
         entities: ['finance_user_03', '185.220.101.45', 'finance-db'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.90 },
+            { label: 'Criticality', score: 0.86 },
+            { label: 'Similarity', score: 0.82 }
+        ]
     },
     {
         id: 'INC-2082',
@@ -168,7 +213,12 @@ export const mockIncidents = [
         summary: 'Unauthorized access attempt on SWIFT terminal from internal IP.',
         killChainStage: 3,
         entities: ['swift-terminal', '10.0.2.15'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.75 },
+            { label: 'Criticality', score: 0.70 },
+            { label: 'Similarity', score: 0.68 }
+        ]
     },
     {
         id: 'INC-2081',
@@ -184,7 +234,12 @@ export const mockIncidents = [
         summary: 'Automated brute force attack on admin portal detected and blocked.',
         killChainStage: 1,
         entities: ['admin_portal', '198.51.100.55'],
-        playbookGenerated: false
+        playbookGenerated: false,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.58 },
+            { label: 'Criticality', score: 0.52 },
+            { label: 'Similarity', score: 0.54 }
+        ]
     },
     {
         id: 'INC-2080',
@@ -200,7 +255,12 @@ export const mockIncidents = [
         summary: 'Login from new device detected for emp_089.',
         killChainStage: 1,
         entities: ['emp_089'],
-        playbookGenerated: false
+        playbookGenerated: false,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.36 },
+            { label: 'Criticality', score: 0.30 },
+            { label: 'Similarity', score: 0.32 }
+        ]
     }
 ];
 
@@ -1081,12 +1141,70 @@ const Incidents = () => {
 
                                                     {/* Block 2: AI Summary */}
                                                     <div style={{ marginTop: 16 }}>
-                                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                                                             <Sparkles size={11} color="#00AEEF" />
                                                             AI Analysis
                                                         </div>
+
+                                                        {/* Ollama Header */}
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            gap: '8px',
+                                                            alignItems: 'center',
+                                                            marginBottom: '8px',
+                                                            padding: '6px 10px',
+                                                            borderRadius: '6px',
+                                                            background: isDark ? 'rgba(0,174,239,0.04)' : 'rgba(0,174,239,0.03)',
+                                                            border: '1px solid rgba(0,174,239,0.1)'
+                                                        }}>
+                                                            <Brain size={11} color="#00AEEF" />
+                                                            <span style={{ fontSize: '10px', fontWeight: 600, color: '#00AEEF', fontFamily: 'monospace' }}>
+                                                                Ollama · Llama 3.1 8B
+                                                            </span>
+                                                            <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>·</span>
+                                                            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Offline inference</span>
+                                                            <span style={{ color: 'var(--text-muted)' }}>·</span>
+                                                            <span style={{
+                                                                fontSize: '10px',
+                                                                fontFamily: 'monospace',
+                                                                color: getFidelityColor(incident.fidelityScore),
+                                                                fontWeight: 600
+                                                            }}>
+                                                                {Math.round(incident.fidelityScore * 100)}% confidence
+                                                            </span>
+                                                        </div>
+
                                                         <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, fontStyle: 'italic' }}>
                                                             {incident.summary}
+                                                        </div>
+
+                                                        {/* Scoring Breakdown Row */}
+                                                        <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
+                                                            {incident.fidelityFactors?.map(factor => {
+                                                                const factorColor = getFidelityColor(factor.score);
+                                                                return (
+                                                                    <div key={factor.label} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                                                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{factor.label}:</span>
+                                                                        <div style={{
+                                                                            width: '40px',
+                                                                            height: '3px',
+                                                                            borderRadius: '2px',
+                                                                            background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                                                                            overflow: 'hidden'
+                                                                        }}>
+                                                                            <div style={{
+                                                                                height: '100%',
+                                                                                width: `${factor.score * 100}%`,
+                                                                                background: factorColor,
+                                                                                borderRadius: '2px'
+                                                                            }} />
+                                                                        </div>
+                                                                        <span style={{ fontSize: '10px', fontFamily: 'monospace', color: factorColor, fontWeight: 600 }}>
+                                                                            {Math.round(factor.score * 100)}%
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
                                                     </div>
 

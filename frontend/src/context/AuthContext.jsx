@@ -19,91 +19,91 @@ const MOCK_USERS = {
       canViewAuditTrail: false,
       canRunPipelinePage: false
     },
-    navItems: [
-      'dashboard',
-      'incidents',
-      'admin'
-    ]
-  },
-  tier2: {
-    id: 'U002',
-    name: 'testuser',
-    roleLabel: 'Incident Responder',
-    role: 'tier2',
-    avatar: 'TU',
-    department: 'SOC Operations',
-    permissions: {
-      canActivateResponse: true,
-      canIsolateUser: true,
-      canRunPipeline: false,
-      canViewReasoning: true,
-      canViewPlaybooks: true,
-      canAccessAdmin: true,
-      canManageUsers: false,
-      canViewAuditTrail: false,
-      canRunPipelinePage: false
-    },
-    navItems: [
-      'dashboard',
-      'incidents',
-      'playbooks',
-      'llmreasoning',
-      'admin'
-    ]
-  },
-  tier3: {
-    id: 'U003',
-    name: 'James Okafor',
-    roleLabel: 'Threat Hunter',
-    role: 'tier3',
-    avatar: 'JO',
-    department: 'SOC Operations',
-    permissions: {
-      canActivateResponse: true,
-      canIsolateUser: true,
-      canRunPipeline: true,
-      canViewReasoning: true,
-      canViewPlaybooks: true,
-      canAccessAdmin: true,
-      canManageUsers: false,
-      canViewAuditTrail: false,
-      canRunPipelinePage: true
-    },
-    navItems: [
-      'dashboard',
-      'incidents',
-      'playbooks',
-      'llmreasoning',
-      'pipeline',
-      'admin'
-    ]
-  },
-  manager: {
-    id: 'U004',
-    name: 'Priya Sharma',
-    roleLabel: 'SOC Manager',
-    role: 'manager',
-    avatar: 'PS',
-    department: 'SOC Leadership',
-    permissions: {
-      canActivateResponse: true,
-      canIsolateUser: true,
-      canRunPipeline: true,
-      canViewReasoning: true,
-      canViewPlaybooks: true,
-      canAccessAdmin: true,
-      canManageUsers: true,
-      canViewAuditTrail: true,
-      canRunPipelinePage: true
-    },
-    navItems: [
-      'dashboard',
-      'incidents',
-      'playbooks',
-      'llmreasoning',
-      'pipeline',
-      'admin'
-    ]
+     navItems: [
+       'dashboard',
+       'incidents',
+       'activity'
+     ]
+   },
+   tier2: {
+     id: 'U002',
+     name: 'testuser',
+     roleLabel: 'Incident Responder',
+     role: 'tier2',
+     avatar: 'TU',
+     department: 'SOC Operations',
+     permissions: {
+       canActivateResponse: true,
+       canIsolateUser: true,
+       canRunPipeline: false,
+       canViewReasoning: true,
+       canViewPlaybooks: true,
+       canAccessAdmin: true,
+       canManageUsers: false,
+       canViewAuditTrail: false,
+       canRunPipelinePage: false
+     },
+     navItems: [
+       'dashboard',
+       'incidents',
+       'playbooks',
+       'llmreasoning',
+       'activity'
+     ]
+   },
+   tier3: {
+     id: 'U003',
+     name: 'James Okafor',
+     roleLabel: 'Threat Hunter',
+     role: 'tier3',
+     avatar: 'JO',
+     department: 'SOC Operations',
+     permissions: {
+       canActivateResponse: true,
+       canIsolateUser: true,
+       canRunPipeline: true,
+       canViewReasoning: true,
+       canViewPlaybooks: true,
+       canAccessAdmin: true,
+       canManageUsers: false,
+       canViewAuditTrail: false,
+       canRunPipelinePage: true
+     },
+     navItems: [
+       'dashboard',
+       'incidents',
+       'playbooks',
+       'llmreasoning',
+       'pipeline',
+       'activity'
+     ]
+   },
+   manager: {
+     id: 'U004',
+     name: 'Priya Sharma',
+     roleLabel: 'SOC Manager',
+     role: 'manager',
+     avatar: 'PS',
+     department: 'SOC Leadership',
+     permissions: {
+       canActivateResponse: true,
+       canIsolateUser: true,
+       canRunPipeline: true,
+       canViewReasoning: true,
+       canViewPlaybooks: true,
+       canAccessAdmin: true,
+       canManageUsers: true,
+       canViewAuditTrail: true,
+       canRunPipelinePage: true
+     },
+     navItems: [
+       'dashboard',
+       'incidents',
+       'playbooks',
+       'llmreasoning',
+       'pipeline',
+       'activity'
+     ]
   }
 }
 

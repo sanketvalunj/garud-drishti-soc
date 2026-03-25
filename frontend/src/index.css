@@ -298,5 +298,90 @@
     0%, 100% { opacity: 0.8; }
     50% { opacity: 0; }
   }
+
+  @keyframes border-travel {
+    0% {
+      --angle: 0deg;
+    }
+    100% {
+      --angle: 360deg;
+    }
+  }
+
+  @property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  .pipeline-card-running {
+    position: relative;
+    border: none !important;
+  }
+
+  .pipeline-card-running::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 14px;
+    padding: 2px;
+    background: conic-gradient(
+      from var(--angle),
+      transparent 0deg,
+      transparent 270deg,
+      rgba(0, 174, 239, 0.9) 300deg,
+      rgba(0, 174, 239, 1) 330deg,
+      rgba(255, 255, 255, 0.8) 345deg,
+      rgba(0, 174, 239, 1) 355deg,
+      rgba(0, 174, 239, 0.9) 360deg
+    );
+    animation: border-travel 4s linear infinite;
+    -webkit-mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    z-index: 0;
+  }
+
+  .pipeline-card-running::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 14px;
+    background: conic-gradient(
+      from var(--angle),
+      transparent 0deg,
+      transparent 270deg,
+      rgba(0, 174, 239, 0.15) 300deg,
+      rgba(0, 174, 239, 0.3) 330deg,
+      rgba(0, 174, 239, 0.15) 360deg
+    );
+    animation: border-travel 4s linear infinite;
+    filter: blur(6px);
+    z-index: 0;
+  }
+
+  .pipeline-card-idle {
+    border: 1px solid var(--glass-border) !important;
+  }
+
+  @keyframes button-pulse {
+    0%, 100% { 
+      box-shadow: 0 0 0 0 
+        rgba(0,174,239,0.4); 
+    }
+    50% { 
+      box-shadow: 0 0 0 8px 
+        rgba(0,174,239,0); 
+    }
+  }
+
+  .pipeline-btn-running {
+    animation: button-pulse 2s infinite;
+  }
 }
 

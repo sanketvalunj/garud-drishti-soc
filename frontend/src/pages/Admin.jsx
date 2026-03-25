@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Shield, 
@@ -27,6 +28,7 @@ import { useTheme } from '../context/ThemeContext'
 import clsx from 'clsx'
 
 const Admin = () => {
+  const navigate = useNavigate()
   const { user, hasPermission } = useAuth()
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
@@ -162,8 +164,11 @@ const Admin = () => {
                       <div className="text-xs text-orange-500/70">{su.reason}</div>
                     </div>
                   </div>
-                  <button className="bg-orange-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-orange-500/20 uppercase">
-                    Isolate Account
+                  <button 
+                    onClick={() => navigate('/admin')}
+                    className="bg-[var(--glass-border)] text-[var(--text-secondary)] px-4 py-2 rounded-lg text-xs font-bold border border-[var(--glass-border)] hover:border-blue-500/50 transition-all uppercase"
+                  >
+                    View Profile
                   </button>
                 </div>
               ))}

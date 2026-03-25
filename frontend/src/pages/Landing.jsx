@@ -1,878 +1,884 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
+import React, { useRef, useEffect, useState, useCallback } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { useAuth } from '../context/AuthContext'
 import {
-  BarChart2, Shield, Lock, BookOpen, Users,
-  Database, Cpu, Monitor, Hand, Zap,
-  Activity, ShieldAlert, User, Eye, EyeOff, Loader2, ChevronRight, ChevronDown
-} from 'lucide-react';
-import AnimatedGradientBg from '../components/AnimatedGradientBg';
+  Shield, Activity, ShieldAlert, BarChart2, Lock,
+  ChevronRight, Eye, EyeOff, User, Loader2,
+  Zap, Brain, Users, Database, Cpu, Monitor,
+  ArrowRight, CheckCircle, Play
+} from 'lucide-react'
+import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts'
 
-// DATA: Replace with API call to /api/platform/info when available
-const LANDING_DATA = {
-  pillars: [
-    {
-      id: '01', abbr: 'BFOF',
-      title: 'Bayesian Fidelity Orchestration Framework',
-      desc: 'Probabilistic risk scoring using multi-factor weighted inference, replacing static severity with quantified risk-based prioritization',
-      icon: BarChart2, color: '#00AEEF'
-    },
-    {
-      id: '02', abbr: 'GCAR',
-      title: 'Governance-Calibrated Autonomous Response',
-      desc: 'Balances automated containment with compliance mandates and business continuity safeguards',
-      icon: Lock, color: '#00AEEF'
-    },
-    {
-      id: '03', abbr: 'ITMM',
-      title: 'Institutional Threat Memory Matrix',
-      desc: 'Applies historical attack graph similarity scoring to recognize evolving or repeat threat patterns',
-      icon: BookOpen, color: '#00AEEF'
-    },
-    {
-      id: '04', abbr: 'AADI',
-      title: 'Analyst-Augmented Decision Intelligence',
-      desc: 'Combines AI reasoning with configurable human oversight across manual, assisted, and autonomous modes',
-      icon: Users, color: '#00AEEF'
-    }
-  ],
-  nodes: [
-    {
-      title: 'Log Storage Node',
-      icon: Database, color: '#00AEEF',
-      items: ['Elasticsearch', 'Log Indexing', 'Normalized Events', 'Incident History']
-    },
-    {
-      title: 'SOC AI Processing Node',
-      icon: Cpu, color: '#00AEEF', badge: 'MAIN BRAIN',
-      items: ['Ingestion Engine', 'UEBA Detection', 'Correlation Engine', 'AI Reasoning']
-    },
-    {
-      title: 'Analyst Interface Node',
-      icon: Monitor, color: '#00AEEF',
-      items: ['FastAPI Backend', 'Web Dashboard', 'Alert Viewer', 'Playbook Interface']
-    }
-  ],
-  modes: [
-    { title: 'Manual Mode', icon: Hand, color: '#00AEEF', desc: 'Full analyst control over every decision' },
-    { title: 'Assisted Mode', icon: Zap, color: '#00AEEF', desc: 'AI suggests, analyst approves before execution' },
-    { title: 'Autonomous Mode', icon: Cpu, color: '#00AEEF', desc: 'AI executes within governance guardrails automatically' }
-  ],
-  team: [
-    { name: "Sanket Valunj", branch: "Computer Engineering", role: "AI/ML", icon: "S" },
-    { name: "Avantika Patil", branch: "Computer Engineering", role: "Backend", icon: "A" },
-    { name: "Shreya Magar", branch: "Information Technology", role: "AI/ML", icon: "S" },
-    { name: "Shruti Joshi", branch: "Computer Engineering", role: "Frontend", icon: "S" },
-    { name: "Vishvesh Paturkar", branch: "Computer Engineering", role: "AI/ML", icon: "V" }
-  ],
-  roles: [
-    { value: 'tier1', label: 'Tier 1 Analyst', sublabel: 'Triage & Monitoring', icon: Activity, color: '#00AEEF', description: 'Monitor alerts, triage incidents, escalate to Tier 2' },
-    { value: 'tier2', label: 'Tier 2 Analyst', sublabel: 'Incident Response', icon: ShieldAlert, color: '#00AEEF', description: 'Investigate incidents, execute containment, isolate users' },
-    { value: 'tier3', label: 'Tier 3 Analyst', sublabel: 'Threat Hunting', icon: Shield, color: '#00AEEF', description: 'Hunt threats, manage pipeline, detection engineering' },
-    { value: 'manager', label: 'SOC Manager', sublabel: 'Command & Control', icon: BarChart2, color: '#00AEEF', description: 'Oversee team, manage users, view reports and audit trail' }
-  ]
-};
+// DATA: Replace with GET /api/platform/stats when available
+const PLATFORM_STATS = [
+  { value: 99.7, suffix: '%', label: 'Detection Accuracy', decimals: 1 },
+  { value: 2, prefix: '<', suffix: 'min', label: 'Avg Response Time', decimals: 0 },
+  { value: 3, suffix: '', label: 'AI Agents', decimals: 0 },
+]
 
-// DATA: Tune these for feel — no API replacement needed
-const PARTICLE_COUNT_DESKTOP = 150
-const PARTICLE_COUNT_MOBILE = 80
-const SPRING_STRENGTH = 0.042      // higher = snappier
-const DAMPING = 0.82               // lowered slightly to absorb vibration better
-const ATTRACT_RADIUS = 500         // px
-const REPEL_RADIUS = 45            // px inner dead zone
-const ATTRACT_FORCE = 1.8          // cursor pull strength
-const TILT_X_STRENGTH = 28         // horizontal field tilt
-const TILT_Y_STRENGTH = 18         // vertical field tilt
-const CONNECTION_DIST = 120        // px max line distance
-const PULSE_RADIUS = 220           // px click wave radius
-const PULSE_FORCE = 5.5            // click burst strength
+// DATA: Replace with GET /api/platform/features when available
+const FEATURES = [
+  {
+    id: 'bfof', tag: 'BFOF', title: 'Bayesian Fidelity Orchestration',
+    subtitle: 'Replace static severity with intelligence',
+    description: 'Probabilistic risk scoring using multi-factor weighted inference. Every alert gets a 0-1 fidelity score based on behavioral deviation, asset criticality, historical similarity, and cross-entity correlation.',
+    bullets: ['Multi-factor weighted risk scoring', 'Replaces static SIEM severity thresholds', 'SHAP-based explainability for every score'],
+    visual: 'fidelity', align: 'left', accent: '#00AEEF',
+  },
+  {
+    id: 'correlation', tag: 'GRAPH ENGINE', title: 'Incident Graph Reconstruction',
+    subtitle: 'See the full attack, not just fragments',
+    description: 'Links isolated alerts across users, hosts, sessions and processes into unified attack chains. Analysts see the complete kill chain narrative - not thousands of disconnected events.',
+    bullets: ['Entity-linked correlation across all log sources', 'Automated kill chain reconstruction', 'Interactive attack timeline visualization'],
+    visual: 'graph', align: 'right', accent: '#00AEEF',
+  },
+  {
+    id: 'agents', tag: 'MULTI-AGENT', title: 'AI Decision Intelligence',
+    subtitle: 'Three agents vote before any action',
+    description: 'Risk Agent, Compliance Agent, and Business Impact Agent collaborate via LangGraph. Weighted voting replaces single-score alerts - reducing false positives and eliminating decision bias.',
+    bullets: ['Risk + Compliance + Business Impact agents', 'Weighted voting engine with governance guardrails', 'Manual, Assisted, and Autonomous execution modes'],
+    visual: 'agents', align: 'left', accent: '#00AEEF',
+  },
+  {
+    id: 'airgap', tag: 'SAIA', title: 'Sovereign Air-Gapped Architecture',
+    subtitle: 'Zero external data transfer. Ever.',
+    description: 'All AI reasoning, MITRE mapping, and playbook generation runs entirely within your infrastructure via Ollama hosted LLMs. No cloud APIs. No data leaves your network.',
+    bullets: ['Fully offline LLM execution via Ollama', 'Encrypted local model artifact store', 'Regulatory-ready audit trail built in'],
+    visual: 'airgap', align: 'right', accent: '#00AEEF',
+  },
+]
 
-const ThreatCanvas = () => {
-  const canvasRef = useRef(null)
-  const particlesRef = useRef([])
-  const mouseRef = useRef({ x: -9999, y: -9999 })
-  const animFrameRef = useRef(null)
-  const isPulsingRef = useRef(false)
-  const pulseOriginRef = useRef({ x: 0, y: 0 })
-  const pulseStartRef = useRef(0)
+// DATA: Replace with GET /api/roles when available
+const ROLES = [
+  {
+    value: 'tier1', label: 'Tier 1 Analyst', sublabel: 'Triage & Monitoring', icon: Activity, color: '#15803D',
+    description: 'Monitor alerts, triage incidents, escalate to Tier 2',
+    capabilities: ['Alert triage queue with SLA tracking', 'Quick classify: True/False Positive', 'IoC lookup — IP, hash, domain, URL', 'Shift summary and performance metrics']
+  },
+  {
+    value: 'tier2', label: 'Tier 2 Analyst', sublabel: 'Incident Response', icon: ShieldAlert, color: '#D97706',
+    description: 'Investigate escalated incidents, execute containment',
+    capabilities: ['Deep incident investigation workspace', 'Containment actions: block, isolate, disable', 'SIEM rule tuning and false positive reduction', 'Malware and IOC analysis tools']
+  },
+  {
+    value: 'tier3', label: 'Tier 3 Analyst', sublabel: 'Threat Hunting', icon: Shield, color: '#B91C1C',
+    description: 'Proactively hunt threats, forensics, detection engineering',
+    capabilities: ['Threat hunt console with query interface', 'Hunt campaign manager and hypothesis tracking', 'Detection rule builder and tester', 'Attack pattern library and forensics workspace']
+  },
+]
 
+/* ── Helper: SVG wave path generator ───────────────────── */
+const generateWavePath = (time, baseline, amplitude, freq, phase) => {
+  const points = []
+  const steps = 20
+  for (let i = 0; i <= steps; i++) {
+    const x = (i / steps) * 1440
+    const y = baseline + amplitude * Math.sin((i / steps) * Math.PI * 2 * freq + time * 0.5 + phase)
+    points.push(`${i === 0 ? 'M' : 'L'}${x},${y}`)
+  }
+  points.push('L1440,420 L0,420 Z')
+  return points.join(' ')
+}
+
+/* ── AnimatedWaves component ───────────────────────────── */
+const AnimatedWaves = () => {
+  const [offset, setOffset] = useState(0)
   useEffect(() => {
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-
-    // ── RESIZE ─────────────────────────────────────
-    const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-      initParticles()
+    let frame, start = null
+    const animate = (ts) => {
+      if (!start) start = ts
+      setOffset((ts - start) / 1000)
+      frame = requestAnimationFrame(animate)
     }
-
-    // ── PARTICLE FACTORY ───────────────────────────
-    const initParticles = () => {
-      const isMobile = window.innerWidth < 768
-      const COUNT = isMobile ? PARTICLE_COUNT_MOBILE : PARTICLE_COUNT_DESKTOP
-      particlesRef.current = []
-
-      for (let i = 0; i < COUNT; i++) {
-        // Fake Z depth — random between 0.2 and 1.0
-        const z = 0.2 + Math.random() * 0.8
-
-        // Determine particle type
-        const rand = Math.random()
-        let color, glowColor
-        if (rand < 0.65) {
-          // Blue — normal network traffic
-          color = `rgba(0, 174, 239, ${0.4 + z * 0.5})`
-          glowColor = `rgba(0, 174, 239, ${0.08 + z * 0.12})`
-        } else if (rand < 0.85) {
-          // Ghost white — background noise
-          color = `rgba(255, 255, 255, ${0.1 + z * 0.2})`
-          glowColor = `rgba(255, 255, 255, ${0.03 + z * 0.05})`
-        } else {
-          // Red — threat signatures
-          color = `rgba(185, 28, 28, ${0.5 + z * 0.4})`
-          glowColor = `rgba(185, 28, 28, ${0.08 + z * 0.1})`
-        }
-
-        particlesRef.current.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          ox: 0,
-          oy: 0,
-          vx: 0,
-          vy: 0,
-          z,
-          radius: ((2 + z * 5) * (Math.random() * 0.6 + 0.7)) * 0.34,
-          color,
-          glowColor,
-          driftSpeedX: (Math.random() - 0.5) * 0.030,
-          driftSpeedY: (Math.random() - 0.5) * 0.020,
-          driftPhaseX: Math.random() * Math.PI * 2,
-          driftPhaseY: Math.random() * Math.PI * 2,
-          driftRadius: 15 + Math.random() * 35,
-        })
-        const p = particlesRef.current[particlesRef.current.length - 1]
-        p.ox = p.x
-        p.oy = p.y
-      }
-    }
-
-    // ── MOUSE TRACKING ─────────────────────────────
-    const onMouseMove = (e) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY }
-    }
-
-    // ── CLICK PULSE ────────────────────────────────
-    const onClick = (e) => {
-      isPulsingRef.current = true
-      pulseOriginRef.current = { x: e.clientX, y: e.clientY }
-      pulseStartRef.current = performance.now()
-    }
-
-    // ── DRAW SINGLE PARTICLE ───────────────────────
-    const drawParticle = (ctx, p) => {
-      const glowRadius = p.radius * 4.5
-      const grd = ctx.createRadialGradient(
-        p.x, p.y, 0,
-        p.x, p.y, glowRadius
-      )
-      grd.addColorStop(0, p.color)
-      grd.addColorStop(0.3, p.glowColor)
-      grd.addColorStop(1, 'transparent')
-
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2)
-      ctx.fillStyle = grd
-      ctx.fill()
-
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2)
-      ctx.fillStyle = p.color
-      ctx.fill()
-    }
-
-    // ── DRAW CONNECTIONS ──────────────────────────
-    const drawConnections = (ctx, particles) => {
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const a = particles[i]
-          const b = particles[j]
-          const dx = a.x - b.x
-          const dy = a.y - b.y
-          const dist = Math.sqrt(dx * dx + dy * dy)
-
-          if (dist < CONNECTION_DIST) {
-            // Only draw connector lines between larger and smaller dots
-            // by enforcing a minimum Z-depth (size) difference
-            const isDifferentSize = Math.abs(a.z - b.z) > 0.25;
-
-            if (isDifferentSize) {
-              const alpha = (1 - dist / CONNECTION_DIST) * 0.65 * ((a.z + b.z) / 2)
-              ctx.beginPath()
-              ctx.moveTo(a.x, a.y)
-              ctx.lineTo(b.x, b.y)
-              ctx.strokeStyle = `rgba(0, 174, 239, ${alpha})`
-              ctx.lineWidth = 1.0
-              ctx.stroke()
-            }
-          }
-        }
-      }
-    }
-
-    // ── MAIN ANIMATION LOOP ────────────────────────
-    let time = 0
-
-    const animate = () => {
-      animFrameRef.current = requestAnimationFrame(animate)
-      time += 0.016
-
-      // Clear with slight trail effect + transparency to see background gradient
-      ctx.fillStyle = 'rgba(2, 11, 24, 0.2)'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-      const mouse = mouseRef.current
-      const now = performance.now()
-
-      drawConnections(ctx, particlesRef.current)
-
-      particlesRef.current.forEach((p, i) => {
-        const driftX = Math.sin(time * p.driftSpeedX * 60 + p.driftPhaseX) * p.driftRadius * 0.3
-        const driftY = Math.cos(time * p.driftSpeedY * 60 + p.driftPhaseY) * p.driftRadius * 0.2
-
-        const dynamicOx = p.ox + driftX
-        const dynamicOy = p.oy + driftY
-
-        p.vx += (dynamicOx - p.x) * SPRING_STRENGTH
-        p.vy += (dynamicOy - p.y) * SPRING_STRENGTH
-        p.vx *= DAMPING
-        p.vy *= DAMPING
-
-        const dx = mouse.x - p.x
-        const dy = mouse.y - p.y
-        const dist = Math.sqrt(dx * dx + dy * dy)
-
-        if (dist < ATTRACT_RADIUS && dist > 1) {
-          if (dist < REPEL_RADIUS) {
-            // Linear repel - gets weaker as you move toward REPEL_RADIUS
-            const repelStrength = (REPEL_RADIUS - dist) / REPEL_RADIUS
-            p.vx -= (dx / dist) * repelStrength * 3.5
-            p.vy -= (dy / dist) * repelStrength * 3.5
-          } else {
-            // Attract - fades to 0 exactly at REPEL_RADIUS and ATTRACT_RADIUS
-            // to ensure zero jitter/vibration at the boundary
-            const range = ATTRACT_RADIUS - REPEL_RADIUS
-            const progress = (dist - REPEL_RADIUS) / range
-            const smoothForce = Math.sin(progress * Math.PI) * ATTRACT_FORCE
-            p.vx += (dx / dist) * smoothForce * p.z
-            p.vy += (dy / dist) * smoothForce * p.z
-          }
-        }
-
-        if (isPulsingRef.current) {
-          const elapsed = now - pulseStartRef.current
-          const duration = 900
-          if (elapsed < duration) {
-            const pdx = p.x - pulseOriginRef.current.x
-            const pdy = p.y - pulseOriginRef.current.y
-            const pdist = Math.sqrt(pdx * pdx + pdy * pdy)
-            if (pdist < PULSE_RADIUS && pdist > 0) {
-              const progress = elapsed / duration
-              const wave = Math.sin(progress * Math.PI)
-              const force = wave * (1 - pdist / PULSE_RADIUS) * PULSE_FORCE
-              p.vx += (pdx / pdist) * force
-              p.vy += (pdy / pdist) * force
-            }
-          } else {
-            isPulsingRef.current = false
-          }
-        }
-
-        p.x += p.vx
-        p.y += p.vy
-        drawParticle(ctx, p)
-      })
-
-      if (isPulsingRef.current) {
-        const elapsed = now - pulseStartRef.current
-        const progress = elapsed / 900
-        const ringRadius = progress * PULSE_RADIUS
-        const ringAlpha = (1 - progress) * 0.35
-        ctx.beginPath()
-        ctx.arc(pulseOriginRef.current.x, pulseOriginRef.current.y, ringRadius, 0, Math.PI * 2)
-        ctx.strokeStyle = `rgba(0, 174, 239, ${ringAlpha})`
-        ctx.lineWidth = 1.5
-        ctx.stroke()
-      }
-
-      if (mouse.x > 0 && mouse.y > 0) {
-        const cursorGrd = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 80)
-        cursorGrd.addColorStop(0, 'rgba(0, 174, 239, 0.06)')
-        cursorGrd.addColorStop(1, 'transparent')
-        ctx.beginPath()
-        ctx.arc(mouse.x, mouse.y, 80, 0, Math.PI * 2)
-        ctx.fillStyle = cursorGrd
-        ctx.fill()
-      }
-    }
-
-    resize()
-    animate()
-    window.addEventListener('resize', resize)
-    window.addEventListener('mousemove', onMouseMove)
-    canvas.addEventListener('click', onClick)
-
-    return () => {
-      cancelAnimationFrame(animFrameRef.current)
-      window.removeEventListener('resize', resize)
-      window.removeEventListener('mousemove', onMouseMove)
-      canvas.removeEventListener('click', onClick)
-    }
+    frame = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(frame)
   }, [])
-
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'absolute', top: 0, left: 0,
-        width: '100%', height: '100%',
-        zIndex: 0, display: 'block'
-      }}
-    />
+    <svg viewBox="0 0 1440 420" preserveAspectRatio="none"
+      style={{ position: 'absolute', bottom: 0, left: '-10%', width: '120%', height: '78%', zIndex: 0 }}>
+      <path d={generateWavePath(offset, 290, 42, 0.6, 3)} fill="rgba(0,57,93,0.25)" />
+      <path d={generateWavePath(offset, 240, 60, 1.1, 1.5)} fill="rgba(0,119,182,0.15)" />
+      <path d={generateWavePath(offset, 190, 85, 0.8, 0)} fill="rgba(0,174,239,0.08)" />
+    </svg>
   )
 }
 
-const AnimatedStat = ({ end, label, suffix = '' }) => {
-  const [count, setCount] = useState(0);
-
+/* ── AnimatedCounter ───────────────────────────────────── */
+const AnimatedCounter = ({ value, suffix = '', prefix = '', decimals = 0, label }) => {
+  const [count, setCount] = useState(0)
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true })
   useEffect(() => {
-    let start = 0;
-    const duration = 2000;
-    const increment = end / (duration / 16);
+    if (!inView) return
+    let start = 0
+    const duration = 2000, step = (value / duration) * 16
     const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setCount(end);
-        clearInterval(timer);
-      } else {
-        setCount(start);
-      }
-    }, 16);
-    return () => clearInterval(timer);
-  }, [end]);
-
+      start += step
+      if (start >= value) { setCount(value); clearInterval(timer) }
+      else setCount(start)
+    }, 16)
+    return () => clearInterval(timer)
+  }, [inView, value])
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <span style={{ color: 'white', fontSize: '28px', fontWeight: 800 }}>
-        {end === 0 && count === 0 ? '0' : count >= end ? end : count.toFixed(end % 1 !== 0 && end !== 0 ? 1 : 0)}{suffix}
-      </span>
-      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginTop: '4px' }}>{label}</span>
+    <div ref={ref} style={{ textAlign: 'center', flex: 1 }}>
+      <div style={{ fontSize: '42px', fontWeight: 900, color: 'white' }}>
+        {prefix}{decimals ? count.toFixed(decimals) : Math.floor(count)}{suffix}
+      </div>
+      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', marginTop: '6px' }}>{label}</div>
     </div>
-  );
-};
+  )
+}
 
+/* ── Feature Visuals ───────────────────────────────────── */
+const FidelityVisual = () => {
+  const factors = [{ l: 'Behavioral', v: 0.91 }, { l: 'Asset Criticality', v: 0.88 }, { l: 'Historical', v: 0.79 }, { l: 'Cross-Entity', v: 0.85 }]
+  return (
+    <div>
+    <div style={{ textAlign: 'center', marginBottom: 20 }}>
+      <div style={{ width: 140, height: 70, margin: '0 auto', position: 'relative' }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <RadialBarChart
+            cx="50%"
+            cy="100%"
+            innerRadius={50}
+            outerRadius={70}
+            barSize={10}
+            data={[{ value: 87, fill: '#00AEEF' }]}
+            startAngle={180}
+            endAngle={0}
+          >
+            <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+            <RadialBar
+              background={{ fill: "rgba(255,255,255,0.1)" }}
+              dataKey="value"
+              cornerRadius={10}
+              animationDuration={800}
+              animationEasing="ease-out"
+            />
+          </RadialBarChart>
+        </ResponsiveContainer>
+      </div>
+      <div style={{ fontSize: 32, fontWeight: 900, color: 'white', marginTop: -15 }}>0.87</div>
+      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>High Confidence</div>
+    </div>
+      {factors.map(f => (
+        <div key={f.l} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', width: 100, flexShrink: 0 }}>{f.l}</span>
+          <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(0,174,239,0.15)' }}>
+            <motion.div initial={{ width: 0 }} whileInView={{ width: `${f.v * 100}%` }} viewport={{ once: true }} transition={{ duration: 1.2 }}
+              style={{ height: '100%', borderRadius: 3, background: '#00AEEF' }} />
+          </div>
+          <span style={{ fontSize: 11, color: '#00AEEF', fontWeight: 700, width: 32 }}>{f.v}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const GraphVisual = () => {
+  const nodes = [
+    { id: 'auth', x: 40, y: 30, label: 'auth-server', c: '#00AEEF' },
+    { id: 'emp', x: 140, y: 70, label: 'emp_104', c: '#D97706' },
+    { id: 'loan', x: 260, y: 30, label: 'loan-db', c: '#B91C1C' },
+    { id: 'vpn', x: 80, y: 140, label: 'vpn-gw', c: '#00AEEF' },
+    { id: 'exfil', x: 220, y: 140, label: 'exfil-point', c: '#B91C1C' },
+    { id: 'c2', x: 300, y: 100, label: 'c2-server', c: '#B91C1C' },
+  ]
+  const edges = [[0, 1], [1, 2], [1, 3], [3, 4], [2, 5], [4, 5]]
+  return (
+    <svg viewBox="0 0 360 180" style={{ width: '100%' }}>
+      {edges.map(([a, b], i) => (
+        <motion.line key={i} x1={nodes[a].x} y1={nodes[a].y} x2={nodes[b].x} y2={nodes[b].y}
+          stroke="rgba(124,58,237,0.4)" strokeWidth={1.5} strokeDasharray="4 4"
+          initial={{ pathLength: 0, opacity: 0 }} whileInView={{ pathLength: 1, opacity: 1 }}
+          viewport={{ once: true }} transition={{ duration: 0.8, delay: i * 0.15 }} />
+      ))}
+      {nodes.map((n, i) => (
+        <motion.g key={n.id} initial={{ opacity: 0, scale: 0.5 }} whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }} transition={{ delay: i * 0.12 }}>
+          <circle cx={n.x} cy={n.y} r={14} fill={`${n.c}33`} stroke={n.c} strokeWidth={1.5} />
+          <text x={n.x} y={n.y + 28} fill="rgba(255,255,255,0.5)" fontSize={8} textAnchor="middle">{n.label}</text>
+        </motion.g>
+      ))}
+    </svg>
+  )
+}
+
+const AgentsVisual = () => {
+  const agents = [
+    { name: 'Risk Agent', score: 0.91, status: 'HIGH', color: '#B91C1C' },
+    { name: 'Compliance Agent', score: 0.88, status: 'CRITICAL', color: '#D97706' },
+    { name: 'Business Impact', score: 0.79, status: 'MEDIUM', color: 'rgba(0,174,239,0.7)' },
+  ]
+  return (
+    <div>
+      {agents.map((a, i) => (
+        <motion.div key={a.name} initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }} transition={{ delay: i * 0.15 }}
+          style={{
+            background: 'rgba(2,11,24,0.6)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10,
+            padding: '10px 14px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+          }}>
+          <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>{a.name}</span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: 'white' }}>{a.score}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: a.color, background: `${a.color}22`, padding: '2px 6px', borderRadius: 4 }}>{a.status}</span>
+          </div>
+        </motion.div>
+      ))}
+      <div style={{ marginTop: 12, textAlign: 'center' }}>
+        <span style={{
+          background: 'rgba(0,174,239,0.15)', color: '#00AEEF', fontSize: 10, fontWeight: 700,
+          padding: '4px 12px', borderRadius: 20, border: '1px solid rgba(0,174,239,0.3)'
+        }}>Voting Engine → AUTONOMOUS</span>
+      </div>
+    </div>
+  )
+}
+
+const AirgapVisual = () => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+    {[
+      { label: 'Your Infrastructure', icon: Database },
+      { label: 'CRYPTIX Engine', icon: Cpu },
+      { label: 'SOC Dashboard', icon: Activity }
+    ].map((box, i) => (
+      <React.Fragment key={box.label}>
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.2 }}
+          style={{
+            background: 'rgba(2,11,24,0.8)', border: '1px solid rgba(0,174,239,0.3)', borderRadius: 12,
+            padding: '16px 24px', textAlign: 'center', width: '100%',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8
+          }}>
+          <box.icon size={24} color="#00AEEF" />
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>{box.label}</div>
+        </motion.div>
+        {i < 2 && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ width: 2, height: 16, background: 'rgba(0,174,239,0.4)' }} />
+            {i === 0 && <span style={{ fontSize: 8, color: '#00AEEF', fontWeight: 700 }}>NO EXTERNAL CALLS</span>}
+            <div style={{ width: 2, height: 8, background: 'rgba(0,174,239,0.4)' }} />
+          </div>
+        )}
+      </React.Fragment>
+    ))}
+    <motion.div initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }}
+      style={{
+        background: 'rgba(0,174,239,0.2)', border: '1px solid rgba(0,174,239,0.4)', borderRadius: 20,
+        padding: '4px 14px', fontSize: 10, fontWeight: 700, color: '#00AEEF'
+      }}>
+      <Lock size={10} style={{ display: 'inline', marginRight: 4 }} /> FULLY OFFLINE
+    </motion.div>
+  </div>
+)
+
+const FeatureVisual = ({ type }) => {
+  const map = { fidelity: FidelityVisual, graph: GraphVisual, agents: AgentsVisual, airgap: AirgapVisual }
+  const Comp = map[type]
+  return Comp ? <Comp /> : null
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LANDING COMPONENT
+   ═══════════════════════════════════════════════════════════ */
 const Landing = () => {
-  const [activeTab, setActiveTab] = useState('home');
-  const [selectedRole, setSelectedRole] = useState('tier2');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const [loginRole, setLoginRole] = useState('tier1')
+  const [activeRole, setActiveRole] = useState('tier1')
+  const [direction, setDirection] = useState(0)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const { login } = useAuth()
+  const navigate = useNavigate()
 
   const handleLogin = async (e) => {
-    if (e) e.preventDefault();
-    if (!username.trim()) {
-      setError('Please enter a username');
-      return;
-    }
-    if (!password.trim()) {
-      setError('Please enter a password');
-      return;
-    }
-    setError('');
-    setIsLoading(true);
+    if (e) e.preventDefault()
+    if (!username.trim()) { setError('Please enter a username'); return }
+    if (!password.trim()) { setError('Please enter a password'); return }
+    setError('')
+    setIsLoading(true)
+    await new Promise(r => setTimeout(r, 1200))
+    login(loginRole)
+    setIsLoading(false)
+    navigate('/dashboard')
+  }
 
-    await new Promise(resolve => setTimeout(resolve, 1200));
+  const scrollToLogin = () => document.getElementById('login')?.scrollIntoView({ behavior: 'smooth' })
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
-    login(selectedRole);
-    setIsLoading(false);
-    navigate('/dashboard'); // TODO: Route to role-specific dashboard based on role
-  };
+  const onTabChange = (newRole) => {
+    const currentIndex = ROLES.findIndex(r => r.value === activeRole)
+    const newIndex = ROLES.findIndex(r => r.value === newRole)
+    setDirection(newIndex > currentIndex ? 1 : -1)
+    setActiveRole(newRole)
+  }
 
-  const scrollTo = (id) => {
-    setActiveTab(id);
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const activeRoleData = ROLES.find(r => r.value === activeRole)
+  const loginRoleData = ROLES.find(r => r.value === loginRole)
 
-  const selectedRoleData = LANDING_DATA.roles.find(r => r.value === selectedRole);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const sections = ['home', 'login', 'services', 'about'];
-      let current = '';
-      for (const section of sections) {
-        const el = document.getElementById(section);
-        if (el && window.scrollY >= (el.offsetTop - 200)) {
-          current = section;
-        }
-      }
-      if (current) setActiveTab(current);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const px = 'clamp(24px, 8vw, 120px)'
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', fontFamily: 'Inter, sans-serif', background: 'transparent' }}>
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1 }}>
-        <AnimatedGradientBg isLanding={true} />
-      </div>
+    <div style={{ fontFamily: "'Inter', sans-serif", background: '#020B18', color: 'white', minHeight: '100vh' }}>
       <style>{`
-        @keyframes radar-spin {
-          from { transform: translate(-50%, -50%) rotate(0deg); }
-          to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        @keyframes bounce-down {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(5px); }
-        }
-        @keyframes arrow-flow {
-          to { stroke-dashoffset: -20; }
-        }
+        @keyframes float1 { 0%,100%{transform:translateX(120%) translateY(0)} 50%{transform:translateX(120%) translateY(-8px)} }
+        @keyframes float2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        @keyframes spin { to{transform:rotate(360deg)} }
         html { scroll-behavior: smooth; }
       `}</style>
 
-      {/* SECTION 1 — STICKY NAVBAR */}
-      {/* PHASE 20%: Navbar, hero text, static sections render */}
+      {/* ════ SECTION 1 — NAVBAR ════ */}
+      {/* PHASE 20%: Navbar, hero layout, stats bar, footer render */}
       <header style={{
-        position: 'fixed', top: 0, width: '100%', height: '64px', zIndex: 100,
-        backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-        background: 'rgba(2, 11, 24, 0.5)', borderBottom: '1px solid rgba(255,255,255,0.08)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px'
+        position: 'fixed', top: 0, width: '100%', height: 68, zIndex: 100,
+        background: 'rgba(2,11,24,0.92)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+        borderBottom: '1px solid rgba(0,174,239,0.12)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: `0 ${px}`, boxSizing: 'border-box'
       }}>
-        {/* Left */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
           <div style={{
-            width: '44px', height: '44px', borderRadius: '10px',
-            background: '#00AEEF', color: 'white', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '16px'
+            width: 44, height: 44, borderRadius: 10, background: '#00AEEF', color: 'white',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16
           }}>CX</div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ color: 'white', fontSize: '20px', fontWeight: 'bold', lineHeight: 1.1 }}>CRYPTIX</span>
-            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>SOC Platform</span>
+            <span style={{ color: 'white', fontSize: 20, fontWeight: 800 }}>CRYPTIX</span>
+            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11 }}>SOC Platform</span>
           </div>
-        </div>
+        </Link>
 
-        {/* Center */}
-        <div style={{ display: 'flex', gap: '32px' }} className="hidden md:flex">
-          {['home', 'login', 'services', 'about'].map((id) => {
-            const labels = { home: 'Home', login: 'Login', services: 'Our Services', about: 'About Us' };
-            const isActive = activeTab === id;
-            return (
-              <button
-                key={id}
-                onClick={() => scrollTo(id)}
-                style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  fontSize: '14px', fontWeight: 500,
-                  color: isActive ? '#00AEEF' : 'rgba(255,255,255,0.6)',
-                  textDecoration: isActive ? 'underline' : 'none',
-                  textUnderlineOffset: '4px'
-                }}
-              >
-                {labels[id]}
-              </button>
-            );
-          })}
-        </div>
+        <nav style={{ display: 'flex', gap: 8 }}>
+          {[
+            { label: 'Home', action: scrollToTop },
+            { label: 'About Us', to: '/about' },
+            { label: 'Our Services', to: '/services' },
+          ].map(n => n.to ? (
+            <Link key={n.label} to={n.to} style={{
+              fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.6)', padding: '8px 16px',
+              borderRadius: 8, textDecoration: 'none', transition: 'all 0.2s'
+            }}>{n.label}</Link>
+          ) : (
+            <button key={n.label} onClick={n.action} style={{
+              fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.6)', padding: '8px 16px',
+              borderRadius: 8, background: 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+            }}>{n.label}</button>
+          ))}
+        </nav>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={scrollToLogin} style={{
+            background: '#00AEEF', color: 'white', borderRadius: 8, padding: '9px 20px', fontSize: 13,
+            fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,174,239,0.3)'
+          }}>Login</button>
+        </div>
       </header>
 
-      {/* SECTION 2 — HERO */}
-      <section id="home" style={{
-        position: 'relative',
-        height: '100vh',
-        overflow: 'hidden',
-        background: 'linear-gradient(to bottom, #00395D 0%, #00395D 50%, rgba(0, 174, 239, 0.15) 80%, var(--bg-color) 100%)'
+      {/* ════ SECTION 2 — HERO ════ */}
+      <section style={{
+        minHeight: '100vh', background: '#020B18', position: 'relative', overflow: 'hidden',
+        display: 'flex', alignItems: 'center', padding: `68px ${px} 0`
       }}>
+        <AnimatedWaves />
 
-        <ThreatCanvas />
+        <div style={{ position: 'relative', zIndex: 10, display: 'flex', gap: 60, alignItems: 'center', width: '100%', maxWidth: 1400, margin: '0 auto' }}>
+          {/* Left Column */}
+          <div style={{ flex: '0 0 55%' }}>
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+              style={{
+                display: 'inline-flex', gap: 6, alignItems: 'center', background: 'rgba(0,174,239,0.1)',
+                border: '1px solid rgba(0,174,239,0.25)', color: '#00AEEF', fontSize: 11, fontWeight: 700,
+                borderRadius: 20, padding: '5px 14px', letterSpacing: 2, marginBottom: 24
+              }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00AEEF', animation: 'pulse 2s infinite' }} />
+              BARCLAYS HACK-O-HIRE 2026
+            </motion.div>
 
-        {/* Hero Text */}
-        <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '64px' }}>
-          <span style={{
-            background: 'rgba(0,174,239,0.1)', border: '1px solid rgba(0,174,239,0.3)',
-            color: '#00AEEF', fontSize: '11px', fontWeight: 700, borderRadius: '20px',
-            padding: '4px 12px', letterSpacing: '2px', marginBottom: '24px'
-          }}>
-            BARCLAYS HACK-O-HIRE 2026
-          </span>
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-            style={{ fontSize: '72px', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', lineHeight: 1.1, margin: 0, textShadow: '0 0 120px rgba(0,174,239,0.25), 0 0 40px rgba(0,174,239,0.1)' }}
-          >
-            CRYPTIX
-          </motion.h1>
-          <motion.p
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-            style={{ fontSize: '20px', color: 'rgba(255,255,255,0.6)', maxWidth: '600px', lineHeight: 1.6, textAlign: 'center' }}
-          >
-            The AI Engine for Detecting Hidden Threats
-          </motion.p>
+            <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+              style={{
+                fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, color: 'white', lineHeight: 1.1,
+                letterSpacing: -1.5, margin: 0
+              }}>
+              Autonomous Cyber<br /><span style={{ color: '#00AEEF' }}>Incident Response</span>
+            </motion.h1>
 
-          <div style={{ display: 'flex', gap: '48px', marginTop: '40px' }}>
-            <AnimatedStat end={99.7} label="Detection Accuracy" suffix="%" />
-            <div style={{ width: '1px', borderLeft: '1px solid rgba(255,255,255,0.08)' }} />
-            <AnimatedStat end={0.1} label="Avg Response Time" suffix="min" />
-            <div style={{ width: '1px', borderLeft: '1px solid rgba(255,255,255,0.08)' }} />
-            <AnimatedStat end={3} label="AI Agents" />
-            <div style={{ width: '1px', borderLeft: '1px solid rgba(255,255,255,0.08)' }} />
-            <AnimatedStat end={0} label="External Data Transfers" />
+            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              style={{ fontSize: 18, color: 'rgba(255,255,255,0.55)', marginTop: 16, lineHeight: 1.5, maxWidth: 480 }}>
+              The AI engine for detecting hidden threats
+            </motion.p>
+
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+              style={{ display: 'flex', gap: 8, marginTop: 24 }}>
+              {['✓ Air-Gapped AI', '✓ Multi-Agent', '✓ MITRE ATT&CK'].map((pill, i) => (
+                <motion.span key={pill} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.05 }}
+                  style={{
+                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'rgba(255,255,255,0.6)', fontSize: 12, borderRadius: 20, padding: '5px 12px'
+                  }}>{pill}</motion.span>
+              ))}
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+              style={{ display: 'flex', gap: 12, marginTop: 36 }}>
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={scrollToLogin}
+                style={{
+                  background: '#00AEEF', color: 'white', borderRadius: 8, padding: '14px 28px', fontSize: 15,
+                  fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 8px 32px rgba(0,174,239,0.35)',
+                  display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap'
+                }}>
+                <span>Access Secure Console</span><ArrowRight size={16} />
+              </motion.button>
+            </motion.div>
           </div>
 
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => scrollTo('login')}
-            style={{
-              marginTop: '40px', background: '#00AEEF', color: 'white', borderRadius: '8px',
-              padding: '14px 32px', fontSize: '15px', fontWeight: 700, border: 'none',
-              cursor: 'pointer', boxShadow: '0 8px 40px rgba(0,174,239,0.35)',
-              transition: 'box-shadow 0.3s ease'
-            }}
-          >
-            Access Secure Console →
-          </motion.button>
-        </div>
+          {/* Right Column — SOC Dashboard Mockup */}
+          <motion.div initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.8 }}
+            style={{ flex: '0 0 45%', position: 'relative' }}>
+            <div style={{
+              background: 'rgba(0,57,93,0.6)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,174,239,0.2)',
+              borderRadius: 20, padding: 24, boxShadow: '0 40px 80px rgba(0,0,0,0.4)', maxWidth: 440
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>🛡 CRYPTIX SOC</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#15803D' }} />
+                  <span style={{ fontSize: 12, color: '#D97706' }}>Live 3 Active Threats</span>
+                  <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />
+                  </div>
+                </div>
+              </div>
 
-        {/* Scroll Indicator */}
-        <div style={{ position: 'absolute', bottom: '24px', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 10 }}>
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', marginBottom: '8px' }}>scroll to explore</span>
-          <ChevronDown size={16} color="rgba(255,255,255,0.3)" style={{ animation: 'bounce-down 2s infinite' }} />
-        </div>
-        {/* Fade Overlay to next section */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '128px', pointerEvents: 'none', zIndex: 11 }}>
-          <div style={{ width: '100%', height: '100%', background: 'linear-gradient(to bottom, transparent, var(--bg-color))', backdropFilter: 'blur(6px)' }} />
+              {[
+                { sev: '#B91C1C', name: 'Privilege Escalation - emp_104', score: '0.94', sc: '#B91C1C' },
+                { sev: '#D97706', name: 'Lateral Movement detected', score: '0.71', sc: '#D97706' },
+                { sev: '#15803D', name: 'Suspicious Login - resolved', score: '0.32', sc: '#15803D' },
+              ].map(row => (
+                <div key={row.name} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0',
+                  borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: 12
+                }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: row.sev, flexShrink: 0 }} />
+                  <span style={{ color: 'rgba(255,255,255,0.7)', flex: 1 }}>{row.name}</span>
+                  <span style={{
+                    background: `${row.sc}22`, color: row.sc, fontSize: 11, fontWeight: 700,
+                    padding: '2px 8px', borderRadius: 6
+                  }}>{row.score}</span>
+                </div>
+              ))}
+
+              <div style={{ marginTop: 16, textAlign: 'center', position: 'relative' }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>AI Fidelity Score</div>
+                
+                <div style={{ width: 160, height: 90, margin: '0 auto', position: 'relative' }}>
+                  <div style={{ width: '100%', height: '100%', position: 'absolute', top: -15 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadialBarChart
+                        cx="50%"
+                        cy="100%"
+                        innerRadius={55}
+                        outerRadius={75}
+                        barSize={10}
+                        data={[{ value: 87, fill: '#00AEEF' }]}
+                        startAngle={180}
+                        endAngle={0}
+                      >
+                        <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+                        <RadialBar
+                          background={{ fill: "rgba(255,255,255,0.1)" }}
+                          dataKey="value"
+                          cornerRadius={10}
+                          animationDuration={800}
+                          animationEasing="ease-out"
+                        />
+                      </RadialBarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div style={{
+                    position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+                    textAlign: 'center', width: '100%'
+                  }}>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: 'white', lineHeight: 1 }}>0.87</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>High Confidence</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating card: Multi-Agent Vote */}
+            <div style={{
+              position: 'absolute', top: -10, right: 40, background: 'rgba(2,11,24,0.9)',
+              border: '1px solid rgba(0,174,239,0.3)', borderRadius: 12, padding: 12, fontSize: 11,
+              zIndex: 30, boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+            }}>
+              <div style={{ fontWeight: 700, color: '#00AEEF', marginBottom: 6 }}>Multi-Agent Vote</div>
+              {[{ n: 'Risk', v: '0.91' }, { n: 'Compliance', v: '0.88' }, { n: 'Impact', v: '0.79' }].map(a => (
+                <div key={a.n} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, color: 'rgba(255,255,255,0.6)', marginBottom: 2 }}>
+                  <span>{a.n}</span><span style={{ color: 'white', fontWeight: 700 }}>{a.v}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Floating card: Response Executed */}
+            <div style={{
+              position: 'absolute', bottom: -10, left: -30, background: 'rgba(21,128,61,0.27)',
+              border: '1px solid rgba(21,128,61,0.42)', borderRadius: 12, padding: 12, fontSize: 11,
+              zIndex: 20
+            }}>
+              <div style={{ fontWeight: 700, color: '#15803D', marginBottom: 4 }}>✓ Response Executed</div>
+              <div style={{ color: 'rgba(255,255,255,0.6)' }}>IP 203.0.113.45 blocked</div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* SECTION 3 — LOGIN */}
-      {/* PHASE 100%: Login form functional, auth flow, all animations */}
-      <section id="login" style={{
-        padding: '100px 24px',
-        background: 'linear-gradient(to bottom, var(--bg-color) 0%, rgba(0, 174, 239, 0.05) 50%, var(--bg-color) 100%)',
-        width: '100%',
-        border: 'none',
-        boxShadow: 'none'
+      {/* ════ SECTION 3 — STATS BAR ════ */}
+      <section style={{
+        background: 'rgba(0,57,93,0.4)', backdropFilter: 'blur(20px)',
+        borderTop: '1px solid rgba(0,174,239,0.1)', borderBottom: '1px solid rgba(0,174,239,0.1)',
+        padding: `40px ${px}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0
       }}>
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <h4 style={{ color: '#00AEEF', fontSize: '11px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 12px 0' }}>SECURE ACCESS</h4>
-          <h2 style={{ fontSize: '36px', fontWeight: 800, color: 'white', margin: '0' }}>Select your role to continue</h2>
-          <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.5)', margin: '8px 0 0 0' }}>Each role provides a purpose-built workspace for your responsibilities</p>
-        </div>
+        {PLATFORM_STATS.map((s, i) => (
+          <React.Fragment key={s.label}>
+            <AnimatedCounter {...s} />
+            {i < PLATFORM_STATS.length - 1 && (
+              <div style={{ width: 1, height: 40, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+            )}
+          </React.Fragment>
+        ))}
+      </section>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', maxWidth: '1100px', margin: '0 auto 40px auto' }}>
-          {LANDING_DATA.roles.map((role) => {
-            const isSelected = selectedRole === role.value;
-            return (
-              <motion.div
-                key={role.value}
-                onClick={() => setSelectedRole(role.value)}
-                animate={{ scale: isSelected ? 1.02 : 1, opacity: isSelected ? 1 : 0.7 }}
-                whileHover={{ scale: isSelected ? 1.02 : 1.02, opacity: 1 }}
-                style={{
-                  padding: '20px', cursor: 'pointer', borderRadius: '12px',
-                  background: isSelected ? `${role.color}15` : 'rgba(255,255,255,0.03)',
-                  border: isSelected ? `1.5px solid #00AEEF` : '1px solid rgba(255,255,255,0.08)',
-                }}
-              >
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: `${role.color}26`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <role.icon size={18} color={role.color} />
-                  </div>
-                  <div>
-                    <h4 style={{ color: 'white', fontSize: '15px', fontWeight: 'bold', margin: '0 0 2px 0' }}>{role.label}</h4>
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', margin: 0 }}>{role.sublabel}</p>
-                  </div>
+      {/* ════ SECTION 4 — FEATURES ════ */}
+      {/* PHASE 50%: Animated waves, feature sections, role showcase */}
+      <section style={{ padding: `100px ${px}`, background: '#020B18' }}>
+        {FEATURES.map((f, idx) => (
+          <div key={f.id}>
+            {idx > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,0.04)', margin: '80px 0' }} />}
+            <div style={{
+              display: 'flex', gap: 80, alignItems: 'center', maxWidth: 1200, margin: '0 auto',
+              flexDirection: f.align === 'right' ? 'row-reverse' : 'row'
+            }}>
+              {/* Text */}
+              <motion.div style={{ flex: 1 }}
+                initial={{ opacity: 0, x: f.align === 'left' ? -30 : 30 }}
+                whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+                <span style={{
+                  background: `${f.accent}26`, color: f.accent, fontSize: 11, fontWeight: 700,
+                  letterSpacing: 2, borderRadius: 20, padding: '4px 12px'
+                }}>{f.tag}</span>
+                <h3 style={{
+                  color: 'white', fontSize: 'clamp(28px, 3vw, 40px)', fontWeight: 800,
+                  marginTop: 12, lineHeight: 1.2, marginBottom: 0
+                }}>{f.title}</h3>
+                <p style={{ color: f.accent, fontSize: 16, fontWeight: 600, marginTop: 8, marginBottom: 0 }}>{f.subtitle}</p>
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 15, lineHeight: 1.7, marginTop: 16, maxWidth: 480 }}>{f.description}</p>
+                <div style={{ marginTop: 24 }}>
+                  {f.bullets.map(b => (
+                    <div key={b} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
+                      <CheckCircle size={16} color={f.accent} style={{ marginTop: 2, flexShrink: 0 }} />
+                      <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>{b}</span>
+                    </div>
+                  ))}
                 </div>
               </motion.div>
-            );
+
+              {/* Visual */}
+              <motion.div style={{
+                flex: 1, background: 'rgba(0,57,93,0.35)', backdropFilter: 'blur(20px)',
+                border: `1px solid ${f.accent}33`, borderRadius: 20, padding: 32, minHeight: 280
+              }}
+                initial={{ opacity: 0, x: f.align === 'left' ? 30 : -30 }}
+                whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+                <FeatureVisual type={f.visual} />
+              </motion.div>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* ════ SECTION 5 — ROLE SHOWCASE ════ */}
+      <section style={{ padding: `100px ${px}`, background: 'rgba(0,57,93,0.2)' }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <span style={{ color: '#00AEEF', fontSize: 11, fontWeight: 700, letterSpacing: 3, display: 'block', marginBottom: 12 }}>ROLE-BASED ACCESS</span>
+          <h2 style={{ fontSize: 36, fontWeight: 800, color: 'white', margin: 0 }}>Purpose-built for every SOC role</h2>
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', marginTop: 8 }}>Each analyst gets a workspace designed for their exact responsibilities</p>
+        </div>
+
+        <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 40 }}>
+          {ROLES.map(r => {
+            const isActive = activeRole === r.value
+            return (
+              <button key={r.value} onClick={() => onTabChange(r.value)} style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 8,
+                border: isActive ? '1px solid #00AEEF' : '1px solid transparent',
+                background: isActive ? 'rgba(0,174,239,0.15)' : 'transparent',
+                color: isActive ? 'white' : 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                transition: 'all 0.2s'
+              }}>
+                <r.icon size={16} /> {r.label}
+              </button>
+            )
           })}
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={selectedRole}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            style={{ maxWidth: '400px', margin: '0 auto', background: 'rgba(255,255,255,0.02)', padding: '32px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: '8px', display: 'block' }}>Username</label>
-                <div style={{ position: 'relative' }}>
-                  <User size={14} color="rgba(255,255,255,0.5)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    style={{
-                      width: '100%', height: '44px', padding: '0 16px 0 36px', borderRadius: '8px',
-                      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'white', fontSize: '14px', outline: 'none'
-                    }}
-                    placeholder="Enter username"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: '8px', display: 'block' }}>Password</label>
-                <div style={{ position: 'relative' }}>
-                  <Lock size={14} color="rgba(255,255,255,0.5)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    style={{
-                      width: '100%', height: '44px', padding: '0 40px 0 36px', borderRadius: '8px',
-                      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'white', fontSize: '14px', outline: 'none'
-                    }}
-                    placeholder="Enter password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              {error && <div style={{ fontSize: '12px', color: '#B91C1C' }}>{error}</div>}
-
-              {selectedRoleData && (
+        <div style={{ position: 'relative', overflow: 'hidden', minHeight: 400 }}>
+          <AnimatePresence mode="popLayout" custom={direction}>
+            {activeRoleData && (
+              <motion.div key={activeRole} 
+                custom={direction}
+                initial={{ x: direction > 0 ? '100%' : '-100%', opacity: 0 }} 
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.2 } }} 
+                transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                style={{ display: 'flex', gap: 60, maxWidth: 1200, margin: '0 auto', alignItems: 'center' }}>
+              <div style={{ flex: 1 }}>
                 <div style={{
-                  display: 'flex', gap: '8px', alignItems: 'center', padding: '10px 12px',
-                  borderRadius: '8px', background: `${selectedRoleData.color}15`, border: `1px solid ${selectedRoleData.color}33`, marginTop: '8px'
+                  width: 56, height: 56, borderRadius: '50%', background: 'rgba(0,174,239,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16
                 }}>
-                  <selectedRoleData.icon size={14} color={selectedRoleData.color} />
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: selectedRoleData.color }}>Signing in as {selectedRoleData.label}</span>
+                  <activeRoleData.icon size={24} color="#00AEEF" />
                 </div>
-              )}
+                <h3 style={{ color: 'white', fontSize: 28, fontWeight: 800, margin: 0 }}>{activeRoleData.label}</h3>
+                <p style={{ color: '#00AEEF', fontSize: 14, fontWeight: 600, margin: '4px 0 0 0' }}>{activeRoleData.sublabel}</p>
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 15, marginTop: 12 }}>{activeRoleData.description}</p>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                style={{
-                  width: '100%', height: '44px', marginTop: '16px',
-                  background: isLoading ? 'rgba(0,174,239,0.5)' : '#00AEEF', color: 'white', border: 'none', borderRadius: '8px',
-                  fontSize: '14px', fontWeight: 700, cursor: isLoading ? 'not-allowed' : 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                }}
-              >
-                {isLoading ? (
-                  <><Loader2 size={16} className="animate-spin" /> Authenticating...</>
-                ) : (
-                  <>Sign In <ChevronRight size={16} /></>
-                )}
-              </button>
-            </form>
-          </motion.div>
+                <div style={{ marginTop: 28 }}>
+                  {activeRoleData.capabilities.map(c => (
+                    <div key={c} style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'flex-start' }}>
+                      <CheckCircle size={16} color="#00AEEF" style={{ marginTop: 2, flexShrink: 0 }} />
+                      <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14 }}>{c}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                  onClick={() => { setLoginRole(activeRole); scrollToLogin() }}
+                  style={{
+                    background: '#00AEEF', color: 'white', borderRadius: 8,
+                    padding: '12px 24px', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', marginTop: 32,
+                    display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap'
+                  }}>
+                  Enter as {activeRoleData.label} <ArrowRight size={14} style={{ flexShrink: 0 }} />
+                </motion.button>
+              </div>
+
+              {/* Role-specific dashboard preview */}
+              <div style={{
+                flex: 1, background: 'rgba(0,57,93,0.4)', backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(0,174,239,0.2)', borderRadius: 20, padding: 24
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00AEEF' }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>{activeRoleData.label} Dashboard</span>
+                </div>
+                {activeRoleData.capabilities.map((c, i) => (
+                  <div key={c} style={{
+                    background: 'rgba(2,11,24,0.5)', border: '1px solid rgba(255,255,255,0.06)',
+                    borderRadius: 8, padding: '10px 14px', marginBottom: 6, fontSize: 12, color: 'rgba(255,255,255,0.5)',
+                    display: 'flex', alignItems: 'center', gap: 8
+                  }}>
+                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#00AEEF' }} />
+                    {c}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
-        {/* Fade Overlay to services section */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '160px', pointerEvents: 'none', zIndex: 11 }}>
-          <div style={{ width: '100%', height: '100%', background: 'linear-gradient(to bottom, transparent, var(--bg-color))', backdropFilter: 'blur(8px)' }} />
+      </div>
+    </section>
+
+      {/* ════ SECTION 6 — LOGIN ════ */}
+      {/* PHASE 100%: Login form functional, About+Services pages, all animations, floating cards, visual mockups */}
+      <section id="login" style={{ padding: `100px ${px}`, background: '#020B18', borderTop: '1px solid rgba(0,174,239,0.08)' }}>
+        <div style={{ display: 'flex', gap: 60, maxWidth: 1200, margin: '0 auto', alignItems: 'center' }}>
+          {/* Login Form */}
+          <div style={{ width: 480, flexShrink: 0 }}>
+            <div style={{
+              background: 'rgba(0,57,93,0.3)', backdropFilter: 'blur(24px)',
+              border: '1px solid rgba(0,174,239,0.6)', borderRadius: 20, padding: 40,
+              boxShadow: '0 0 18px rgba(0,174,239,0.18)'
+            }}>
+              <div style={{ textAlign: 'center', marginBottom: 28 }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: '50%', background: 'rgba(0,174,239,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px'
+                }}>
+                  <Lock size={22} color="#00AEEF" />
+                </div>
+                <h3 style={{ color: 'white', fontSize: 26, fontWeight: 800, margin: 0 }}>Secure Access</h3>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, margin: '4px 0 0' }}>Sign in to CRYPTIX SOC Platform</p>
+              </div>
+
+              {/* Role selector 2x2 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
+                {ROLES.map(r => {
+                  const sel = loginRole === r.value
+                  const isTier3 = r.value === 'tier3'
+                  return (
+                    <div key={r.value} onClick={() => setLoginRole(r.value)} style={{
+                      padding: 12, cursor: 'pointer', borderRadius: 12, transition: 'all 0.15s',
+                      background: sel ? `${r.color}15` : 'rgba(255,255,255,0.03)',
+                      border: sel ? '1.5px solid #00AEEF' : '1px solid rgba(255,255,255,0.08)'
+                      , ...(isTier3 ? { gridColumn: '1 / span 2', justifySelf: 'center', width: 'calc(50% - 4px)' } : {})
+                    }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>{r.label}</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{r.sublabel}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <form onSubmit={handleLogin}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 8, display: 'block' }}>Username</label>
+                  <div style={{ position: 'relative' }}>
+                    <User size={14} color="rgba(255,255,255,0.5)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
+                    <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="Enter username"
+                      style={{
+                        width: '100%', height: 44, padding: '0 16px 0 36px', borderRadius: 8,
+                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'white', fontSize: 14, outline: 'none', boxSizing: 'border-box'
+                      }} />
+                  </div>
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 8, display: 'block' }}>Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={14} color="rgba(255,255,255,0.5)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
+                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password"
+                      style={{
+                        width: '100%', height: 44, padding: '0 40px 0 36px', borderRadius: 8,
+                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'white', fontSize: 14, outline: 'none', boxSizing: 'border-box'
+                      }} />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                        background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)'
+                      }}>
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {error && <div style={{ fontSize: 12, color: '#B91C1C', marginBottom: 8 }}>{error}</div>}
+
+                {loginRoleData && (
+                  <div style={{
+                    display: 'flex', gap: 8, alignItems: 'center', padding: '10px 12px', borderRadius: 8,
+                    background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(0,0,0,0.36)', marginBottom: 16,
+                    backdropFilter: 'blur(9px)', WebkitBackdropFilter: 'blur(9px)'
+                  }}>
+                    <loginRoleData.icon size={14} color="white" />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'white' }}>Signing in as {loginRoleData.label}</span>
+                  </div>
+                )}
+
+                <button type="submit" disabled={isLoading} style={{
+                  width: '100%', minHeight: 44, height: 'auto', background: isLoading ? 'rgba(0,174,239,0.5)' : '#00AEEF',
+                  color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700,
+                  cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '8px 16px',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {isLoading ? (<><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Authenticating...</>) :
+                    (<React.Fragment><span>Sign In</span> <ChevronRight size={16} style={{ flexShrink: 0 }} /></React.Fragment>)}
+                </button>
+              </form>
+
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 16, marginBottom: 0 }}>
+                Demo mode · Any username and password accepted
+              </p>
+            </div>
+          </div>
+
+          {/* Info Panel */}
+          <div style={{ flex: 1, paddingLeft: 60 }}>
+            <span style={{ color: '#00AEEF', fontSize: 11, fontWeight: 700, letterSpacing: 2, display: 'block', marginBottom: 16 }}>WHY CRYPTIX?</span>
+            <h2 style={{ fontSize: 32, fontWeight: 800, color: 'white', lineHeight: 1.2, marginBottom: 24, marginTop: 0 }}>
+              Intelligence-driven security for modern banks
+            </h2>
+
+            {[
+              { icon: Shield, color: '#00AEEF', title: 'Air-Gapped & Compliant', desc: 'All AI runs within your infrastructure. Zero external calls.' },
+              { icon: Zap, color: '#00AEEF', title: 'Sub-2 Minute Response', desc: 'From alert ingestion to containment action.' },
+              { icon: Users, color: '#00AEEF', title: 'Role-Based Intelligence', desc: 'Every analyst gets a purpose-built workspace.' },
+            ].map(pt => (
+              <div key={pt.title} style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: '50%', background: `${pt.color}26`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                }}>
+                  <pt.icon size={18} color={pt.color} />
+                </div>
+                <div>
+                  <div style={{ color: 'white', fontSize: 15, fontWeight: 700 }}>{pt.title}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginTop: 4 }}>{pt.desc}</div>
+                </div>
+              </div>
+            ))}
+
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 32, marginTop: 32 }} />
+          </div>
         </div>
       </section>
 
-      {/* SECTION 4 — OUR SERVICES */}
-      <section id="services" style={{
-        padding: '100px 24px',
-        background: 'linear-gradient(to bottom, var(--bg-color), transparent)',
-        position: 'relative',
-        width: '100%',
-        margin: '0',
-        zIndex: 1
-      }}>
-        <h4 style={{ color: '#00AEEF', fontSize: '11px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 12px 0' }}>OUR SERVICES</h4>
-        <h2 style={{ fontSize: '36px', fontWeight: 800, color: 'white', margin: '0' }}>Enterprise-Grade Cyber Defense</h2>
-        <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.5)', margin: '8px 0 60px 0' }}>Four strategic innovation pillars powering CRYPTIX</p>
+      {/* ════ SECTION 7 — FOOTER ════ */}
+      <footer style={{ background: '#020B18', borderTop: '1px solid rgba(255,255,255,0.06)', padding: `40px ${px}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', maxWidth: 1200, margin: '0 auto', flexWrap: 'wrap', gap: 40 }}>
+          <div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8, background: '#00AEEF', color: 'white',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12
+              }}>CX</div>
+              <span style={{ color: 'white', fontSize: 16, fontWeight: 800 }}>CRYPTIX</span>
+            </div>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, maxWidth: 260, margin: 0 }}>The AI engine for detecting hidden threats</p>
+          </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
-          {LANDING_DATA.pillars.map((pillar, i) => (
-            <motion.div
-              key={pillar.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              whileHover={{ borderColor: `#00AEEF` }}
-              style={{
-                background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '28px',
-                position: 'relative', transition: 'border-color 0.3s ease'
-              }}
-            >
-              <div style={{ position: 'absolute', top: '28px', right: '28px' }}>
-                <span style={{ background: `${pillar.color}26`, color: pillar.color, fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>
-                  {pillar.abbr}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                <div style={{
-                  width: '32px', height: '32px', borderRadius: '50%', background: `${pillar.color}26`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  <pillar.icon size={16} color="white" />
-                </div>
-                <span style={{ color: pillar.color, fontSize: '11px', fontWeight: 700 }}>{pillar.id}</span>
-              </div>
-              <h3 style={{ color: 'white', fontSize: '16px', fontWeight: 700, margin: '0 0 12px 0' }}>{pillar.title}</h3>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', lineHeight: 1.6, margin: 0 }}>{pillar.desc}</p>
-            </motion.div>
-          ))}
-        </div>
+          <div style={{ display: 'flex', gap: 60 }}>
+            <div>
+              <h4 style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 700, marginBottom: 12, marginTop: 0 }}>Product</h4>
+              {['Dashboard', 'Incidents', 'Playbooks', 'Pipeline'].map(l => (
+                <div key={l} style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 8, cursor: 'default' }}>{l}</div>
+              ))}
+            </div>
+            <div>
+              <h4 style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 700, marginBottom: 12, marginTop: 0 }}>Platform</h4>
+              <Link to="/about" style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, display: 'block', marginBottom: 8, textDecoration: 'none' }}>About Us</Link>
+              <Link to="/services" style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, display: 'block', marginBottom: 8, textDecoration: 'none' }}>Our Services</Link>
+            </div>
+            <div>
+              <h4 style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 700, marginBottom: 12, marginTop: 0 }}>Legal</h4>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Demo Project · Not for production</div>
+            </div>
+          </div>
 
-        {/* 3-Node Architecture */}
-        <div style={{ marginTop: '80px' }}>
-          <h3 style={{ color: 'white', fontSize: '24px', fontWeight: 'bold', margin: '0 0 8px 0', textAlign: 'center' }}>3-Node Distributed Architecture</h3>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', margin: '0 0 40px 0', textAlign: 'center' }}>Optimized for security and scale</p>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'center', alignItems: 'center' }}>
-            {LANDING_DATA.nodes.map((node, i) => (
-              <React.Fragment key={node.title}>
-                <motion.div
-                  whileHover={{ borderColor: '#00AEEF' }}
-                  style={{
-                    background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '16px', padding: '24px', minWidth: '220px', flex: '1 1 250px', position: 'relative',
-                    transition: 'border-color 0.3s ease'
-                  }}
-                >
-                  {node.badge && (
-                    <span style={{ position: 'absolute', top: '-10px', right: '20px', background: node.badge === 'MAIN BRAIN' ? '#D97706' : node.color, color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px' }}>
-                      {node.badge}
-                    </span>
-                  )}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `${node.color}26`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <node.icon size={20} color="white" />
-                    </div>
-                    <span style={{ color: 'white', fontWeight: 'bold', fontSize: '16px' }}>{node.title}</span>
-                  </div>
-                  <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {node.items.map(item => (
-                      <li key={item} style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: node.color }} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </motion.div>
-                {i < LANDING_DATA.nodes.length - 1 && (
-                  <svg className="hidden lg:block" width="80" height="24" viewBox="0 0 80 24" style={{ flexShrink: 0 }}>
-                    <line x1="0" y1="12" x2="70" y2="12" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeDasharray="4 4" style={{ animation: 'arrow-flow 1s linear infinite' }} />
-                    <polygon points="70,8 80,12 70,16" fill="rgba(255,255,255,0.5)" />
-                  </svg>
-                )}
-              </React.Fragment>
-            ))}
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 11, color: '#00AEEF', fontWeight: 700, letterSpacing: 1.5 }}>🦅 BARCLAYS</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>Hack-O-Hire 2026</div>
           </div>
         </div>
 
-        {/* Execution Modes */}
-        <div style={{ marginTop: '60px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-          {LANDING_DATA.modes.map((mode, i) => (
-            <motion.div
-              key={mode.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              style={{
-                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
-                borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px'
-              }}
-            >
-              <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: `${mode.color}1a`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <mode.icon size={20} color="white" />
-              </div>
-              <div>
-                <h4 style={{ color: 'white', fontSize: '14px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{mode.title}</h4>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', margin: 0 }}>{mode.desc}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* SECTION 5 — ABOUT US */}
-      <section id="about" style={{ padding: '100px 24px', background: 'transparent', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <h4 style={{ color: '#00AEEF', fontSize: '11px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 12px 0' }}>ABOUT US</h4>
-          <h2 style={{ fontSize: '36px', fontWeight: 800, color: 'white', margin: '0' }}>Built by Garud-Drishti</h2>
-          <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.5)', margin: '8px 0 0 0' }}>A team of aspiring engineers from PICT, Pune - built for Barclays Hack-O-Hire 2026</p>
-        </div>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
-          {LANDING_DATA.team.map((member, i) => (
-            <motion.div
-              key={member.name}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              style={{
-                width: '200px', background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center'
-              }}
-            >
-              <div style={{
-                width: '56px', height: '56px', borderRadius: '50%', background: 'linear-gradient(135deg, #00AEEF 0%, #0077B6 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '22px', fontWeight: 'bold', marginBottom: '16px'
-              }}>
-                {member.icon}
-              </div>
-              <h4 style={{ color: 'white', fontSize: '15px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{member.name}</h4>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', margin: '0 0 12px 0' }}>{member.branch}</p>
-              <span style={{ background: '#00AEEF26', color: '#00AEEF', fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
-                {member.role}
-              </span>
-            </motion.div>
-          ))}
-        </div>
-
-        <div style={{ marginTop: '60px', maxWidth: '700px', margin: '60px auto 0 auto' }}>
-          <p style={{
-            fontSize: '18px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, fontStyle: 'italic',
-            borderLeft: '3px solid #00AEEF', paddingLeft: '24px', margin: 0
-          }}>
-            "CRYPTIX transforms fragmented security alerts into unified, high-confidence incident intelligence - enabling banks to shift from reactive monitoring to intelligent, risk-calibrated cyber resilience."
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: 32, paddingTop: 24, textAlign: 'center', maxWidth: 1200, margin: '32px auto 0' }}>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', margin: 0 }}>
+            © 2026 CRYPTIX · Team Garud-Drishti · PICT Pune · Sanket Valunj · Avantika Patil · Shreya Magar · Shruti Joshi · Vishvesh Paturkar
           </p>
         </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer style={{ background: 'transparent', borderTop: '1px solid rgba(255,255,255,0.04)', padding: '24px', textAlign: 'center' }}>
-        <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.3)' }}>
-          CRYPTIX · Barclays Hack-O-Hire 2026 · Team Garud-Drishti · PICT Pune
-        </p>
       </footer>
     </div>
-  );
-};
+  )
+}
 
-export default Landing;
+export default Landing

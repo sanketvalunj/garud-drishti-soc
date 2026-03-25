@@ -3,9 +3,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     AlertTriangle, ShieldAlert, Clock, Activity,
-    ArrowUp, ChevronRight, ExternalLink, Loader2, ArrowRight, Play, RefreshCw
+    ArrowUp, ChevronRight, ExternalLink, Loader2, ArrowRight, Play, RefreshCw,
+    Pause
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { usePipeline } from '../context/PipelineContext';
+import { useAuth } from '../context/AuthContext';
 import {
     BarChart, Bar, Cell, PieChart, Pie, XAxis, Tooltip, ResponsiveContainer, LabelList
 } from 'recharts';
@@ -22,6 +25,25 @@ import RiskChart from '../components/RiskChart';
 import MitreMapping from '../components/MitreMapping';
 import PlaybookViewer from '../components/incidents/PlaybookViewer';
 import AutomationPanel from '../components/AutomationPanel';
+
+// ─── LIVE STREAM CONSTANTS ──────────────────────────────────
+const INITIAL_LIVE_EVENTS = [
+    { id: 'evt-001', time: '12:13:45', type: 'Login Failed', entity: 'swift-terminal', severity: 'medium', source: 'IAM', isNew: false, incidentId: 'INC-2091' },
+    { id: 'evt-002', time: '12:13:01', type: 'Access Attempt', entity: 'core-banking', severity: 'high', source: 'EDR', isNew: false, incidentId: 'INC-2090' },
+    { id: 'evt-003', time: '12:12:33', type: 'Lateral Movement', entity: 'loan-db', severity: 'high', source: 'SIEM', isNew: false, incidentId: 'INC-2089' }
+];
+
+const NEW_EVENTS_POOL = [
+    { type: 'Anomalous Login', entity: 'emp_201', severity: 'medium', source: 'IAM', incidentId: 'INC-2091' },
+    { type: 'Port Scan Detected', entity: 'vpn-gateway', severity: 'low', source: 'SIEM', incidentId: 'INC-2088' },
+    { type: 'Privilege Escalation', entity: 'emp_088', severity: 'high', source: 'EDR', incidentId: 'INC-2091' },
+    { type: 'Data Transfer', entity: 'file-server', severity: 'medium', source: 'DLP', incidentId: 'INC-2089' },
+    { type: 'Failed Auth', entity: 'api-gateway', severity: 'low', source: 'WAF', incidentId: 'INC-2087' }
+];
+
+const generateSparkline = (points, min, max) => {
+    return Array.from({ length: points }, () => Math.floor(Math.random() * (max - min) + min));
+};
 
 // ─── MOCK DATA ──────────────────────────────────────────────
 const mockIncidents = [
@@ -104,6 +126,7 @@ const polarToCartesian = (cx, cy, r, angle) => {
 const Dashboard = () => {
     const navigate = useNavigate();
     const { isRunning, lastRun, runPipeline } = usePipeline();
+    const { user } = useAuth();
     const [stats, setStats] = useState({
         incidents: 0,
         activeThreats: 0,
@@ -112,6 +135,75 @@ const Dashboard = () => {
         playbooks: 0,
         aiDecisions: 0
     });
+
+    // CHANGE 1 — LIVE INCIDENT FEED STATE
+    const [liveEvents, setLiveEvents] = useState(INITIAL_LIVE_EVENTS);
+    const [isStreamActive, setIsStreamActive] = useState(true);
+    const [newEventIds, setNewEventIds] = useState(new Set());
+    const [showPipelineToast, setShowPipelineToast] = useState(false);
+    const [borderAngle, setBorderAngle] = useState(0);
+    const liveRef = React.useRef(null);
+
+    useEffect(() => {
+        if (!isRunning) {
+            setBorderAngle(0);
+            return;
+        }
+        
+        const interval = setInterval(() => {
+            setBorderAngle(prev => prev >= 360 ? 0 : prev + 1);
+        }, 16); // ~60fps
+        
+        return () => clearInterval(interval);
+    }, [isRunning]);
+
+    // CHANGE 2 — SYSTEM HEALTH STATE
+    const [healthData] = useState({
+        eventsPerMin: generateSparkline(12, 40, 120),
+        aiLatency: generateSparkline(12, 0.8, 2.4),
+        pipelineLoad: generateSparkline(12, 20, 80)
+    });
+
+    // SIMULATE LIVE STREAM
+    useEffect(() => {
+        if (!isStreamActive) return;
+
+        const interval = setInterval(() => {
+            const template = NEW_EVENTS_POOL[
+                Math.floor(Math.random() * NEW_EVENTS_POOL.length)
+            ];
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-GB', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+
+            const newEvent = {
+                ...template,
+                id: `evt-${Date.now()}`,
+                time: timeStr,
+                isNew: true
+            };
+
+            setLiveEvents(prev => {
+                const updated = [newEvent, ...prev];
+                return updated.slice(0, 8); // keep last 8
+            });
+
+            setNewEventIds(prev => new Set([...prev, newEvent.id]));
+
+            // Remove "new" highlight after 3s
+            setTimeout(() => {
+                setNewEventIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(newEvent.id);
+                    return next;
+                });
+            }, 3000);
+
+        }, 4000); // new event every 4 seconds
+
+        return () => clearInterval(interval);
+    }, [isStreamActive]);
 
     const fetchDashboardData = async () => {
         try {
@@ -214,89 +306,135 @@ const Dashboard = () => {
                 />
             </div>
 
-            {/* Pipeline Control - Refactored Hero Card */}
+            {/* Pipeline Control - Only visible for Tier 3 and Manager */}
+            {(user?.role === 'tier3' || user?.role === 'manager') && (
             <div
-                className="transition-all duration-300"
+                className={isRunning ? 'pipeline-card-running' : 'pipeline-card-idle'}
                 style={{
-                    background: 'var(--surface-color)',
-                    backdropFilter: 'blur(25px)',
-                    WebkitBackdropFilter: 'blur(25px)',
-                    border: '2.2px solid var(--glass-border)',
-                    boxShadow: '0 0 20px rgba(0,0,0,0.1)',
+                    position: 'relative',
+                    overflow: 'visible',
                     borderRadius: '12px',
-                    padding: '20px 24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
+                    zIndex: 0,
+                    transition: 'all 0.3s ease'
                 }}
             >
-                {/* Left side: Content */}
-                <div className="flex-1 flex flex-col">
-                    <h2 style={{ color: 'var(--text-primary)', fontSize: '16.5px', fontWeight: '600' }}>
-                        Pipeline Control
-                    </h2>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
-                        Run the full AI detection and response pipeline
-                    </p>
+                {/* JS Fallback / CSS Animated Border */}
+                {isRunning && (
+                    <div style={{
+                        position: 'absolute',
+                        inset: -2,
+                        borderRadius: 14,
+                        background: `conic-gradient(
+                            from ${borderAngle}deg,
+                            transparent 0deg,
+                            transparent 270deg,
+                            rgba(0,174,239,0.9) 300deg,
+                            rgba(0,174,239,1) 330deg,
+                            rgba(255,255,255,0.8) 345deg,
+                            rgba(0,174,239,1) 355deg,
+                            transparent 360deg
+                        )`,
+                        WebkitMask: `
+                            linear-gradient(#fff 0 0) content-box,
+                            linear-gradient(#fff 0 0)
+                        `,
+                        WebkitMaskComposite: 'xor',
+                        maskComposite: 'exclude',
+                        padding: 2,
+                        zIndex: 0,
+                        pointerEvents: 'none'
+                    }} />
+                )}
 
-                    <div className="mt-3 mr-8 lg:mr-16">
-                        <div className="h-2 rounded-full overflow-hidden relative" style={{ background: 'var(--bg-primary)' }}>
-                            <div
-                                className="h-full transition-all duration-700 ease-out bg-[#00AEEF]"
-                                style={{
-                                    width: isRunning ? '65%' : '100%',
-                                    boxShadow: isRunning ? '0 0 12px rgba(0,174,239,0.5)' : 'none'
-                                }}
-                            />
-                            {isRunning && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full h-full -translate-x-full animate-[shimmer_1.5s_infinite]" />
-                            )}
-                        </div>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '6px' }}>
-                            {isRunning ? 'Processing Stage 3/4 · Running...' : `100% Stage Completed · Last run: ${lastRun ? lastRun.toLocaleTimeString() : '2 mins ago'}`}
+                {/* Inner Content Wrapper */}
+                <div style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    borderRadius: '12px',
+                    background: 'var(--surface-color)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    padding: '24px',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    boxShadow: isRunning ? 'inset 0 0 20px rgba(0,174,239,0.04)' : 'none',
+                    transition: 'box-shadow 0.3s ease'
+                }}>
+                    {/* Left side: Content */}
+                    <div className="flex-1 flex flex-col">
+                        <h2 style={{ color: 'var(--text-primary)', fontSize: '16.5px', fontWeight: '600' }}>
+                            Pipeline Control
+                        </h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
+                            Run the full AI detection and response pipeline
                         </p>
-                    </div>
-                </div>
 
-                {/* Right side: Hero Button */}
-                <button
-                    onClick={runPipeline}
-                    disabled={isRunning}
-                    className={`shimmer-btn ${isRunning ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    style={{
-                        background: isRunning ? 'rgba(0,174,239,0.3)' : '#00AEEF',
-                        color: 'white',
-                        fontWeight: '700',
-                        fontSize: '14px',
-                        padding: '12px 32px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        boxShadow: isRunning ? 'none' : '0 0 20px rgba(0,174,239,0.35), 0 4px 12px rgba(0,174,239,0.2)',
-                        transition: 'all 0.3s ease',
-                    }}
-                >
-                    {isRunning ? (
-                        <>
-                            <Loader2 size={16} className="animate-spin" />
-                            Running...
-                        </>
-                    ) : (
-                        <>
-                            <Play size={16} fill="currentColor" />
-                            Run Pipeline
-                        </>
-                    )}
-                </button>
+                        <div className="mt-3 mr-8 lg:mr-16">
+                            <div className="h-2 rounded-full overflow-hidden relative" style={{ background: 'var(--bg-primary)' }}>
+                                <div
+                                    className="h-full transition-all duration-700 ease-out bg-[#00AEEF]"
+                                    style={{
+                                        width: isRunning ? '65%' : '100%',
+                                        boxShadow: isRunning ? '0 0 12px rgba(0,174,239,0.5)' : 'none'
+                                    }}
+                                />
+                                {isRunning && (
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full h-full -translate-x-full animate-[shimmer_1.5s_infinite]" />
+                                )}
+                            </div>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '6px' }}>
+                                {isRunning ? 'Processing Stage 3/4 · Running...' : `100% Stage Completed · Last run: ${lastRun ? lastRun.toLocaleTimeString() : '2 mins ago'}`}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Right side: Hero Button */}
+                    <button
+                        onClick={() => {
+                            runPipeline();
+                            setShowPipelineToast(true);
+                            setTimeout(() => setShowPipelineToast(false), 6000);
+                        }}
+                        disabled={isRunning}
+                        className={`shimmer-btn ${isRunning ? 'opacity-70 cursor-not-allowed pipeline-btn-running' : ''}`}
+                        style={{
+                            background: isRunning ? 'rgba(0,174,239,0.3)' : '#00AEEF',
+                            color: 'white',
+                            fontWeight: '700',
+                            fontSize: '14px',
+                            padding: '12px 32px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            boxShadow: isRunning ? 'none' : '0 0 20px rgba(0,174,239,0.35), 0 4px 12px rgba(0,174,239,0.2)',
+                            transition: 'all 0.3s ease',
+                        }}
+                    >
+                        {isRunning ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" />
+                                Running...
+                            </>
+                        ) : (
+                            <>
+                                <Play size={16} fill="currentColor" />
+                                Run Pipeline
+                            </>
+                        )}
+                    </button>
+                </div>
             </div>
+            )}
 
 
 
             {/* ROW 2 — Two columns */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                {/* LEFT: Live Incident Feed */}
+                {/* LEFT: Live Incident Feed (Change 1) */}
                 <div className="xl:col-span-2 rounded-xl shadow-sm border flex flex-col h-[400px]"
                     style={{
                         background: 'var(--surface-color)',
@@ -305,46 +443,152 @@ const Dashboard = () => {
                         borderColor: 'var(--glass-border)'
                     }}
                 >
+                    {/* LIVE FEED HEADER */}
                     <div className="p-4 border-b flex items-center justify-between shrink-0" style={{ borderColor: 'var(--glass-border)' }}>
-                        <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                            Live Incident Feed
-                        </h3>
-                        <span className="bg-[#B91C1C] text-white px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                            Live
-                        </span>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <Activity size={15} color="#00AEEF" />
+                            <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                                Live Event Stream
+                            </h3>
+                            
+                            <div style={{
+                                display: 'flex', gap: '6px', alignItems: 'center',
+                                background: 'rgba(21,128,61,0.08)', border: '1px solid rgba(21,128,61,0.15)',
+                                borderRadius: '20px', padding: '2px 10px'
+                            }}>
+                                <div style={{ 
+                                    width: '7px', height: '7px', borderRadius: '50%', 
+                                    background: '#15803D',
+                                    animation: isStreamActive ? 'pulse-ring 2s infinite' : 'none'
+                                }} />
+                                <span style={{ fontSize: '10px', fontWeight: 600, color: '#15803D' }}>
+                                    {isStreamActive ? 'Live' : 'Paused'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            <div style={{
+                                background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.15)',
+                                borderRadius: '20px', padding: '2px 10px', fontSize: '10px', color: '#00AEEF'
+                            }}>
+                                {liveEvents.length} events
+                            </div>
+                            
+                            <button
+                                onClick={() => setIsStreamActive(!isStreamActive)}
+                                style={{
+                                    background: 'none', border: 'none', cursor: 'pointer',
+                                    color: 'var(--text-muted)', fontSize: '11px',
+                                    display: 'flex', gap: '4px', alignItems: 'center',
+                                    padding: '4px 8px', borderRadius: '4px',
+                                    transition: 'all 0.2s'
+                                }}
+                                className="hover:bg-white/5"
+                            >
+                                {isStreamActive ? (
+                                    <><Pause size={14} /> Pause</>
+                                ) : (
+                                    <><Play size={14} /> Resume</>
+                                )}
+                            </button>
+                        </div>
                     </div>
-                    <div className="overflow-y-auto flex-1 p-2 custom-scrollbar">
-                        <div className="space-y-[2px]">
-                            {mockIncidents.map((inc) => (
-                                <div
-                                    key={inc.id}
-                                    onClick={() => navigate(`/incidents?highlight=${inc.id}`)}
-                                    className="p-3 hover:bg-white/10 rounded-lg cursor-pointer transition-all duration-300 flex items-center justify-between group border border-transparent border-b-white/5 relative z-0 hover:z-10 hover:scale-[1.02] hover:border-white/100 hover:shadow-[0_5px_15px_rgba(255,255,255,0.15)]"
-                                    style={{ background: 'transparent' }}
-                                >
-                                    <div className="flex items-center gap-4 relative z-10">
-                                        <div className="w-20 shrink-0">
-                                            <SeverityBadge severity={inc.severity} />
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-sm group-hover:text-[#00AEEF] transition-colors" style={{ color: 'var(--text-primary)' }}>
-                                                {inc.type}
-                                            </p>
-                                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                                                {inc.entity}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-5 text-right relative z-10">
-                                        <FidelityBadge score={inc.score} />
-                                        <div className="flex items-center gap-2 text-xs font-medium min-w-[70px] justify-end" style={{ color: 'var(--text-muted)' }}>
-                                            {inc.time}
-                                            <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200" />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
+
+                    {/* LIVE FEED ITEMS */}
+                    <div 
+                        ref={liveRef}
+                        style={{ maxHeight: '280px', overflowY: 'auto' }}
+                        className="flex-1 p-2 custom-scrollbar"
+                    >
+                        <div className="space-y-[4px]">
+                            <AnimatePresence initial={false}>
+                                {liveEvents.map((event) => {
+                                    const isNew = newEventIds.has(event.id);
+                                    const severityColor = event.severity === 'high' ? '#B91C1C' 
+                                                        : event.severity === 'medium' ? '#FACC15' 
+                                                        : '#00AEEF';
+                                    
+                                    return (
+                                        <motion.div
+                                            key={event.id}
+                                            initial={{ opacity: 0, y: -12, x: 0 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.25 }}
+                                            style={{
+                                                padding: '10px 12px',
+                                                borderRadius: '8px',
+                                                marginBottom: '4px',
+                                                transition: 'all 0.3s ease',
+                                                display: 'flex',
+                                                gap: '10px',
+                                                alignItems: 'center',
+                                                background: isNew 
+                                                    ? 'rgba(0,174,239,0.06)' 
+                                                    : 'var(--surface-color)',
+                                                border: isNew
+                                                    ? '1px solid rgba(0,174,239,0.15)'
+                                                    : '1px solid var(--glass-border)'
+                                            }}
+                                            onClick={() => navigate(`/incidents?highlight=${event.incidentId || 'INC-2091'}`)}
+                                            className="hover:bg-white/10 rounded-lg cursor-pointer transition-all duration-300 group relative z-0 hover:z-10 hover:scale-[1.02] hover:border-white/100 hover:shadow-[0_5px_15px_rgba(255,255,255,0.15)]"
+                                        >
+                                            {/* Severity dot */}
+                                            <div style={{ 
+                                                width: '8px', height: '8px', borderRadius: '50%',
+                                                flexShrink: 0,
+                                                background: severityColor,
+                                                animation: (isNew && event.severity === 'high') ? 'pulse-ring 1.5s infinite' : 'none',
+                                                boxShadow: `0 0 4px ${severityColor}`
+                                            }} />
+
+                                            {/* Time */}
+                                            <div style={{
+                                                fontFamily: "'JetBrains Mono', monospace",
+                                                fontSize: '11px',
+                                                color: 'var(--text-muted)',
+                                                minWidth: ' map', // wait, users says 56px
+                                                minWidth: '56px'
+                                            }}>
+                                                {event.time}
+                                            </div>
+
+                                            {/* Event type */}
+                                            <div style={{
+                                                fontSize: '12px',
+                                                fontWeight: 600,
+                                                color: 'var(--text-primary)',
+                                                flex: 1
+                                            }}>
+                                                {event.type}
+                                            </div>
+
+                                            {/* Entity */}
+                                            <div style={{
+                                                fontFamily: "'JetBrains Mono', monospace",
+                                                fontSize: '11px',
+                                                color: '#00AEEF'
+                                            }}>
+                                                {event.entity}
+                                            </div>
+
+                                            {/* Source badge */}
+                                            <div style={{
+                                                background: 'rgba(255,255,255,0.04)',
+                                                border: '1px solid var(--glass-border)',
+                                                borderRadius: '4px',
+                                                padding: '1px 6px',
+                                                fontSize: '9px',
+                                                fontFamily: "'JetBrains Mono', monospace",
+                                                color: 'var(--text-muted)'
+                                            }}>
+                                                {event.source}
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
+                            </AnimatePresence>
                         </div>
                     </div>
                 </div>
@@ -597,12 +841,14 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* ROW 5 — System Health Strip */}
-            <div>
-                <h3 className="font-semibold mb-4 px-1" style={{ color: 'var(--text-secondary)' }}>System Health</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* AI Engine */}
-                    <div className="rounded-xl shadow-sm border p-5 flex flex-col justify-center"
+            {/* ROW 5 — System Health (Change 2) */}
+            <div className="mt-8">
+                <h3 className="font-semibold mb-4 px-1" style={{ color: 'var(--text-secondary)' }}>System Health Metrics</h3>
+                
+                {/* Health Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* CARD 1 — Events/Min */}
+                    <div className="rounded-xl shadow-sm border p-4 flex flex-col"
                         style={{
                             background: 'var(--surface-color)',
                             backdropFilter: 'blur(20px)',
@@ -610,22 +856,43 @@ const Dashboard = () => {
                             borderColor: 'var(--glass-border)'
                         }}
                     >
-                        <h4 className="text-xs font-semibold mb-4" style={{ color: 'var(--text-muted)' }}>AI Engine Status</h4>
                         <div className="flex justify-between items-center mb-2">
-                            <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>cryptix-finetuned-7b</span>
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded border border-green-500/20">
-                                <Loader2 size={12} className="animate-spin text-green-500" />
-                                Operational
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>Events / Min</span>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#15803D] animate-pulse" />
+                                <span style={{ fontSize: '10px', color: '#15803D', fontWeight: 600 }}>Live</span>
                             </div>
                         </div>
-                        <div className="flex justify-between text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                            <span>Uptime: 3h 22m</span>
-                            <span>Latency: 24ms</span>
+                        
+                        <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#00AEEF', marginBottom: '8px' }}>
+                            {healthData.eventsPerMin[healthData.eventsPerMin.length - 1]}
+                        </div>
+
+                        {/* Sparkline SVG */}
+                        <div style={{ width: '100%', height: '40px' }}>
+                            {(() => {
+                                const points = healthData.eventsPerMin;
+                                const max = Math.max(...points) || 1;
+                                const min = Math.min(...points) || 0;
+                                const w = 200, h = 40;
+                                const range = max - min || 1;
+                                const pathData = points.map((val, i) => {
+                                    const x = (i / (points.length - 1)) * w;
+                                    const y = h - ((val - min) / range * h);
+                                    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                                }).join(' ');
+                                return (
+                                    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: 40 }}>
+                                        <path d={pathData} fill="none" stroke="#00AEEF" strokeWidth="1.5" opacity="0.7" />
+                                        <path d={pathData + ` L ${w} ${h} L 0 ${h} Z`} fill="rgba(0,174,239,0.08)" />
+                                    </svg>
+                                );
+                            })()}
                         </div>
                     </div>
 
-                    {/* Network Nodes */}
-                    <div className="rounded-xl shadow-sm border p-5 flex flex-col justify-center"
+                    {/* CARD 2 — AI Latency */}
+                    <div className="rounded-xl shadow-sm border p-4 flex flex-col"
                         style={{
                             background: 'var(--surface-color)',
                             backdropFilter: 'blur(20px)',
@@ -633,27 +900,163 @@ const Dashboard = () => {
                             borderColor: 'var(--glass-border)'
                         }}
                     >
-                        <h4 className="text-xs font-semibold mb-4" style={{ color: 'var(--text-muted)' }}>Network Nodes</h4>
-                        <div className="space-y-3">
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_4px_#22c55e]" />
-                                    <span className="font-semibold text-xs" style={{ color: 'var(--text-secondary)' }}>core-banking</span>
-                                </div>
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-muted)' }}>Database</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_4px_#22c55e]" />
-                                    <span className="font-semibold text-xs" style={{ color: 'var(--text-secondary)' }}>swift-terminal</span>
-                                </div>
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-muted)' }}>Gateway</span>
+                        <div className="flex justify-between items-center mb-2">
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>AI Processing Latency</span>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[#15803D]" />
+                                <span style={{ fontSize: '10px', color: '#15803D', fontWeight: 600 }}>Optimized</span>
                             </div>
                         </div>
+                        
+                        <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#15803D', marginBottom: '8px' }}>
+                            {healthData.aiLatency[healthData.aiLatency.length - 1].toFixed(1)}s
+                        </div>
+
+                        {/* Sparkline SVG */}
+                        <div style={{ width: '100%', height: '40px' }}>
+                            {(() => {
+                                const points = healthData.aiLatency;
+                                const max = Math.max(...points) || 1;
+                                const min = Math.min(...points) || 0;
+                                const w = 200, h = 40;
+                                const range = max - min || 1;
+                                const pathData = points.map((val, i) => {
+                                    const x = (i / (points.length - 1)) * w;
+                                    const y = h - ((val - min) / range * h);
+                                    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                                }).join(' ');
+                                return (
+                                    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: 40 }}>
+                                        <path d={pathData} fill="none" stroke="#15803D" strokeWidth="1.5" opacity="0.7" />
+                                        <path d={pathData + ` L ${w} ${h} L 0 ${h} Z`} fill="rgba(21,128,61,0.08)" />
+                                    </svg>
+                                );
+                            })()}
+                        </div>
                     </div>
+
+                    {/* CARD 3 — Pipeline Load */}
+                    <div className="rounded-xl shadow-sm border p-4 flex flex-col"
+                        style={{
+                            background: 'var(--surface-color)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            borderColor: 'var(--glass-border)'
+                        }}
+                    >
+                        {(() => {
+                            const load = healthData.pipelineLoad[healthData.pipelineLoad.length - 1];
+                            const loadColor = load < 60 ? '#15803D' : load < 80 ? '#D97706' : '#B91C1C';
+                            return (
+                                <>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>Pipeline Load</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: loadColor }} />
+                                            <span style={{ fontSize: '10px', color: loadColor, fontWeight: 600 }}>
+                                                {load < 80 ? 'Normal' : 'High Load'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: loadColor, marginBottom: '8px' }}>
+                                        {load}%
+                                    </div>
+
+                                    {/* Sparkline SVG */}
+                                    <div style={{ width: '100%', height: '40px' }}>
+                                        {(() => {
+                                            const points = healthData.pipelineLoad;
+                                            const max = Math.max(...points) || 1;
+                                            const min = Math.min(...points) || 0;
+                                            const w = 200, h = 40;
+                                            const range = max - min || 1;
+                                            const pathData = points.map((val, i) => {
+                                                const x = (i / (points.length - 1)) * w;
+                                                const y = h - ((val - min) / range * h);
+                                                return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                                            }).join(' ');
+                                            return (
+                                                <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: 40 }}>
+                                                    <path d={pathData} fill="none" stroke={loadColor} strokeWidth="1.5" opacity="0.7" />
+                                                    <path d={pathData + ` L ${w} ${h} L 0 ${h} Z`} fill={`${loadColor}15`} />
+                                                </svg>
+                                            );
+                                        })()}
+                                    </div>
+                                </>
+                            );
+                        })()}
+                    </div>
+                </div>
+
+                {/* Status Strip Footer */}
+                <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
+                    {[
+                        { label: 'AI Engine', status: 'Operational' },
+                        { label: 'FAISS Index', status: 'Synced' },
+                        { label: 'Ollama', status: 'Online' }
+                    ].map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#15803D]" />
+                            <span style={{ fontWeight: 600 }}>{item.label}</span>
+                            <span>&middot;</span>
+                            <span>{item.status}</span>
+                        </div>
+                    ))}
                 </div>
             </div>
 
+            {/* Pipeline Toast Notification */}
+            <AnimatePresence>
+                {showPipelineToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                        style={{
+                            position: 'fixed',
+                            bottom: '32px',
+                            right: '32px',
+                            zIndex: 9999,
+                            background: 'var(--surface-color)',
+                            backdropFilter: 'blur(30px)',
+                            WebkitBackdropFilter: 'blur(30px)',
+                            border: '1px solid #00AEEF50',
+                            borderRadius: '12px',
+                            padding: '12px 16px',
+                            boxShadow: '0 10px 40px rgba(0,174,239,0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px'
+                        }}
+                    >
+                        <div className="w-2 h-2 rounded-full bg-[#00AEEF] animate-pulse" />
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            Pipeline running
+                        </span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>·</span>
+                        <button 
+                            onClick={() => navigate('/pipeline')}
+                            style={{ 
+                                background: 'none', 
+                                border: 'none', 
+                                color: '#00AEEF', 
+                                fontSize: '13px', 
+                                fontWeight: 700, 
+                                cursor: 'pointer',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                            }}
+                            className="hover:underline"
+                        >
+                            View details <ArrowRight size={14} />
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div >
     );
 };

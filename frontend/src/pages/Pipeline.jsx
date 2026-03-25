@@ -158,7 +158,7 @@ const MOCK_PIPELINE_HISTORY = [
 ]
 
 const Pipeline = () => {
-  const { isRunning, lastRun, runPipeline } = usePipeline()
+  const { isRunning, lastRun, runPipeline, currentStage } = usePipeline()
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
   const navigate = useNavigate()
@@ -173,17 +173,10 @@ const Pipeline = () => {
   const [uploadSource, setUploadSource] = useState('windows_event')
   const [isUploading, setIsUploading] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState(false)
-  const [currentStage, setCurrentStage] = useState(6)
 
-  // Simulate pipeline running stage by stage
-  const handleRunPipeline = async () => {
-    if (isRunning) return;
-    setCurrentStage(0)
-    runPipeline()
-    for (let i = 1; i <= 6; i++) {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      setCurrentStage(i)
-    }
+  // Pipeline run is now handled globally via context
+  const handleRunPipeline = () => {
+    runPipeline();
   }
 
   // File upload handlers
