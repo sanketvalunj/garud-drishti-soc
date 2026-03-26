@@ -1,5 +1,4 @@
 
 #!/bin/bash
 source venv/bin/activate
-python -m uvicorn garud_drishti.backend.main:app --reload
-//start server with= ./run.sh
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000

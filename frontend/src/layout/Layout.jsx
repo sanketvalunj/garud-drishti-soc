@@ -67,51 +67,51 @@ const Layout = () => {
                     </div>
 
                     {/* Right: Status and User Avatar */}
-                        <div className="relative">
-                            <button 
-                                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                                className="flex items-center gap-2 p-1 rounded-full hover:bg-white/5 transition-all outline-none"
-                            >
-                                <div className="w-9 h-9 rounded-full bg-[#00AEEF] flex items-center justify-center text-white font-bold text-sm shadow-sm ring-2 ring-white/20">
-                                    {user?.avatar || 'U'}
-                                </div>
-                                <ChevronDown size={14} className={clsx("transition-transform duration-200", isUserMenuOpen ? "rotate-180" : "")} style={{ color: 'var(--text-secondary)' }} />
-                            </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                            className="flex items-center gap-2 p-1 rounded-full hover:bg-white/5 transition-all outline-none"
+                        >
+                            <div className="w-9 h-9 rounded-full bg-[#00AEEF] flex items-center justify-center text-white font-bold text-sm shadow-sm ring-2 ring-white/20">
+                                {user?.avatar || 'U'}
+                            </div>
+                            <ChevronDown size={14} className={clsx("transition-transform duration-200", isUserMenuOpen ? "rotate-180" : "")} style={{ color: 'var(--text-secondary)' }} />
+                        </button>
 
-                            <AnimatePresence>
-                                {isUserMenuOpen && (
-                                    <>
-                                        <div 
-                                            className="fixed inset-0 z-40" 
-                                            onClick={() => setIsUserMenuOpen(false)} 
-                                        />
-                                        <motion.div 
-                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 p-2 z-50 shadow-2xl overflow-hidden"
-                                            style={{
-                                                background: 'rgba(15, 23, 42, 0.95)',
-                                                backdropFilter: 'blur(40px)'
-                                            }}
+                        <AnimatePresence>
+                            {isUserMenuOpen && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setIsUserMenuOpen(false)}
+                                    />
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 p-2 z-50 shadow-2xl overflow-hidden"
+                                        style={{
+                                            background: 'rgba(15, 23, 42, 0.95)',
+                                            backdropFilter: 'blur(40px)'
+                                        }}
+                                    >
+                                        <div className="px-3 py-3 border-b border-white/5 mb-2">
+                                            <div className="text-sm font-bold truncate" style={{ color: 'var(--text-color)' }}>{user?.name}</div>
+                                            <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>{user?.roleLabel}</div>
+                                        </div>
+
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-500/10 text-red-400 text-sm transition-all text-left mt-1"
                                         >
-                                            <div className="px-3 py-3 border-b border-white/5 mb-2">
-                                                <div className="text-sm font-bold truncate" style={{ color: 'var(--text-color)' }}>{user?.name}</div>
-                                                <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>{user?.roleLabel}</div>
-                                            </div>
-
-                                            <button 
-                                                onClick={handleLogout}
-                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-500/10 text-red-400 text-sm transition-all text-left mt-1"
-                                            >
-                                                <LogOut size={16} />
-                                                <span>Log out</span>
-                                            </button>
-                                        </motion.div>
-                                    </>
-                                )}
-                            </AnimatePresence>
-                        </div>
+                                            <LogOut size={16} />
+                                            <span>Log out</span>
+                                        </button>
+                                    </motion.div>
+                                </>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </header>
 
                 {/* Main page content */}

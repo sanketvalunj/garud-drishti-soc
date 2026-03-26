@@ -1,0 +1,282 @@
+[
+  {
+    "entity_id": "ENT-001",
+    "name": "john.doe",
+    "employee_id": "EMP-101",
+    "banking_user_id": "USR-101",
+    "workstation": "WS-FIN-01",
+    "assigned_ip": "192.168.1.101",
+    "dept": "Finance",
+    "role": "analyst",
+    "normal_hours": [
+      9,
+      18
+    ]
+  },
+  {
+    "entity_id": "ENT-002",
+    "name": "sara.khan",
+    "employee_id": "EMP-102",
+    "banking_user_id": "USR-102",
+    "workstation": "WS-IT-02",
+    "assigned_ip": "192.168.1.102",
+    "dept": "IT",
+    "role": "engineer",
+    "normal_hours": [
+      8,
+      17
+    ]
+  },
+  {
+    "entity_id": "ENT-003",
+    "name": "mike.ross",
+    "employee_id": "EMP-103",
+    "banking_user_id": "USR-103",
+    "workstation": "WS-OPS-03",
+    "assigned_ip": "192.168.1.103",
+    "dept": "Operations",
+    "role": "manager",
+    "normal_hours": [
+      9,
+      18
+    ]
+  },
+  {
+    "entity_id": "ENT-004",
+    "name": "priya.sharma",
+    "employee_id": "EMP-104",
+    "banking_user_id": "USR-104",
+    "workstation": "WS-FIN-04",
+    "assigned_ip": "192.168.1.104",
+    "dept": "Finance",
+    "role": "analyst",
+    "normal_hours": [
+      9,
+      18
+    ]
+  },
+  {
+    "entity_id": "ENT-005",
+    "name": "alex.turner",
+    "employee_id": "EMP-105",
+    "banking_user_id": "USR-105",
+    "workstation": "WS-SEC-05",
+    "assigned_ip": "192.168.1.105",
+    "dept": "Security",
+    "role": "soc_analyst",
+    "normal_hours": [
+      7,
+      16
+    ]
+  },
+  {
+    "entity_id": "ENT-006",
+    "name": "neha.verma",
+    "employee_id": "EMP-106",
+    "banking_user_id": "USR-106",
+    "workstation": "WS-HR-06",
+    "assigned_ip": "192.168.1.106",
+    "dept": "HR",
+    "role": "hr_manager",
+    "normal_hours": [
+      9,
+      18
+    ]
+  },
+  {
+    "entity_id": "ENT-007",
+    "name": "raj.patel",
+    "employee_id": "EMP-107",
+    "banking_user_id": "USR-107",
+    "workstation": "WS-IT-07",
+    "assigned_ip": "192.168.1.107",
+    "dept": "IT",
+    "role": "sysadmin",
+    "normal_hours": [
+      8,
+      20
+    ]
+  },
+  {
+    "entity_id": "ENT-008",
+    "name": "emily.clark",
+    "employee_id": "EMP-108",
+    "banking_user_id": "USR-108",
+    "workstation": "WS-LEG-08",
+    "assigned_ip": "192.168.1.108",
+    "dept": "Legal",
+    "role": "legal_counsel",
+    "normal_hours": [
+      9,
+      18
+    ]
+  },
+  {
+    "entity_id": "ENT-009",
+    "name": "david.lee",
+    "employee_id": "EMP-109",
+    "banking_user_id": "USR-109",
+    "workstation": "WS-FIN-09",
+    "assigned_ip": "192.168.1.109",
+    "dept": "Finance",
+    "role": "trader",
+    "normal_hours": [
+      7,
+      16
+    ]
+  },
+  {
+    "entity_id": "ENT-010",
+    "name": "fatima.ali",
+    "employee_id": "EMP-110",
+    "banking_user_id": "USR-110",
+    "workstation": "WS-OPS-10",
+    "assigned_ip": "192.168.1.110",
+    "dept": "Operations",
+    "role": "analyst",
+    "normal_hours": [
+      9,
+      18
+    ]
+  },
+  {
+    "entity_id": "ENT-011",
+    "name": "chris.brown",
+    "employee_id": "EMP-111",
+    "banking_user_id": "USR-111",
+    "workstation": "WS-IT-11",
+    "assigned_ip": "192.168.1.111",
+    "dept": "IT",
+    "role": "devops",
+    "normal_hours": [
+      8,
+      17
+    ]
+  },
+  {
+    "entity_id": "ENT-012",
+    "name": "ananya.iyer",
+    "employee_id": "EMP-112",
+    "banking_user_id": "USR-112",
+    "workstation": "WS-FIN-12",
+    "assigned_ip": "192.168.1.112",
+    "dept": "Finance",
+    "role": "auditor",
+    "normal_hours": [
+      9,
+      18
+    ]
+  },
+  {
+    "entity_id": "ENT-013",
+    "name": "tom.hardy",
+    "employee_id": "EMP-113",
+    "banking_user_id": "USR-113",
+    "workstation": "WS-NET-13",
+    "assigned_ip": "192.168.1.113",
+    "dept": "Network",
+    "role": "netadmin",
+    "normal_hours": [
+      8,
+      17
+    ]
+  },
+  {
+    "entity_id": "ENT-014",
+    "name": "sonia.mehta",
+    "employee_id": "EMP-114",
+    "banking_user_id": "USR-114",
+    "workstation": "WS-CUS-14",
+    "assigned_ip": "192.168.1.114",
+    "dept": "Customer",
+    "role": "support",
+    "normal_hours": [
+      9,
+      18
+    ]
+  },
+  {
+    "entity_id": "ENT-015",
+    "name": "kevin.james",
+    "employee_id": "EMP-115",
+    "banking_user_id": "USR-115",
+    "workstation": "WS-FIN-15",
+    "assigned_ip": "192.168.1.115",
+    "dept": "Finance",
+    "role": "analyst",
+    "normal_hours": [
+      9,
+      18
+    ]
+  },
+  {
+    "entity_id": "ENT-016",
+    "name": "lena.schmidt",
+    "employee_id": "EMP-116",
+    "banking_user_id": "USR-116",
+    "workstation": "WS-DEV-16",
+    "assigned_ip": "192.168.1.116",
+    "dept": "Dev",
+    "role": "developer",
+    "normal_hours": [
+      9,
+      18
+    ]
+  },
+  {
+    "entity_id": "ENT-017",
+    "name": "omar.sheikh",
+    "employee_id": "EMP-117",
+    "banking_user_id": "USR-117",
+    "workstation": "WS-SEC-17",
+    "assigned_ip": "192.168.1.117",
+    "dept": "Security",
+    "role": "pen_tester",
+    "normal_hours": [
+      8,
+      17
+    ]
+  },
+  {
+    "entity_id": "ENT-018",
+    "name": "jessica.wu",
+    "employee_id": "EMP-118",
+    "banking_user_id": "USR-118",
+    "workstation": "WS-MKT-18",
+    "assigned_ip": "192.168.1.118",
+    "dept": "Marketing",
+    "role": "analyst",
+    "normal_hours": [
+      9,
+      18
+    ]
+  },
+  {
+    "entity_id": "ENT-019",
+    "name": "admin.sys",
+    "employee_id": "EMP-119",
+    "banking_user_id": "USR-119",
+    "workstation": "WS-ADM-19",
+    "assigned_ip": "192.168.1.119",
+    "dept": "IT",
+    "role": "superadmin",
+    "normal_hours": [
+      0,
+      23
+    ]
+  },
+  {
+    "entity_id": "ENT-020",
+    "name": "service.bot",
+    "employee_id": "EMP-120",
+    "banking_user_id": "USR-120",
+    "workstation": "WS-SVC-20",
+    "assigned_ip": "192.168.1.120",
+    "dept": "Automation",
+    "role": "service_account",
+    "normal_hours": [
+      0,
+      23
+    ]
+  }
+]

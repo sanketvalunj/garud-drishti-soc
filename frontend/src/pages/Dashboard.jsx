@@ -155,11 +155,11 @@ const Dashboard = () => {
             setBorderAngle(0);
             return;
         }
-        
+
         const interval = setInterval(() => {
             setBorderAngle(prev => prev >= 360 ? 0 : prev + 1);
         }, 16); // ~60fps
-        
+
         return () => clearInterval(interval);
     }, [isRunning]);
 
@@ -251,7 +251,7 @@ const Dashboard = () => {
 
     return (
         <div className="space-y-6">
-                {/* Stat Cards */}
+            {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 <StatCard
                     title="Total Incidents"
@@ -315,23 +315,23 @@ const Dashboard = () => {
 
             {/* Pipeline Control - Only visible for Tier 3 and Manager */}
             {(user?.role === 'tier3' || user?.role === 'manager') && (
-            <div
-                className={isRunning ? 'pipeline-card-running' : 'pipeline-card-idle'}
-                style={{
-                    position: 'relative',
-                    overflow: 'visible',
-                    borderRadius: '12px',
-                    zIndex: 0,
-                    transition: 'all 0.3s ease'
-                }}
-            >
-                {/* JS Fallback / CSS Animated Border */}
-                {isRunning && (
-                    <div style={{
-                        position: 'absolute',
-                        inset: -2,
-                        borderRadius: 14,
-                        background: `conic-gradient(
+                <div
+                    className={isRunning ? 'pipeline-card-running' : 'pipeline-card-idle'}
+                    style={{
+                        position: 'relative',
+                        overflow: 'visible',
+                        borderRadius: '12px',
+                        zIndex: 0,
+                        transition: 'all 0.3s ease'
+                    }}
+                >
+                    {/* JS Fallback / CSS Animated Border */}
+                    {isRunning && (
+                        <div style={{
+                            position: 'absolute',
+                            inset: -2,
+                            borderRadius: 14,
+                            background: `conic-gradient(
                             from ${borderAngle}deg,
                             transparent 0deg,
                             transparent 270deg,
@@ -341,100 +341,100 @@ const Dashboard = () => {
                             rgba(0,174,239,1) 355deg,
                             transparent 360deg
                         )`,
-                        WebkitMask: `
+                            WebkitMask: `
                             linear-gradient(#fff 0 0) content-box,
                             linear-gradient(#fff 0 0)
                         `,
-                        WebkitMaskComposite: 'xor',
-                        maskComposite: 'exclude',
-                        padding: 2,
-                        zIndex: 0,
-                        pointerEvents: 'none'
-                    }} />
-                )}
+                            WebkitMaskComposite: 'xor',
+                            maskComposite: 'exclude',
+                            padding: 2,
+                            zIndex: 0,
+                            pointerEvents: 'none'
+                        }} />
+                    )}
 
-                {/* Inner Content Wrapper */}
-                <div style={{
-                    position: 'relative',
-                    zIndex: 1,
-                    borderRadius: '12px',
-                    background: 'var(--surface-color)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    padding: '24px',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    boxShadow: isRunning ? 'inset 0 0 20px rgba(0,174,239,0.04)' : 'none',
-                    transition: 'box-shadow 0.3s ease'
-                }}>
-                    {/* Left side: Content */}
-                    <div className="flex-1 flex flex-col">
-                        <h2 style={{ color: 'var(--text-primary)', fontSize: '16.5px', fontWeight: '600' }}>
-                            Pipeline Control
-                        </h2>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
-                            Run the full AI detection and response pipeline
-                        </p>
-
-                        <div className="mt-3 mr-8 lg:mr-16">
-                            <div className="h-2 rounded-full overflow-hidden relative" style={{ background: 'var(--bg-primary)' }}>
-                                <div
-                                    className="h-full transition-all duration-700 ease-out bg-[#00AEEF]"
-                                    style={{
-                                        width: isRunning ? '65%' : '100%',
-                                        boxShadow: isRunning ? '0 0 12px rgba(0,174,239,0.5)' : 'none'
-                                    }}
-                                />
-                                {isRunning && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full h-full -translate-x-full animate-[shimmer_1.5s_infinite]" />
-                                )}
-                            </div>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '6px' }}>
-                                {isRunning ? 'Processing Stage 3/4 · Running...' : `100% Stage Completed · Last run: ${lastRun ? lastRun.toLocaleTimeString() : '2 mins ago'}`}
+                    {/* Inner Content Wrapper */}
+                    <div style={{
+                        position: 'relative',
+                        zIndex: 1,
+                        borderRadius: '12px',
+                        background: 'var(--surface-color)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        padding: '24px',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        boxShadow: isRunning ? 'inset 0 0 20px rgba(0,174,239,0.04)' : 'none',
+                        transition: 'box-shadow 0.3s ease'
+                    }}>
+                        {/* Left side: Content */}
+                        <div className="flex-1 flex flex-col">
+                            <h2 style={{ color: 'var(--text-primary)', fontSize: '16.5px', fontWeight: '600' }}>
+                                Pipeline Control
+                            </h2>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
+                                Run the full AI detection and response pipeline
                             </p>
-                        </div>
-                    </div>
 
-                    {/* Right side: Hero Button */}
-                    <button
-                        onClick={() => {
-                            runPipeline();
-                            setShowPipelineToast(true);
-                            setTimeout(() => setShowPipelineToast(false), 6000);
-                        }}
-                        disabled={isRunning}
-                        className={`shimmer-btn ${isRunning ? 'opacity-70 cursor-not-allowed pipeline-btn-running' : ''}`}
-                        style={{
-                            background: isRunning ? 'rgba(0,174,239,0.3)' : '#00AEEF',
-                            color: 'white',
-                            fontWeight: '700',
-                            fontSize: '14px',
-                            padding: '12px 32px',
-                            borderRadius: '8px',
-                            border: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            boxShadow: isRunning ? 'none' : '0 0 20px rgba(0,174,239,0.35), 0 4px 12px rgba(0,174,239,0.2)',
-                            transition: 'all 0.3s ease',
-                        }}
-                    >
-                        {isRunning ? (
-                            <>
-                                <Loader2 size={16} className="animate-spin" />
-                                Running...
-                            </>
-                        ) : (
-                            <>
-                                <Play size={16} fill="currentColor" />
-                                Run Pipeline
-                            </>
-                        )}
-                    </button>
+                            <div className="mt-3 mr-8 lg:mr-16">
+                                <div className="h-2 rounded-full overflow-hidden relative" style={{ background: 'var(--bg-primary)' }}>
+                                    <div
+                                        className="h-full transition-all duration-700 ease-out bg-[#00AEEF]"
+                                        style={{
+                                            width: isRunning ? '65%' : '100%',
+                                            boxShadow: isRunning ? '0 0 12px rgba(0,174,239,0.5)' : 'none'
+                                        }}
+                                    />
+                                    {isRunning && (
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full h-full -translate-x-full animate-[shimmer_1.5s_infinite]" />
+                                    )}
+                                </div>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '6px' }}>
+                                    {isRunning ? 'Processing Stage 3/4 · Running...' : `100% Stage Completed · Last run: ${lastRun ? lastRun.toLocaleTimeString() : '2 mins ago'}`}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Right side: Hero Button */}
+                        <button
+                            onClick={() => {
+                                runPipeline();
+                                setShowPipelineToast(true);
+                                setTimeout(() => setShowPipelineToast(false), 6000);
+                            }}
+                            disabled={isRunning}
+                            className={`shimmer-btn ${isRunning ? 'opacity-70 cursor-not-allowed pipeline-btn-running' : ''}`}
+                            style={{
+                                background: isRunning ? 'rgba(0,174,239,0.3)' : '#00AEEF',
+                                color: 'white',
+                                fontWeight: '700',
+                                fontSize: '14px',
+                                padding: '12px 32px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                boxShadow: isRunning ? 'none' : '0 0 20px rgba(0,174,239,0.35), 0 4px 12px rgba(0,174,239,0.2)',
+                                transition: 'all 0.3s ease',
+                            }}
+                        >
+                            {isRunning ? (
+                                <>
+                                    <Loader2 size={16} className="animate-spin" />
+                                    Running...
+                                </>
+                            ) : (
+                                <>
+                                    <Play size={16} fill="currentColor" />
+                                    Run Pipeline
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
-            </div>
             )}
 
 
@@ -457,14 +457,14 @@ const Dashboard = () => {
                             <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
                                 Live Event Stream
                             </h3>
-                            
+
                             <div style={{
                                 display: 'flex', gap: '6px', alignItems: 'center',
                                 background: 'rgba(21,128,61,0.08)', border: '1px solid rgba(21,128,61,0.15)',
                                 borderRadius: '20px', padding: '2px 10px'
                             }}>
-                                <div style={{ 
-                                    width: '7px', height: '7px', borderRadius: '50%', 
+                                <div style={{
+                                    width: '7px', height: '7px', borderRadius: '50%',
                                     background: '#15803D',
                                     animation: isStreamActive ? 'pulse-ring 2s infinite' : 'none'
                                 }} />
@@ -481,7 +481,7 @@ const Dashboard = () => {
                             }}>
                                 {liveEvents.length} events
                             </div>
-                            
+
                             <button
                                 onClick={() => setIsStreamActive(!isStreamActive)}
                                 style={{
@@ -503,7 +503,7 @@ const Dashboard = () => {
                     </div>
 
                     {/* LIVE FEED ITEMS */}
-                    <div 
+                    <div
                         ref={liveRef}
                         style={{ maxHeight: '280px', overflowY: 'auto' }}
                         className="flex-1 p-2 custom-scrollbar"
@@ -512,10 +512,10 @@ const Dashboard = () => {
                             <AnimatePresence initial={false}>
                                 {liveEvents.map((event) => {
                                     const isNew = newEventIds.has(event.id);
-                                    const severityColor = event.severity === 'high' ? '#B91C1C' 
-                                                        : event.severity === 'medium' ? '#FACC15' 
-                                                        : '#00AEEF';
-                                    
+                                    const severityColor = event.severity === 'high' ? '#B91C1C'
+                                        : event.severity === 'medium' ? '#FACC15'
+                                            : '#00AEEF';
+
                                     return (
                                         <motion.div
                                             key={event.id}
@@ -531,8 +531,8 @@ const Dashboard = () => {
                                                 display: 'flex',
                                                 gap: '10px',
                                                 alignItems: 'center',
-                                                background: isNew 
-                                                    ? 'rgba(0,174,239,0.06)' 
+                                                background: isNew
+                                                    ? 'rgba(0,174,239,0.06)'
                                                     : 'var(--surface-color)',
                                                 border: isNew
                                                     ? '1px solid rgba(0,174,239,0.15)'
@@ -542,7 +542,7 @@ const Dashboard = () => {
                                             className="hover:bg-white/10 rounded-lg cursor-pointer transition-all duration-300 group relative z-0 hover:z-10 hover:scale-[1.02] hover:border-white/100 hover:shadow-[0_5px_15px_rgba(255,255,255,0.15)]"
                                         >
                                             {/* Severity dot */}
-                                            <div style={{ 
+                                            <div style={{
                                                 width: '8px', height: '8px', borderRadius: '50%',
                                                 flexShrink: 0,
                                                 background: severityColor,
@@ -813,8 +813,8 @@ const Dashboard = () => {
                         </thead>
                         <tbody className="divide-y" style={{ borderColor: 'var(--glass-border)', color: 'var(--text-secondary)' }}>
                             {mockIncidents.slice(0, 5).map((inc) => (
-                                <tr 
-                                    key={inc.id} 
+                                <tr
+                                    key={inc.id}
                                     onClick={() => navigate(`/incidents?highlight=${inc.id}`)}
                                     className="hover:bg-white/10 cursor-pointer transition-colors"
                                 >
@@ -851,7 +851,7 @@ const Dashboard = () => {
             {/* ROW 5 — System Health (Change 2) */}
             <div className="mt-8">
                 <h3 className="font-semibold mb-4 px-1" style={{ color: 'var(--text-secondary)' }}>System Health Metrics</h3>
-                
+
                 {/* Health Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* CARD 1 — Events/Min */}
@@ -870,7 +870,7 @@ const Dashboard = () => {
                                 <span style={{ fontSize: '10px', color: '#15803D', fontWeight: 600 }}>Live</span>
                             </div>
                         </div>
-                        
+
                         <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#00AEEF', marginBottom: '8px' }}>
                             {healthData.eventsPerMin[healthData.eventsPerMin.length - 1]}
                         </div>
@@ -914,7 +914,7 @@ const Dashboard = () => {
                                 <span style={{ fontSize: '10px', color: '#15803D', fontWeight: 600 }}>Optimized</span>
                             </div>
                         </div>
-                        
+
                         <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#15803D', marginBottom: '8px' }}>
                             {healthData.aiLatency[healthData.aiLatency.length - 1].toFixed(1)}s
                         </div>
@@ -965,7 +965,7 @@ const Dashboard = () => {
                                             </span>
                                         </div>
                                     </div>
-                                    
+
                                     <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: loadColor, marginBottom: '8px' }}>
                                         {load}%
                                     </div>
@@ -1043,14 +1043,14 @@ const Dashboard = () => {
                             Pipeline running
                         </span>
                         <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>·</span>
-                        <button 
+                        <button
                             onClick={() => navigate('/pipeline')}
-                            style={{ 
-                                background: 'none', 
-                                border: 'none', 
-                                color: '#00AEEF', 
-                                fontSize: '13px', 
-                                fontWeight: 700, 
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#00AEEF',
+                                fontSize: '13px',
+                                fontWeight: 700,
                                 cursor: 'pointer',
                                 padding: 0,
                                 display: 'flex',

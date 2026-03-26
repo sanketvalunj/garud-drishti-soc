@@ -152,11 +152,11 @@ const LiveEventStream = () => {
     // ─────────────────────────────────────────────────────────────────
     return (
         <div className="p-0 rounded-2xl overflow-hidden border grid grid-cols-1 lg:grid-cols-12 h-[350px]"
-            style={{ 
-                background: 'var(--surface-color)', 
+            style={{
+                background: 'var(--surface-color)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                borderColor: 'var(--glass-border)' 
+                borderColor: 'var(--glass-border)'
             }}
         >
 

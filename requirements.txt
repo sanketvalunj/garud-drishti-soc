@@ -7,10 +7,17 @@
 fastapi
 uvicorn[standard]
 pydantic
+pydantic[email]          # Enables EmailStr validation
+
+# Authentication & Security
+python-jose[cryptography] # JWT encoding/decoding (HMAC + RSA support)
+bcrypt                    # Password hashing (constant-time, salted)
+passlib[bcrypt]           # Optional helper; bcrypt used directly here
 
 # Data Processing
 pandas
 numpy
+networkx
 
 # Storage
 elasticsearch>=8.0.0
@@ -19,6 +26,8 @@ elasticsearch>=8.0.0
 python-dotenv
 tqdm
 
-#scheduler
+# Scheduler
 apscheduler
 tzlocal
+
+scikit-learn

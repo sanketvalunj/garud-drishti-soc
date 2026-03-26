@@ -1,0 +1,9 @@
+{
+  "sliding_window_minutes": 10,
+  "sequence_gap_minutes": 5,
+  "anomaly_match_tolerance_seconds": 120,
+  "deduplicate_before_correlation": true,
+  "min_incident_risk_score": 45,
+  "max_timeline_events": 50,
+  "max_story_events": 8
+}

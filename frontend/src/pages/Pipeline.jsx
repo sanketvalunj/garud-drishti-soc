@@ -170,7 +170,7 @@ const Pipeline = () => {
   const [pipelineStatus] = useState(MOCK_PIPELINE_STATUS)
   const [history] = useState(MOCK_PIPELINE_HISTORY)
   const [stats] = useState(MOCK_PIPELINE_STATS)
-  
+
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [isDragging, setIsDragging] = useState(false)
   const [uploadSource, setUploadSource] = useState('windows_event')
@@ -196,8 +196,8 @@ const Pipeline = () => {
     e.preventDefault()
     setIsDragging(false)
     const files = Array.from(e.dataTransfer.files)
-    const validFiles = files.filter(f => 
-      ['.log', '.json', '.csv', '.txt', '.evtx', '.xml'].some(ext => 
+    const validFiles = files.filter(f =>
+      ['.log', '.json', '.csv', '.txt', '.evtx', '.xml'].some(ext =>
         f.name.endsWith(ext)
       )
     )
@@ -395,7 +395,7 @@ const Pipeline = () => {
                       <div style={{ fontSize: '14px', fontWeight: 600, color: getStageColor(status) }}>
                         {stage.name}
                       </div>
-                      
+
                       {status === 'completed' ? (
                         <div style={{
                           fontSize: '10px',
@@ -519,7 +519,7 @@ const Pipeline = () => {
                         {file.name}
                       </div>
                       <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                        {(file.size/1024).toFixed(1)} KB
+                        {(file.size / 1024).toFixed(1)} KB
                       </div>
                     </div>
                     <button

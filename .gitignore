@@ -1,24 +1,52 @@
+# =========================
 # Python
+# =========================
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Virtual env
+# =========================
+# Virtual Environment
+# =========================
 venv/
-.env/
+app_env/
+.env
 
-# Logs & temp
+# =========================
+# Logs
+# =========================
 *.log
-*.tmp
 
-# OS files
+# =========================
+# Data (GENERATED FILES)
+# =========================
+data/
+garud_drishti/data/
+*/data/
+*.json
+
+# BUT keep config JSON if needed
+!config.json
+!garud_drishti/correlation_engine/**/*.json
+!garud_drishti/correlation_engine/**/*.md
+
+# Keep offline MITRE knowledge base JSONs, but not generated correlation outputs
+!garud_drishti/data/
+garud_drishti/data/*
+!garud_drishti/data/mitre/
+!garud_drishti/data/mitre/**/*.json
+garud_drishti/data/correlation/
+garud_drishti/data/incidents/
+
+# =========================
+# OS Files
+# =========================
 .DS_Store
+Thumbs.db
 
-# Data files (optional – remove if you want them tracked)
-
-models/
-
-# Docker
-*.db
-*.sqlite3
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/

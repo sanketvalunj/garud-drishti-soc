@@ -1,4 +1,8 @@
 import json
+import uuid
+import time
+import logging
+
 from garud_drishti.ai_engine.reasoning.signal_context import build_soc_context
 from garud_drishti.ai_engine.reasoning.threat_reasoner import ThreatReasoner
 from garud_drishti.ai_engine.reasoning.attack_analyzer import AttackAnalyzer
@@ -10,34 +14,82 @@ from garud_drishti.ai_engine.playbook.playbook_generator import PlaybookGenerato
 from garud_drishti.ai_engine.playbook.playbook_selector import PlaybookSelector
 from garud_drishti.ai_engine.orchestration.automation_engine import AutomationEngine
 from garud_drishti.ai_engine.orchestration.decision_logger import DecisionLogger
+<<<<<<< HEAD
 import logging
 import uuid
-import time
 
-logger = logging.getLogger("SOCMasterAgent")
-logger.setLevel(logging.INFO)
-# Use a null handler or file handler to keep stdout pure JSON if requested
-# For this script we will add a console handler that goes to stderr, or just a file handler
-fh = logging.FileHandler("soc_pipeline.log")
-fh.setFormatter(logging.Formatter('%(asctime)s - [%(levelname)s] - %(message)s'))
 if not logger.handlers:
+    fh = logging.FileHandler("soc_pipeline.log")
+    fh.setFormatter(logging.Formatter("%(asctime)s - [%(levelname)s] - %(message)s"))
     logger.addHandler(fh)
 
-def validate(data: dict, schema: dict, module: str):
-    """Enforces strict schema validation pipeline-wide."""
+
+# ---------------------------------------------------------------------------
+# Schema validation helper
+# ---------------------------------------------------------------------------
+
+def validate(data: dict, schema: dict, module: str) -> None:
+    """
+    Enforces strict schema validation pipeline-wide.
+
+    Args:
+        data: Output dict from a pipeline stage.
+        schema: Mapping of required keys to their expected types.
+        module: Human-readable stage name used in error messages.
+
+    Raises:
+        ValueError: If data is empty.
+        KeyError: If a required key is missing.
+        TypeError: If a value has the wrong type.
+    """
+>>>>>>> 6bd384c36c960584426c4e6347a32d9f9c031e3e
     if not data:
         raise ValueError(f"Empty data output from {module}")
-    for key, expected_type in schema.items():
         if key not in data:
             raise KeyError(f"Missing required key '{key}' from {module}")
         if not isinstance(data[key], expected_type):
-            raise TypeError(f"Invalid type for '{key}' in {module}. Expected {expected_type.__name__}, got {type(data[key]).__name__}")
+            raise TypeError(
+                f"Invalid type for '{key}' in {module}. "
+                f"Expected {expected_type.__name__}, got {type(data[key]).__name__}"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Priority classifier
+# ---------------------------------------------------------------------------
+
+def _classify_priority(risk_score: int) -> str:
+    """Return P1 / P2 / P3 based on numeric risk score."""
+    if risk_score > 80:
+        return "P1"
+    if risk_score > 50:
+        return "P2"
+    return "P3"
+
+
+# ---------------------------------------------------------------------------
+# SOCMasterAgent
+# ---------------------------------------------------------------------------
 
 class SOCMasterAgent:
     """
-    Orchestrates the Final Phase-5 AI Engine SOC pipeline.
+    Orchestrates the full multi-stage SOC AI pipeline.
+
+    Pipeline stages
+    ---------------
+    1.  ThreatReasoner       – classify threat type, risk score, severity
+    2.  AttackAnalyzer       – build attack chain and depth
+    3.  AgentOrchestrator    – multi-agent voting engine (risk / compliance / impact)
+    4.  PolicyGuard          – governance / policy validation
+    5.  DecisionExplainer    – human-readable explanation
+    6.  ConfidenceCalibrator – calibrate confidence score
+    7.  PlaybookSelector     – choose the right playbook
+    8.  PlaybookGenerator    – generate step-by-step response
+    9.  AutomationEngine     – conditional simulation (block / isolate / critical only)
+    10. DecisionLogger       – persist decision with feedback loop
     """
-    def __init__(self):
+
+    def __init__(self) -> None:
         self.threat_reasoner = ThreatReasoner()
         self.attack_analyzer = AttackAnalyzer()
         self.orchestrator = AgentOrchestrator()
@@ -49,119 +101,229 @@ class SOCMasterAgent:
         self.automation_engine = AutomationEngine()
         self.decision_logger = DecisionLogger()
 
-    def run(self):
+    # ------------------------------------------------------------------
+    # Public entry point
+    # ------------------------------------------------------------------
+
+    def run(self) -> dict:
+        """
+        Build SOC context and process every detected incident.
+
+        Returns:
+            dict: ``{"status": "success"|"no_incidents"|"error", "data": [...]}``
+        """
         trace_id = str(uuid.uuid4())
-        logger.info(f"[{trace_id}] - [PIPELINE_START] - Initializing SOC Pipeline")
+        pipeline_start = time.time()
+        logger.info(f"[{trace_id}] [PIPELINE_START] Initializing SOC Pipeline")
 
-        # 1. Build SOC intelligence context (Layer 1)
         context = build_soc_context()
-
-        # Pipeline Safety Guard
         incidents = context.get("incidents", [])
-        if not incidents:
-            logger.info(f"[{trace_id}] - [PIPELINE_END] - No incidents detected")
-            return {"status": "no_incidents", "data": None}
-            
-        incident = incidents[0]
         anomalies = context.get("anomalies", [])
 
-        # 2. Threat Reasoner
-        logger.info(f"[{trace_id}] - [THREAT_REASONER] - Starting analysis")
-        threat_analysis = self.threat_reasoner.analyze(incident, anomalies)
-        validate(threat_analysis, {
-            "threat_type": str,
-            "risk_score": int,
-            "severity": str
-        }, "ThreatReasoner")
+        if not incidents:
+            logger.info(f"[{trace_id}] [PIPELINE_END] No incidents detected")
+            return {"status": "no_incidents", "data": None}
+
+        results = []
+        for incident in incidents:
+            result = self._process_single_incident(incident, anomalies, trace_id)
+            results.append(result)
+
+        pipeline_latency = round(time.time() - pipeline_start, 4)
+        logger.info(
+            f"[{trace_id}] [PIPELINE_COMPLETED] "
+            f"{len(incidents)} incident(s) processed in {pipeline_latency}s"
+        )
+
+        return {
+            "status": "success",
+            "trace_id": trace_id,
+            "pipeline_latency_seconds": pipeline_latency,
+            "incidents_processed": len(incidents),
+            "data": results,
+        }
+
+    # ------------------------------------------------------------------
+    # Per-incident processing
+    # ------------------------------------------------------------------
+
+    def _process_single_incident(
+        self, incident: dict, anomalies: list, trace_id: str
+    ) -> dict:
+        """
+        Run the full 10-stage pipeline for a single incident.
+
+        Args:
+            incident: Normalised incident dict from the SOC context.
+            anomalies: List of anomaly dicts from the SOC context.
+            trace_id: Shared trace identifier for the parent run.
+
+        Returns:
+            dict: Per-incident result payload including latency and priority,
+                  or a structured error dict if a stage fails.
+        """
+        incident_id = incident.get("incident_id", "INC-000")
+        stage_start = time.time()
+        logger.info(f"[{trace_id}] [{incident_id}] Processing incident")
+
+        # ── Stage 1: Threat Reasoner ──────────────────────────────────
+        try:
+            logger.info(f"[{trace_id}] [{incident_id}] [THREAT_REASONER] Starting")
+            threat_analysis = self.threat_reasoner.analyze(incident, anomalies)
+            validate(
+                threat_analysis,
+                {"threat_type": str, "risk_score": int, "severity": str},
+                "ThreatReasoner",
+            )
+        except Exception as e:
+            logger.error(f"[{trace_id}] [{incident_id}] ThreatReasoner failed: {e}")
+            return {"status": "error", "incident_id": incident_id, "stage": "threat_reasoner", "detail": str(e)}
+
         threat_type = threat_analysis["threat_type"]
         risk_score = threat_analysis["risk_score"]
-        
-        # 3. Attack Analyzer
-        logger.info(f"[{trace_id}] - [ATTACK_ANALYZER] - Starting analysis")
-        attack_analysis = self.attack_analyzer.analyze(incident)
-        validate(attack_analysis, {
-            "attack_chain": list,
-            "attack_depth": int
-        }, "AttackAnalyzer")
-        attack_chain = attack_analysis["attack_chain"]
 
-        # Extract context
+        # ── Stage 2: Attack Analyzer ──────────────────────────────────
+        try:
+            logger.info(f"[{trace_id}] [{incident_id}] [ATTACK_ANALYZER] Starting")
+            attack_analysis = self.attack_analyzer.analyze(incident)
+            validate(
+                attack_analysis,
+                {"attack_chain": list, "attack_depth": int},
+                "AttackAnalyzer",
+            )
+        except Exception as e:
+            logger.error(f"[{trace_id}] [{incident_id}] AttackAnalyzer failed: {e}")
+            return {"status": "error", "incident_id": incident_id, "stage": "attack_analyzer", "detail": str(e)}
+
+        attack_chain = attack_analysis["attack_chain"]
         entity_context = {
             "user": incident.get("user", "unknown"),
             "asset": incident.get("asset", "unknown"),
-            "source_ip": incident.get("source_ip", "unknown")
+            "source_ip": incident.get("source_ip", "unknown"),
         }
 
-        # 4. Agent Orchestrator (Layer 2 & 3 Voting Engine)
-        logger.info(f"[{trace_id}] - [RISK_AGENT] - Engaging agent orchestrator")
-        orchestration_result = self.orchestrator.run(incident)
-        validate(orchestration_result, {
-            "decision": dict,
-            "agent_memory": dict
-        }, "AgentOrchestrator")
-        
+        # ── Stage 3: Agent Orchestrator ───────────────────────────────
+        try:
+            logger.info(f"[{trace_id}] [{incident_id}] [AGENT_ORCHESTRATOR] Starting")
+            orchestration_result = self.orchestrator.run({
+                "incident": incident,
+                "threat_analysis": threat_analysis,
+                "attack_analysis": attack_analysis,
+            })
+            validate(
+                orchestration_result,
+                {"decision": dict, "agent_memory": dict},
+                "AgentOrchestrator",
+            )
+        except Exception as e:
+            logger.error(f"[{trace_id}] [{incident_id}] AgentOrchestrator failed: {e}")
+            return {"status": "error", "incident_id": incident_id, "stage": "agent_orchestrator", "detail": str(e)}
+
         decision = orchestration_result["decision"]
         memory = orchestration_result["agent_memory"]
 
-        # 5. Policy Guard (Governance)
-        logger.info(f"[{trace_id}] - [POLICY_GUARD] - Validating decision")
-        decision = self.policy_guard.validate(decision)
-        validate(decision, {"decision": str}, "PolicyGuard")
+        # ── Stage 4: Policy Guard ─────────────────────────────────────
+        try:
+            logger.info(f"[{trace_id}] [{incident_id}] [POLICY_GUARD] Validating")
+            decision = self.policy_guard.validate(decision)
+            validate(decision, {"decision": str}, "PolicyGuard")
+        except Exception as e:
+            logger.error(f"[{trace_id}] [{incident_id}] PolicyGuard failed: {e}")
+            return {"status": "error", "incident_id": incident_id, "stage": "policy_guard", "detail": str(e)}
 
-        # 6. Decision Explainer (Dynamically generated, no hardcoding)
-        incident_id = incident.get("incident_id", "INC-000")
-        logger.info(f"[{trace_id}] - [DECISION_EXPLAINER] - Generating explanation")
-        explanation = self.decision_explainer.explain(
-            incident_id=incident_id,
-            threat_type=threat_type,
-            attack_chain=attack_chain,
-            entity_context=entity_context,
-            risk_score=risk_score
+        # ── Stage 5: Decision Explainer ───────────────────────────────
+        try:
+            logger.info(f"[{trace_id}] [{incident_id}] [DECISION_EXPLAINER] Generating")
+            explanation = self.decision_explainer.explain(
+                incident_id=incident_id,
+                threat_type=threat_type,
+                attack_chain=attack_chain,
+                entity_context=entity_context,
+                risk_score=risk_score,
+            )
+            validate(explanation, {"incident": str, "summary_lines": list}, "DecisionExplainer")
+        except Exception as e:
+            logger.error(f"[{trace_id}] [{incident_id}] DecisionExplainer failed: {e}")
+            return {"status": "error", "incident_id": incident_id, "stage": "decision_explainer", "detail": str(e)}
+
+        # ── Stage 6: Confidence Calibrator ────────────────────────────
+        try:
+            logger.info(f"[{trace_id}] [{incident_id}] [CONFIDENCE_CALIBRATOR] Calibrating")
+            confidence = self.confidence_calibrator.calibrate(
+                memory.get("risk", {}),
+                memory.get("compliance", {}),
+                memory.get("impact", {}),
+            )
+        except Exception as e:
+            logger.error(f"[{trace_id}] [{incident_id}] ConfidenceCalibrator failed: {e}")
+            return {"status": "error", "incident_id": incident_id, "stage": "confidence_calibrator", "detail": str(e)}
+
+        # ── Stage 7 + 8: Playbook Selector + Generator ────────────────
+        try:
+            logger.info(f"[{trace_id}] [{incident_id}] [PLAYBOOK] Selecting and generating")
+            playbook_name = self.playbook_selector.select(threat_type)
+            response = self.playbook_generator.generate(playbook_name)
+            validate(response, {"playbook": str, "steps": list}, "PlaybookGenerator")
+        except Exception as e:
+            logger.error(f"[{trace_id}] [{incident_id}] Playbook stage failed: {e}")
+            return {"status": "error", "incident_id": incident_id, "stage": "playbook", "detail": str(e)}
+
+        # ── Stage 9: Automation Engine (guarded) ──────────────────────
+        try:
+            logger.info(f"[{trace_id}] [{incident_id}] [AUTOMATION_ENGINE] Evaluating")
+            if decision.get("decision") in {"block", "isolate", "critical"}:
+                logger.info(
+                    f"[{trace_id}] [{incident_id}] [AUTOMATION_ENGINE] "
+                    f"Triggering simulation for decision='{decision.get('decision')}'"
+                )
+                automation = self.automation_engine.simulate(response)
+            else:
+                logger.info(
+                    f"[{trace_id}] [{incident_id}] [AUTOMATION_ENGINE] "
+                    f"Skipped (decision='{decision.get('decision')}')"
+                )
+                automation = {"status": "skipped"}
+        except Exception as e:
+            logger.error(f"[{trace_id}] [{incident_id}] AutomationEngine failed: {e}")
+            automation = {"status": "error", "detail": str(e)}
+
+        # ── Stage 10: Decision Logger ─────────────────────────────────
+        try:
+            logger.info(f"[{trace_id}] [{incident_id}] [DECISION_LOGGER] Logging")
+            self.decision_logger.log({
+                "trace_id": trace_id,
+                "incident_id": incident_id,
+                "threat_type": threat_type,
+                "risk_score": risk_score,
+                "decision": decision,
+                "confidence": confidence,
+                "playbook": response.get("steps"),
+                "automation_status": automation.get("status"),
+                "feedback": "pending",
+            })
+        except Exception as e:
+            logger.error(f"[{trace_id}] [{incident_id}] DecisionLogger failed: {e}")
+
+        # ── Metrics + Priority ────────────────────────────────────────
+        latency = round(time.time() - stage_start, 4)
+        priority = _classify_priority(risk_score)
+
+        logger.info(
+            f"[{trace_id}] [{incident_id}] Completed | "
+            f"priority={priority} risk={risk_score} latency={latency}s"
         )
-        validate(explanation, {"incident": str, "summary_lines": list}, "DecisionExplainer")
 
-        # 7. Confidence Calibrator
-        logger.info(f"[{trace_id}] - [CONFIDENCE_CALIBRATOR] - Calibrating")
-        risk = memory.get("risk", {})
-        compliance = memory.get("compliance", {})
-        impact = memory.get("impact", {})
-        confidence = self.confidence_calibrator.calibrate(risk, compliance, impact)
-        
-        # 8. Playbook Generator
-        logger.info(f"[{trace_id}] - [PLAYBOOK_GENERATOR] - Generating playbook")
-        playbook_name = self.playbook_selector.select(threat_type)
-        response = self.playbook_generator.generate(playbook_name)
-        validate(response, {"playbook": str, "steps": list}, "PlaybookGenerator")
-
-        # 9. Automation Engine
-        logger.info(f"[{trace_id}] - [AUTOMATION_ENGINE] - Running simulation")
-        automation = self.automation_engine.simulate(response)
-
-        # 10. Decision Logger
-        logger.info(f"[{trace_id}] - [DECISION_LOGGER] - Logging to database")
-        log_entry = {
-            "incident_id": incident_id,
-            "threat_type": threat_type,
-            "decision": decision,
-            "confidence": confidence,
-            "playbook": response.get("steps")
-        }
-        self.decision_logger.log(log_entry)
-
-        logger.info(f"[{trace_id}] - [PIPELINE_COMPLETED] - Success")
-
-        # Output payload MUST be pure JSON with preserved context
         return {
             "status": "success",
-            "data": {
-                "trace_id": trace_id,
-                "threat_analysis": threat_analysis,
-                "attack_analysis": attack_analysis,
-                "entity_context": entity_context,
-                "orchestration": orchestration_result,
-                "explanation": explanation,
-                "confidence": confidence,
-                "response": response,
-                "automation": automation
-            }
+            "incident_id": incident_id,
+            "priority": priority,
+            "latency_seconds": latency,
+            "threat_analysis": threat_analysis,
+            "attack_analysis": attack_analysis,
+            "entity_context": entity_context,
+            "orchestration": orchestration_result,
+            "explanation": explanation,
+            "confidence": confidence,
+            "response": response,
+            "automation": automation,
         }

@@ -7,7 +7,7 @@ def _get_project_root() -> Path:
 
 class DecisionLogger:
     def __init__(self):
-        self.log_file = _get_project_root() / "data" / "ai_decisions" / "decision_log.json"
+        self.log_file = _get_project_root() / "garud_drishti" / "data" / "ai_engine" / "decision_log.json"
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
 
     def log(self, decision_object):

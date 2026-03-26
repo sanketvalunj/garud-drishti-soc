@@ -20,95 +20,95 @@ const MOCK_USERS = {
       canViewAuditTrail: false,
       canRunPipelinePage: false
     },
-     navItems: [
-       'dashboard',
-       'alerts',
-       'incidents',
-       'activity'
-     ]
-   },
-   tier2: {
-     id: 'U002',
-     name: 'testuser',
-     roleLabel: 'Incident Responder',
-     role: 'tier2',
-     avatar: 'TU',
-     department: 'SOC Operations',
-     permissions: {
-       canActivateResponse: true,
-       canIsolateUser: true,
-       canRunPipeline: false,
-       canViewReasoning: true,
-       canViewPlaybooks: true,
-       canAccessAdmin: true,
-       canManageUsers: false,
-       canViewAuditTrail: false,
-       canRunPipelinePage: false
-     },
-     navItems: [
-       'dashboard',
-       'alerts',
-       'incidents',
-       'playbooks',
-       'llmreasoning',
-       'activity'
-     ]
-   },
-   tier3: {
-     id: 'U003',
-     name: 'James Okafor',
-     roleLabel: 'Threat Hunter',
-     role: 'tier3',
-     avatar: 'JO',
-     department: 'SOC Operations',
-     permissions: {
-       canActivateResponse: true,
-       canIsolateUser: true,
-       canRunPipeline: true,
-       canViewReasoning: true,
-       canViewPlaybooks: true,
-       canAccessAdmin: true,
-       canManageUsers: false,
-       canViewAuditTrail: false,
-       canRunPipelinePage: true
-     },
-     navItems: [
-       'dashboard',
-       'alerts',
-       'incidents',
-       'playbooks',
-       'llmreasoning',
-       'pipeline',
-       'activity'
-     ]
-   },
-   manager: {
-     id: 'U004',
-     name: 'Priya Sharma',
-     roleLabel: 'SOC Manager',
-     role: 'manager',
-     avatar: 'PS',
-     department: 'SOC Leadership',
-     permissions: {
-       canActivateResponse: true,
-       canIsolateUser: true,
-       canRunPipeline: true,
-       canViewReasoning: true,
-       canViewPlaybooks: true,
-       canAccessAdmin: true,
-       canManageUsers: true,
-       canViewAuditTrail: true,
-       canRunPipelinePage: true
-     },
-     navItems: [
-       'dashboard',
-       'alerts',
-       'incidents',
-       'playbooks',
-       'llmreasoning',
-       'pipeline',
-       'activity'
-     ]
+    navItems: [
+      'dashboard',
+      'alerts',
+      'incidents',
+      'activity'
+    ]
+  },
+  tier2: {
+    id: 'U002',
+    name: 'testuser',
+    roleLabel: 'Incident Responder',
+    role: 'tier2',
+    avatar: 'TU',
+    department: 'SOC Operations',
+    permissions: {
+      canActivateResponse: true,
+      canIsolateUser: true,
+      canRunPipeline: false,
+      canViewReasoning: true,
+      canViewPlaybooks: true,
+      canAccessAdmin: true,
+      canManageUsers: false,
+      canViewAuditTrail: false,
+      canRunPipelinePage: false
+    },
+    navItems: [
+      'dashboard',
+      'alerts',
+      'incidents',
+      'playbooks',
+      'llmreasoning',
+      'activity'
+    ]
+  },
+  tier3: {
+    id: 'U003',
+    name: 'James Okafor',
+    roleLabel: 'Threat Hunter',
+    role: 'tier3',
+    avatar: 'JO',
+    department: 'SOC Operations',
+    permissions: {
+      canActivateResponse: true,
+      canIsolateUser: true,
+      canRunPipeline: true,
+      canViewReasoning: true,
+      canViewPlaybooks: true,
+      canAccessAdmin: true,
+      canManageUsers: false,
+      canViewAuditTrail: false,
+      canRunPipelinePage: true
+    },
+    navItems: [
+      'dashboard',
+      'alerts',
+      'incidents',
+      'playbooks',
+      'llmreasoning',
+      'pipeline',
+      'activity'
+    ]
+  },
+  manager: {
+    id: 'U004',
+    name: 'Priya Sharma',
+    roleLabel: 'SOC Manager',
+    role: 'manager',
+    avatar: 'PS',
+    department: 'SOC Leadership',
+    permissions: {
+      canActivateResponse: true,
+      canIsolateUser: true,
+      canRunPipeline: true,
+      canViewReasoning: true,
+      canViewPlaybooks: true,
+      canAccessAdmin: true,
+      canManageUsers: true,
+      canViewAuditTrail: true,
+      canRunPipelinePage: true
+    },
+    navItems: [
+      'dashboard',
+      'alerts',
+      'incidents',
+      'playbooks',
+      'llmreasoning',
+      'pipeline',
+      'activity'
+    ]
   }
 }
 
@@ -123,16 +123,16 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const storedUser = localStorage.getItem('user_role')
     const storedOnboarding = localStorage.getItem('is_onboarded')
-    
+
     if (storedUser && MOCK_USERS[storedUser]) {
       setUser(MOCK_USERS[storedUser])
       setIsAuthenticated(true)
     }
-    
+
     if (storedOnboarding === 'true') {
       setIsOnboarded(true)
     }
-    
+
     setLoading(false)
   }, [])
 

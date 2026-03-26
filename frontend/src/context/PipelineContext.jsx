@@ -14,14 +14,14 @@ export const PipelineProvider = ({ children }) => {
         if (isRunning) return;
         setIsRunning(true);
         setCurrentStage(0);
-        
+
         try {
             // API to integrate — Simulate stage progression
             for (let i = 1; i <= 6; i++) {
                 await new Promise(resolve => setTimeout(resolve, 1500));
                 setCurrentStage(i);
             }
-            
+
             // Finalize
             setLastRun(new Date());
             api.runPipeline().catch(err => console.error("Background API run failed", err));

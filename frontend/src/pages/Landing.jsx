@@ -135,33 +135,33 @@ const FidelityVisual = () => {
   const factors = [{ l: 'Behavioral', v: 0.91 }, { l: 'Asset Criticality', v: 0.88 }, { l: 'Historical', v: 0.79 }, { l: 'Cross-Entity', v: 0.85 }]
   return (
     <div>
-    <div style={{ textAlign: 'center', marginBottom: 20 }}>
-      <div style={{ width: 140, height: 70, margin: '0 auto', position: 'relative' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <RadialBarChart
-            cx="50%"
-            cy="100%"
-            innerRadius={50}
-            outerRadius={70}
-            barSize={10}
-            data={[{ value: 87, fill: '#00AEEF' }]}
-            startAngle={180}
-            endAngle={0}
-          >
-            <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-            <RadialBar
-              background={{ fill: "rgba(255,255,255,0.1)" }}
-              dataKey="value"
-              cornerRadius={10}
-              animationDuration={800}
-              animationEasing="ease-out"
-            />
-          </RadialBarChart>
-        </ResponsiveContainer>
+      <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <div style={{ width: 140, height: 70, margin: '0 auto', position: 'relative' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <RadialBarChart
+              cx="50%"
+              cy="100%"
+              innerRadius={50}
+              outerRadius={70}
+              barSize={10}
+              data={[{ value: 87, fill: '#00AEEF' }]}
+              startAngle={180}
+              endAngle={0}
+            >
+              <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+              <RadialBar
+                background={{ fill: "rgba(255,255,255,0.1)" }}
+                dataKey="value"
+                cornerRadius={10}
+                animationDuration={800}
+                animationEasing="ease-out"
+              />
+            </RadialBarChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{ fontSize: 32, fontWeight: 900, color: 'white', marginTop: -15 }}>0.87</div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>High Confidence</div>
       </div>
-      <div style={{ fontSize: 32, fontWeight: 900, color: 'white', marginTop: -15 }}>0.87</div>
-      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>High Confidence</div>
-    </div>
       {factors.map(f => (
         <div key={f.l} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', width: 100, flexShrink: 0 }}>{f.l}</span>
@@ -477,7 +477,7 @@ const Landing = () => {
 
               <div style={{ marginTop: 16, textAlign: 'center', position: 'relative' }}>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>AI Fidelity Score</div>
-                
+
                 <div style={{ width: 160, height: 90, margin: '0 auto', position: 'relative' }}>
                   <div style={{ width: '100%', height: '100%', position: 'absolute', top: -15 }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -632,69 +632,69 @@ const Landing = () => {
         <div style={{ position: 'relative', overflow: 'hidden', minHeight: 400 }}>
           <AnimatePresence mode="popLayout" custom={direction}>
             {activeRoleData && (
-              <motion.div key={activeRole} 
+              <motion.div key={activeRole}
                 custom={direction}
-                initial={{ x: direction > 0 ? '100%' : '-100%', opacity: 0 }} 
+                initial={{ x: direction > 0 ? '100%' : '-100%', opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                exit={{ opacity: 0, transition: { duration: 0.2 } }} 
+                exit={{ opacity: 0, transition: { duration: 0.2 } }}
                 transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
                 style={{ display: 'flex', gap: 60, maxWidth: 1200, margin: '0 auto', alignItems: 'center' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  width: 56, height: 56, borderRadius: '50%', background: 'rgba(0,174,239,0.15)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16
-                }}>
-                  <activeRoleData.icon size={24} color="#00AEEF" />
-                </div>
-                <h3 style={{ color: 'white', fontSize: 28, fontWeight: 800, margin: 0 }}>{activeRoleData.label}</h3>
-                <p style={{ color: '#00AEEF', fontSize: 14, fontWeight: 600, margin: '4px 0 0 0' }}>{activeRoleData.sublabel}</p>
-                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 15, marginTop: 12 }}>{activeRoleData.description}</p>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    width: 56, height: 56, borderRadius: '50%', background: 'rgba(0,174,239,0.15)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16
+                  }}>
+                    <activeRoleData.icon size={24} color="#00AEEF" />
+                  </div>
+                  <h3 style={{ color: 'white', fontSize: 28, fontWeight: 800, margin: 0 }}>{activeRoleData.label}</h3>
+                  <p style={{ color: '#00AEEF', fontSize: 14, fontWeight: 600, margin: '4px 0 0 0' }}>{activeRoleData.sublabel}</p>
+                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 15, marginTop: 12 }}>{activeRoleData.description}</p>
 
-                <div style={{ marginTop: 28 }}>
-                  {activeRoleData.capabilities.map(c => (
-                    <div key={c} style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'flex-start' }}>
-                      <CheckCircle size={16} color="#00AEEF" style={{ marginTop: 2, flexShrink: 0 }} />
-                      <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14 }}>{c}</span>
+                  <div style={{ marginTop: 28 }}>
+                    {activeRoleData.capabilities.map(c => (
+                      <div key={c} style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'flex-start' }}>
+                        <CheckCircle size={16} color="#00AEEF" style={{ marginTop: 2, flexShrink: 0 }} />
+                        <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14 }}>{c}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                    onClick={() => { setLoginRole(activeRole); scrollToLogin() }}
+                    style={{
+                      background: '#00AEEF', color: 'white', borderRadius: 8,
+                      padding: '12px 24px', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', marginTop: 32,
+                      display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap'
+                    }}>
+                    Enter as {activeRoleData.label} <ArrowRight size={14} style={{ flexShrink: 0 }} />
+                  </motion.button>
+                </div>
+
+                {/* Role-specific dashboard preview */}
+                <div style={{
+                  flex: 1, background: 'rgba(0,57,93,0.4)', backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(0,174,239,0.2)', borderRadius: 20, padding: 24
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00AEEF' }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>{activeRoleData.label} Dashboard</span>
+                  </div>
+                  {activeRoleData.capabilities.map((c, i) => (
+                    <div key={c} style={{
+                      background: 'rgba(2,11,24,0.5)', border: '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: 8, padding: '10px 14px', marginBottom: 6, fontSize: 12, color: 'rgba(255,255,255,0.5)',
+                      display: 'flex', alignItems: 'center', gap: 8
+                    }}>
+                      <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#00AEEF' }} />
+                      {c}
                     </div>
                   ))}
                 </div>
-
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                  onClick={() => { setLoginRole(activeRole); scrollToLogin() }}
-                  style={{
-                    background: '#00AEEF', color: 'white', borderRadius: 8,
-                    padding: '12px 24px', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', marginTop: 32,
-                    display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap'
-                  }}>
-                  Enter as {activeRoleData.label} <ArrowRight size={14} style={{ flexShrink: 0 }} />
-                </motion.button>
-              </div>
-
-              {/* Role-specific dashboard preview */}
-              <div style={{
-                flex: 1, background: 'rgba(0,57,93,0.4)', backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(0,174,239,0.2)', borderRadius: 20, padding: 24
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00AEEF' }} />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>{activeRoleData.label} Dashboard</span>
-                </div>
-                {activeRoleData.capabilities.map((c, i) => (
-                  <div key={c} style={{
-                    background: 'rgba(2,11,24,0.5)', border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: 8, padding: '10px 14px', marginBottom: 6, fontSize: 12, color: 'rgba(255,255,255,0.5)',
-                    display: 'flex', alignItems: 'center', gap: 8
-                  }}>
-                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#00AEEF' }} />
-                    {c}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </section>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </section>
 
       {/* ════ SECTION 6 — LOGIN ════ */}
       {/* PHASE 100%: Login form functional, About+Services pages, all animations, floating cards, visual mockups */}

@@ -1,5 +1,4 @@
 import json
-import csv
 from pathlib import Path
 
 def _get_project_root() -> Path:
@@ -7,8 +6,8 @@ def _get_project_root() -> Path:
     return Path(__file__).resolve().parent.parent.parent.parent
 
 def load_events():
-    """Loads normalized security events from data/normalized_events/events.json"""
-    events_path = _get_project_root() / "data" / "normalized_events" / "events.json"
+    """Loads normalized security events from garud_drishti/data/normalized_events/normalized_events.json"""
+    events_path = _get_project_root() / "garud_drishti" / "data" / "normalized_events" / "normalized_events.json"
     if events_path.exists():
         try:
             with open(events_path, "r", encoding="utf-8") as f:
@@ -18,22 +17,20 @@ def load_events():
     return []
 
 def load_anomalies():
-    """Loads UEBA anomaly results from data/incident_records/anomaly_results.csv"""
-    anomalies_path = _get_project_root() / "data" / "incident_records" / "anomaly_results.csv"
+    """Loads UEBA anomaly results from garud_drishti/data/processed/anomaly_events.json"""
+    anomalies_path = _get_project_root() / "garud_drishti" / "data" / "processed" / "anomaly_events.json"
     anomalies = []
     if anomalies_path.exists():
         try:
             with open(anomalies_path, "r", encoding="utf-8") as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    anomalies.append(row)
+                anomalies = json.load(f)
         except Exception as e:
             print(f"Error loading anomalies: {e}")
     return anomalies
 
 def load_incidents():
-    """Loads correlation engine incidents from data/incident_records/incidents.json"""
-    incidents_path = _get_project_root() / "data" / "incident_records" / "incidents.json"
+    """Loads correlation engine incidents from garud_drishti/data/processed/incidents.json"""
+    incidents_path = _get_project_root() / "garud_drishti" / "data" / "processed" / "incidents.json"
     if incidents_path.exists():
         try:
             with open(incidents_path, "r", encoding="utf-8") as f:
