@@ -1,15 +1,42 @@
+# =========================
 # Python
+# =========================
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# Virtual env
+# =========================
+# Virtual Environment
+# =========================
+venv/
 app_env/
+.env
 
+# =========================
 # Logs
+# =========================
 *.log
 
-# OS
-.DS_Store
+# =========================
+# Data (GENERATED FILES)
+# =========================
+data/
+garud_drishti/data/
+*/data/
+*.json
 
-# Generated data
-garud_drishti/backend/data/processed/
+# BUT keep config JSON if needed
+!config.json
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
