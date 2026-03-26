@@ -1,0 +1,142 @@
+{
+  "app.transaction.failed": [
+    {
+      "technique_id": "T1565",
+      "confidence": "candidate",
+      "reason": "Failed transaction activity can indicate attempted manipulation or fraud."
+    }
+  ],
+  "app.transaction.large": [
+    {
+      "technique_id": "T1565",
+      "confidence": "candidate",
+      "reason": "Large transactions can represent business logic abuse or manipulation."
+    }
+  ],
+  "auth.login.failed": [
+    {
+      "technique_id": "T1110",
+      "confidence": "candidate",
+      "reason": "Repeated authentication failures are commonly associated with brute force activity."
+    }
+  ],
+  "auth.login.success": [
+    {
+      "technique_id": "T1078",
+      "confidence": "candidate",
+      "reason": "Successful authentication can indicate the use of valid accounts."
+    }
+  ],
+  "auth.password.reset": [
+    {
+      "technique_id": "T1098",
+      "confidence": "candidate",
+      "reason": "Password reset activity can indicate account manipulation."
+    }
+  ],
+  "data.download": [
+    {
+      "technique_id": "T1005",
+      "confidence": "candidate",
+      "reason": "Data download activity may represent collection from local systems."
+    }
+  ],
+  "data.report.export": [
+    {
+      "technique_id": "T1020",
+      "confidence": "candidate",
+      "reason": "Report export activity may indicate automated data exfiltration."
+    }
+  ],
+  "data.transfer.large": [
+    {
+      "technique_id": "T1048",
+      "confidence": "candidate",
+      "reason": "Large outbound data movement may indicate exfiltration."
+    }
+  ],
+  "detection.alert": [
+    {
+      "technique_id": "T1082",
+      "confidence": "candidate",
+      "reason": "Generic detection alerts may be linked to discovery behavior depending on upstream logic."
+    }
+  ],
+  "device.usb.insert": [
+    {
+      "technique_id": "T1052.001",
+      "confidence": "candidate",
+      "reason": "USB insertion can be linked to exfiltration over removable media."
+    }
+  ],
+  "file.access": [
+    {
+      "technique_id": "T1005",
+      "confidence": "candidate",
+      "reason": "File access may indicate local collection."
+    }
+  ],
+  "network.connection.allowed": [
+    {
+      "technique_id": "T1071",
+      "confidence": "candidate",
+      "reason": "Established network connections can support command and control or lateral movement."
+    }
+  ],
+  "network.scan.port": [
+    {
+      "technique_id": "T1046",
+      "confidence": "candidate",
+      "reason": "Port scanning aligns with network service discovery."
+    }
+  ],
+  "privilege.change": [
+    {
+      "technique_id": "T1098",
+      "confidence": "candidate",
+      "reason": "Privilege changes often indicate account manipulation."
+    }
+  ],
+  "privilege.escalation": [
+    {
+      "technique_id": "T1068",
+      "confidence": "candidate",
+      "reason": "Privilege escalation behavior aligns with exploitation for privilege escalation."
+    }
+  ],
+  "process.execution": [
+    {
+      "technique_id": "T1059",
+      "confidence": "candidate",
+      "reason": "Process execution may indicate use of a command or scripting interpreter."
+    }
+  ],
+  "process.execution.suspicious": [
+    {
+      "technique_id": "T1059",
+      "confidence": "candidate",
+      "reason": "Suspicious process execution indicates likely command or scripting interpreter activity."
+    }
+  ],
+  "process.powershell.execution": [
+    {
+      "technique_id": "T1059.001",
+      "confidence": "candidate",
+      "reason": "PowerShell execution maps directly to PowerShell interpreter abuse."
+    }
+  ],
+  "registry.modify": [
+    {
+      "technique_id": "T1112",
+      "confidence": "candidate",
+      "reason": "Registry modification aligns with modify registry behavior."
+    }
+  ],
+  "user.activity": [
+    {
+      "technique_id": "T1078",
+      "confidence": "candidate",
+      "reason": "General user activity may reflect valid-account behavior when paired with stronger evidence."
+    }
+  ]
+}

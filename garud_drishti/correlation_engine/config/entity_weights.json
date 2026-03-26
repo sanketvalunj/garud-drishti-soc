@@ -1,0 +1,40 @@
+{
+  "severity_weights": {
+    "critical": 6.0,
+    "high": 4.5,
+    "medium": 3.0,
+    "low": 1.5,
+    "info": 0.5,
+    "unknown": 1.0
+  },
+  "risk_flag_weights": {
+    "critical": 8.0,
+    "suspicious": 5.0,
+    "elevated": 3.0,
+    "normal": 0.0,
+    "unknown": 1.0
+  },
+  "source_system_weights": {
+    "iam": 2.0,
+    "edr": 5.0,
+    "firewall": 3.0,
+    "siem": 2.5,
+    "application": 1.5,
+    "unknown": 1.0
+  },
+  "privileged_role_keywords": [
+    "admin",
+    "superadmin",
+    "security",
+    "it"
+  ],
+  "critical_asset_keywords": [
+    "core-banking",
+    "swift",
+    "auth-server",
+    "loan-db",
+    "db"
+  ],
+  "privileged_role_bonus": 8.0,
+  "critical_asset_bonus": 6.0
+}

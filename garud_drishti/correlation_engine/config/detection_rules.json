@@ -1,0 +1,140 @@
+{
+  "credential_access_sequence": {
+    "description": "Repeated login failures followed by a successful login within the same correlation window.",
+    "severity": "high",
+    "within_minutes": 10,
+    "minimum_distinct_sources": 1,
+    "sequence": [
+      {
+        "event_code": "auth.login.failed",
+        "min_occurrences": 2
+      },
+      {
+        "event_code": "auth.login.success",
+        "min_occurrences": 1
+      }
+    ]
+  },
+  "credentialed_process_execution": {
+    "description": "Authentication activity followed by suspicious process execution.",
+    "severity": "critical",
+    "within_minutes": 10,
+    "minimum_distinct_sources": 2,
+    "sequence": [
+      {
+        "event_code_any_of": [
+          "auth.login.failed",
+          "auth.login.success"
+        ],
+        "min_occurrences": 2
+      },
+      {
+        "event_code": "auth.login.success",
+        "min_occurrences": 1
+      },
+      {
+        "event_code_any_of": [
+          "process.execution.suspicious",
+          "process.powershell.execution"
+        ],
+        "min_occurrences": 1
+      }
+    ]
+  },
+  "data_exfiltration_sequence": {
+    "description": "Collection followed by a large transfer or export event.",
+    "severity": "critical",
+    "within_minutes": 10,
+    "minimum_distinct_sources": 2,
+    "sequence": [
+      {
+        "event_code_any_of": [
+          "file.access",
+          "data.download",
+          "data.report.export"
+        ],
+        "min_occurrences": 1
+      },
+      {
+        "event_code_any_of": [
+          "data.transfer.large",
+          "device.usb.insert"
+        ],
+        "min_occurrences": 1
+      }
+    ]
+  },
+  "network_reconnaissance_sequence": {
+    "description": "Port scan followed by an allowed network connection.",
+    "severity": "high",
+    "within_minutes": 10,
+    "minimum_distinct_sources": 1,
+    "sequence": [
+      {
+        "event_code": "network.scan.port",
+        "min_occurrences": 1
+      },
+      {
+        "event_code": "network.connection.allowed",
+        "min_occurrences": 1
+      }
+    ]
+  },
+  "persistence_change_sequence": {
+    "description": "Authentication followed by account or registry change.",
+    "severity": "high",
+    "within_minutes": 10,
+    "minimum_distinct_sources": 2,
+    "sequence": [
+      {
+        "event_code": "auth.login.success",
+        "min_occurrences": 1
+      },
+      {
+        "event_code_any_of": [
+          "registry.modify",
+          "auth.password.reset"
+        ],
+        "min_occurrences": 1
+      }
+    ]
+  },
+  "privilege_escalation_sequence": {
+    "description": "Successful login followed by privilege change or escalation.",
+    "severity": "critical",
+    "within_minutes": 10,
+    "minimum_distinct_sources": 1,
+    "sequence": [
+      {
+        "event_code": "auth.login.success",
+        "min_occurrences": 1
+      },
+      {
+        "event_code_any_of": [
+          "privilege.change",
+          "privilege.escalation"
+        ],
+        "min_occurrences": 1
+      }
+    ]
+  },
+  "transaction_abuse_sequence": {
+    "description": "Authentication followed by large or failed transactions.",
+    "severity": "medium",
+    "within_minutes": 10,
+    "minimum_distinct_sources": 1,
+    "sequence": [
+      {
+        "event_code": "auth.login.success",
+        "min_occurrences": 1
+      },
+      {
+        "event_code_any_of": [
+          "app.transaction.large",
+          "app.transaction.failed"
+        ],
+        "min_occurrences": 1
+      }
+    ]
+  }
+}

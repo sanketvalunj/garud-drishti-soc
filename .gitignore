@@ -28,6 +28,16 @@ garud_drishti/data/
 
 # BUT keep config JSON if needed
 !config.json
+!garud_drishti/correlation_engine/**/*.json
+!garud_drishti/correlation_engine/**/*.md
+
+# Keep offline MITRE knowledge base JSONs, but not generated correlation outputs
+!garud_drishti/data/
+garud_drishti/data/*
+!garud_drishti/data/mitre/
+!garud_drishti/data/mitre/**/*.json
+garud_drishti/data/correlation/
+garud_drishti/data/incidents/
 
 # =========================
 # OS Files

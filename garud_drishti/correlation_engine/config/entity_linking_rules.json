@@ -1,0 +1,61 @@
+{
+  "group_priority": [
+    {
+      "entity_type": "session",
+      "fields": [
+        "user_id",
+        "session_id"
+      ],
+      "required_non_empty": [
+        "session_id"
+      ]
+    },
+    {
+      "entity_type": "user_ip",
+      "fields": [
+        "user_id",
+        "src_ip"
+      ],
+      "required_non_empty": [
+        "user_id",
+        "src_ip"
+      ]
+    },
+    {
+      "entity_type": "user",
+      "fields": [
+        "user_id"
+      ],
+      "required_non_empty": [
+        "user_id"
+      ]
+    },
+    {
+      "entity_type": "src_ip",
+      "fields": [
+        "src_ip"
+      ],
+      "required_non_empty": [
+        "src_ip"
+      ]
+    },
+    {
+      "entity_type": "device",
+      "fields": [
+        "device_id"
+      ],
+      "required_non_empty": [
+        "device_id"
+      ]
+    },
+    {
+      "entity_type": "asset",
+      "fields": [
+        "asset_id"
+      ],
+      "required_non_empty": [
+        "asset_id"
+      ]
+    }
+  ]
+}

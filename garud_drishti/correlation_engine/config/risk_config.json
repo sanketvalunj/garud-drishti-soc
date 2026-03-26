@@ -1,0 +1,44 @@
+{
+  "max_score": 100,
+  "weights": {
+    "pattern_score": 22.0,
+    "event_severity": 10.0,
+    "risk_flags": 8.0,
+    "anomaly_score": 18.0,
+    "candidate_techniques": 8.0,
+    "confirmed_techniques": 14.0,
+    "tactic_severity": 12.0,
+    "source_diversity": 5.0,
+    "path_length": 5.0,
+    "entity_context": 6.0,
+    "duplicate_penalty": 4.0
+  },
+  "thresholds": {
+    "critical": 80,
+    "high": 65,
+    "medium": 45
+  },
+  "tactic_severity": {
+    "Collection": 7.0,
+    "Command and Control": 8.0,
+    "Credential Access": 10.0,
+    "Defense Evasion": 8.0,
+    "Discovery": 6.0,
+    "Execution": 8.0,
+    "Exfiltration": 12.0,
+    "Impact": 12.0,
+    "Initial Access": 9.0,
+    "Lateral Movement": 9.0,
+    "Persistence": 9.0,
+    "Privilege Escalation": 11.0
+  },
+  "pattern_severity": {
+    "credential_access_sequence": 14.0,
+    "credentialed_process_execution": 22.0,
+    "data_exfiltration_sequence": 24.0,
+    "network_reconnaissance_sequence": 12.0,
+    "persistence_change_sequence": 16.0,
+    "privilege_escalation_sequence": 20.0,
+    "transaction_abuse_sequence": 10.0
+  }
+}
