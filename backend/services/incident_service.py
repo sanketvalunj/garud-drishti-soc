@@ -29,7 +29,7 @@ from backend.utils.file_loader import load_json_file
 logger = logging.getLogger("garud_drishti.incident_service")
 
 # Path to the anomaly events file, relative to the project root
-_ANOMALY_EVENTS_PATH = "garud_drishti/data/ai_engine/anomaly_events.json"
+_ANOMALY_EVENTS_PATH = "garud_drishti/data/processed/anomaly_events.json"
 
 # In-memory store: incident_id → Incident
 # Populated once on first request (lazy initialisation).

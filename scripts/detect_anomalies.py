@@ -1,27 +1,34 @@
 """
 CRYPTIX — GARUD-DRISHTI
-scripts/anomaly_detection.py
+scripts/detect_anomalies.py
 
 FINAL VERSION:
  Single output → correlation-ready UEBA events
 """
 
-import os
 import json
 import pandas as pd
 import numpy as np
+from pathlib import Path
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 
-INPUT_PATH = "garud_drishti/data/ai_engine/features.csv"
-OUTPUT_PATH = "garud_drishti/data/ai_engine/anomaly_events.json"
+# Dynamic path resolution for cross-platform compatibility
+BASE_DIR = Path(__file__).resolve().parent.parent
+INPUT_PATH = BASE_DIR / "garud_drishti" / "data" / "processed" / "features.csv"
+OUTPUT_PATH = BASE_DIR / "garud_drishti" / "data" / "processed" / "anomaly_events.json"
 
 
 # ─────────────────────────────────────────
 # LOAD
 # ─────────────────────────────────────────
 def load_data(path):
+    """Load features from CSV with path validation."""
     print("📥 Loading features...")
+    
+    if not path.exists():
+        raise FileNotFoundError(f"Input file not found: {path}")
+    
     df = pd.read_csv(path)
     print(f"✅ Loaded {len(df)} records")
     return df

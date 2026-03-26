@@ -3,22 +3,24 @@ CRYPTIX — GARUD-DRISHTI
 scripts/extract_features.py
 
 INPUT:
- garud_drishti/data/ai_engine/normalized_events.json
+ garud_drishti/data/normalized_events/normalized_events.json
 
 OUTPUT:
- garud_drishti/data/ai_engine/features.csv
+ garud_drishti/data/processed/features.csv
 
 GOAL:
  Convert normalized SOC events → ML-ready UEBA features
  + TARGET AWARENESS + CORRELATION CONTEXT
 """
 
-import os
 import json
 import pandas as pd
+from pathlib import Path
 
-INPUT_PATH = "garud_drishti/data/ai_engine/normalized_events.json"
-OUTPUT_PATH = "garud_drishti/data/ai_engine/features.csv"
+# Dynamic path resolution for cross-platform compatibility
+BASE_DIR = Path(__file__).resolve().parent.parent
+INPUT_PATH = BASE_DIR / "garud_drishti" / "data" / "normalized_events" / "normalized_events.json"
+OUTPUT_PATH = BASE_DIR / "garud_drishti" / "data" / "processed" / "features.csv"
 
 # ─────────────────────────────────────────
 # LOAD

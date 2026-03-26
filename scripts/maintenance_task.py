@@ -9,7 +9,7 @@ Runs every 24 hours and performs the following:
      automatically generates a corrected threat_rules config with lowered
      base_scores and anomaly_weights.
   3. Backs up the existing threat_rules config before overwriting.
-  4. Writes the updated config to garud_drishti/data/ai_engine/threat_rules.json
+  4. Writes the updated config to garud_drishti/data/processed/threat_rules.json
      so ThreatReasoner can hot-load it on next run.
 
 Run once:
@@ -31,7 +31,7 @@ from pathlib import Path
 # ── Paths ────────────────────────────────────────────────────────────────────
 
 _ROOT = Path(__file__).resolve().parent.parent
-_DATA_DIR = _ROOT / "garud_drishti" / "data" / "ai_engine"
+_DATA_DIR = _ROOT / "garud_drishti" / "data" / "processed"
 _DECISION_LOG = _DATA_DIR / "decision_log.json"
 _RULES_FILE = _DATA_DIR / "threat_rules.json"
 _BACKUP_DIR = _DATA_DIR / "threat_rules_backups"
