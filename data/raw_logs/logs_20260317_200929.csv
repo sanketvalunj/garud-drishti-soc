@@ -1,0 +1,92 @@
+timestamp,user,device,asset,ip,event_type,source,severity,session_id,mitre_technique,mitre_tactic,geo_country,geo_risk,network_zone,asset_criticality,threat_score,user_risk_score,attack_chain
+2026-03-17T09:48:45,emp_120,trading-workstation-020,,10.0.0.20,file_download,EDR,medium,97ea1461,T1105,Command and Control,IN,low,internal,low,21,0.83,
+2026-03-17T03:33:00,emp_122,,vpn-gateway,5.115.6.4,data_access,APP,medium,0f23454a,T1530,Collection,IN,low,external,high,34,0.49,suspicious_night_login
+2026-03-17T16:35:51,emp_128,,customer-db,10.0.0.28,data_access,APP,medium,cc9080a3,T1530,Collection,IN,low,internal,high,24,0.52,
+2026-03-17T00:14:07,emp_149,,archive-db,10.0.0.49,database_query,APP,low,35926a5e,T1213,Collection,IN,low,internal,medium,9,0.78,
+2026-03-17T01:42:54,emp_140,risk-workstation-040,,17.36.211.111,login_failed,IAM,medium,9e701a8e,T1110.001,Credential Access,BY,high,external,low,33,0.77,
+2026-03-17T14:17:13,emp_134,,,,vpn_connect,FIREWALL,low,7cda55e6,T1133,Initial Access,IN,low,internal,low,6,0.52,
+2026-03-17T10:09:42,emp_138,,,,connection_attempt,FIREWALL,low,dd8178b7,T1071,Command and Control,IN,low,internal,low,7,0.33,
+2026-03-17T17:39:54,emp_102,finance-laptop-002,,10.0.0.2,process_start,EDR,low,8880a9ef,T1059,Execution,IN,low,internal,low,7,0.45,
+2026-03-17T17:08:23,emp_143,finance-laptop-043,,10.0.0.43,file_download,EDR,medium,7f42ffae,T1105,Command and Control,IN,low,internal,low,19,0.42,
+2026-03-17T13:39:42,emp_114,,hr-db,10.0.0.14,file_download,APP,medium,cf78f2f1,T1105,Command and Control,IN,low,internal,medium,21,0.87,
+2026-03-17T00:22:48,emp_140,risk-workstation-040,,10.0.0.40,process_start,EDR,low,c53e5de0,T1059,Execution,IN,low,internal,low,8,0.77,
+2026-03-17T03:43:47,emp_141,,,,port_scan,FIREWALL,high,39304197,T1046,Discovery,DE,low,external,low,45,0.08,
+2026-03-17T04:56:00,emp_104,compliance-workstation-004,,186.157.197.167,login_success,IAM,low,3962a26f,T1078,Initial Access,DE,low,external,low,23,0.72,privilege_escalation
+2026-03-17T05:00:08,emp_113,,,,port_scan,FIREWALL,high,8ef58fb0,T1046,Discovery,SG,low,external,low,49,0.87,
+2026-03-17T12:04:28,emp_112,,risk-db,10.0.0.12,database_query,APP,low,0933d80c,T1213,Collection,IN,low,internal,high,7,0.26,
+2026-03-17T23:57:30,emp_129,,core-banking-db,10.0.0.29,data_export,APP,critical,c81a671f,T1567,Exfiltration,IN,low,internal,critical,82,0.49,insider_data_theft
+2026-03-17T15:32:21,emp_138,,,,connection_attempt,FIREWALL,low,2370cb4a,T1071,Command and Control,IN,low,internal,low,7,0.33,
+2026-03-17T17:39:50,emp_119,,,,vpn_disconnect,FIREWALL,low,a4348d84,T1133,Initial Access,IN,low,internal,low,7,0.62,
+2026-03-17T13:52:43,emp_111,risk-workstation-011,,10.0.0.11,file_access,EDR,low,98891234,T1083,Discovery,IN,low,internal,low,7,0.59,
+2026-03-17T13:53:19,emp_145,hr-laptop-045,,10.0.0.45,password_change,IAM,low,b162f9cd,T1098,Persistence,IN,low,internal,low,6,0.46,
+2026-03-17T13:46:53,emp_101,,,,connection_attempt,FIREWALL,low,b80e19ba,T1071,Command and Control,IN,low,internal,low,9,0.69,
+2026-03-17T16:13:30,emp_122,risk-workstation-022,,10.0.0.22,process_start,EDR,low,a524a617,T1059,Execution,IN,low,internal,low,17,0.49,data_exfiltration
+2026-03-17T15:44:02,emp_107,,trading-db,10.0.0.7,data_access,APP,medium,746e5a2d,T1530,Collection,IN,low,internal,critical,23,0.37,
+2026-03-17T08:54:48,emp_129,hr-laptop-029,,10.0.0.29,file_download,EDR,medium,1e236fde,T1105,Command and Control,IN,low,internal,low,19,0.49,
+2026-03-17T01:08:59,emp_114,ops-workstation-014,,10.0.0.14,malware_detected,EDR,critical,5117927f,T1204.002,Execution,IN,low,internal,low,84,0.87,
+2026-03-17T03:37:02,emp_104,,archive-db,10.0.0.4,database_query,APP,low,c22c1dff,T1213,Collection,IN,low,internal,medium,9,0.72,
+2026-03-17T02:39:00,emp_124,hr-laptop-024,,4.57.60.146,login_success,IAM,low,d01d31db,T1078,Initial Access,BR,medium,external,low,25,0.16,lateral_movement
+2026-03-17T02:40:00,emp_124,,,10.0.0.24,connection_attempt,FIREWALL,low,d01d31db,T1071,Command and Control,IN,low,internal,low,16,0.16,lateral_movement
+2026-03-17T02:40:30,emp_124,auth-server,auth-server,10.0.0.51,process_start,EDR,low,d01d31db,T1059,Execution,IN,low,internal,critical,15,0.16,lateral_movement
+2026-03-17T02:41:30,emp_124,payments-server,payments-server,10.0.0.52,process_start,EDR,low,d01d31db,T1059,Execution,IN,low,internal,critical,15,0.16,lateral_movement
+2026-03-17T13:09:08,emp_129,,audit-db,10.0.0.29,database_query,APP,low,96da5515,T1213,Collection,IN,low,internal,high,8,0.49,
+2026-03-17T11:33:23,emp_147,risk-workstation-047,,10.0.0.47,process_start,EDR,low,a7598c74,T1059,Execution,IN,low,internal,low,9,0.89,
+2026-03-17T23:46:30,emp_132,,core-banking-db,10.0.0.32,data_access,APP,medium,00488b8f,T1530,Collection,IN,low,internal,critical,35,0.7,insider_data_theft
+2026-03-17T03:08:00,emp_111,risk-workstation-011,,222.76.224.32,login_success,IAM,low,525f4607,T1078,Initial Access,AU,low,external,low,22,0.59,suspicious_night_login
+2026-03-17T01:07:40,emp_139,,customer-db,10.0.0.39,database_query,APP,low,e9e8b102,T1213,Collection,IN,low,internal,high,7,0.39,
+2026-03-17T17:00:02,emp_106,finance-laptop-006,,10.0.0.6,file_download,EDR,medium,e7cda3aa,T1105,Command and Control,IN,low,internal,low,18,0.2,
+2026-03-17T11:44:26,emp_127,,customer-db,10.0.0.27,database_query,APP,low,0eb57162,T1213,Collection,IN,low,internal,high,8,0.44,
+2026-03-17T15:39:58,emp_113,,trading-db,10.0.0.13,database_query,APP,low,3a9bef5c,T1213,Collection,IN,low,internal,critical,10,0.87,
+2026-03-17T17:44:59,emp_142,,risk-db,10.0.0.42,file_download,APP,medium,80c3ddd6,T1105,Command and Control,IN,low,internal,high,21,0.92,
+2026-03-17T09:27:23,emp_139,finance-laptop-039,,10.0.0.39,process_start,EDR,low,3ffea230,T1059,Execution,IN,low,internal,low,6,0.39,
+2026-03-17T01:56:25,emp_134,,risk-db,10.0.0.34,database_query,APP,low,b30bbf61,T1213,Collection,IN,low,internal,high,8,0.52,
+2026-03-17T10:23:35,emp_129,hr-laptop-029,,10.0.0.29,file_access,EDR,low,b664289c,T1083,Discovery,IN,low,internal,low,7,0.49,
+2026-03-17T16:51:24,emp_101,,audit-db,10.0.0.1,database_query,APP,low,6e8aa97b,T1213,Collection,IN,low,internal,high,9,0.69,
+2026-03-17T10:08:34,emp_125,trading-workstation-025,,10.0.0.25,mfa_attempt,IAM,low,056f326d,T1556,Credential Access,IN,low,internal,low,6,0.41,
+2026-03-17T01:52:29,emp_123,,trading-db,10.0.0.23,data_access,APP,medium,8230f8fe,T1530,Collection,IN,low,internal,critical,23,0.39,
+2026-03-17T08:32:42,emp_106,,,,connection_attempt,FIREWALL,low,7f3ae203,T1071,Command and Control,IN,low,internal,low,7,0.2,
+2026-03-17T14:33:08,emp_109,,,,vpn_disconnect,FIREWALL,low,cab1efee,T1133,Initial Access,IN,low,internal,low,6,0.4,
+2026-03-17T02:37:00,emp_138,,,10.0.0.38,connection_attempt,FIREWALL,low,be8d9dc7,T1071,Command and Control,IN,low,internal,low,17,0.33,lateral_movement
+2026-03-17T02:39:30,emp_138,auth-server,auth-server,10.0.0.51,process_start,EDR,low,be8d9dc7,T1059,Execution,IN,low,internal,critical,16,0.33,lateral_movement
+2026-03-17T03:34:42,emp_138,ops-workstation-038,,5.115.6.4,login_failed,IAM,medium,d103e082,T1110.001,Credential Access,IN,low,external,low,21,0.33,
+2026-03-17T16:41:31,emp_133,,,,vpn_connect,FIREWALL,low,56c88421,T1133,Initial Access,IN,low,internal,low,5,0.2,
+2026-03-17T09:13:08,emp_109,,audit-db,10.0.0.9,database_query,APP,low,b9caa731,T1213,Collection,IN,low,internal,high,8,0.4,
+2026-03-17T13:49:12,emp_117,,,,connection_attempt,FIREWALL,low,c423a1bd,T1071,Command and Control,IN,low,internal,low,7,0.38,
+2026-03-17T12:24:58,emp_124,,hr-db,10.0.0.24,data_access,APP,medium,49b569c3,T1530,Collection,IN,low,internal,medium,22,0.16,
+2026-03-17T12:56:00,emp_137,security-workstation-037,file-server,10.0.0.37,file_access,EDR,low,8852fcac,T1083,Discovery,IN,low,internal,medium,18,0.63,data_exfiltration
+2026-03-17T08:39:57,emp_129,,,,vpn_disconnect,FIREWALL,low,20eef359,T1133,Initial Access,IN,low,internal,low,6,0.49,
+2026-03-17T15:00:12,emp_129,,,,vpn_connect,FIREWALL,low,510a57ce,T1133,Initial Access,IN,low,internal,low,6,0.49,
+2026-03-17T11:39:15,emp_131,,trading-db,10.0.0.31,data_access,APP,medium,b0275bd8,T1530,Collection,IN,low,internal,critical,25,0.63,
+2026-03-17T17:54:57,emp_150,,customer-db,10.0.0.50,file_download,APP,medium,ba36faca,T1105,Command and Control,IN,low,internal,high,18,0.31,
+2026-03-17T16:43:52,emp_149,compliance-workstation-049,,10.0.0.49,password_change,IAM,low,2017d357,T1098,Persistence,IN,low,internal,low,7,0.78,
+2026-03-17T23:01:53,emp_149,,risk-db,10.0.0.49,data_access,APP,medium,3dd82c69,T1530,Collection,IN,low,internal,high,25,0.78,
+2026-03-17T13:59:21,emp_115,hr-laptop-015,,10.0.0.15,file_access,EDR,low,3397b1b8,T1083,Discovery,IN,low,internal,low,7,0.59,
+2026-03-17T10:56:39,emp_132,compliance-workstation-032,,10.0.0.32,logout,IAM,low,5011dcea,T1078,Defense Evasion,IN,low,internal,low,7,0.7,
+2026-03-17T03:03:00,emp_117,,file-server,228.154.215.199,file_download,APP,medium,483e0c0b,T1105,Command and Control,KP,high,external,medium,38,0.38,suspicious_night_login
+2026-03-17T12:55:45,emp_112,,,,connection_attempt,FIREWALL,low,5c7120c7,T1071,Command and Control,IN,low,internal,low,7,0.26,
+2026-03-17T03:06:25,emp_132,compliance-workstation-032,,10.0.0.32,process_start,EDR,low,9e5c4317,T1059,Execution,IN,low,internal,low,8,0.7,
+2026-03-17T03:00:00,emp_130,compliance-workstation-030,,45.199.215.11,login_success,IAM,low,4b1b459d,T1078,Initial Access,NG,high,external,low,32,0.59,suspicious_night_login
+2026-03-17T03:00:30,emp_130,,monitoring-srv,45.199.215.11,data_access,APP,medium,4b1b459d,T1530,Collection,NG,high,external,medium,44,0.59,suspicious_night_login
+2026-03-17T03:02:15,emp_130,compliance-workstation-030,,10.0.0.30,script_execution,EDR,high,4b1b459d,T1059.001,Execution,IN,low,internal,low,55,0.59,suspicious_night_login
+2026-03-17T08:18:34,emp_123,,,,connection_attempt,FIREWALL,low,a141c27d,T1071,Command and Control,IN,low,internal,low,7,0.39,
+2026-03-17T13:32:48,emp_109,compliance-workstation-009,,10.0.0.9,mfa_attempt,IAM,low,9648a733,T1556,Credential Access,IN,low,internal,low,6,0.4,
+2026-03-17T08:06:33,emp_120,trading-workstation-020,,10.0.0.20,password_change,IAM,low,1676413e,T1098,Persistence,IN,low,internal,low,8,0.83,
+2026-03-17T23:51:45,emp_131,,payments-db,10.0.0.31,database_query,APP,low,dc966917,T1213,Collection,IN,low,internal,critical,19,0.63,insider_data_theft
+2026-03-17T23:52:30,emp_131,,payments-db,10.0.0.31,data_access,APP,medium,dc966917,T1530,Collection,IN,low,internal,critical,35,0.63,insider_data_theft
+2026-03-17T23:53:30,emp_131,,payments-db,10.0.0.31,data_export,APP,critical,dc966917,T1567,Exfiltration,IN,low,internal,critical,83,0.63,insider_data_theft
+2026-03-17T17:50:00,emp_116,,,10.0.0.16,port_scan,FIREWALL,high,7dff2aa6,T1046,Discovery,IN,low,internal,low,55,0.07,data_exfiltration
+2026-03-17T17:51:00,emp_116,,,10.0.0.16,external_transfer,FIREWALL,high,7dff2aa6,T1041,Exfiltration,IN,low,internal,low,60,0.07,data_exfiltration
+2026-03-17T12:55:26,emp_140,,audit-db,10.0.0.40,database_query,APP,low,dcc739ad,T1213,Collection,IN,low,internal,high,9,0.77,
+2026-03-17T14:43:47,emp_118,,,,vpn_disconnect,FIREWALL,low,c510bde4,T1133,Initial Access,IN,low,internal,low,8,0.88,
+2026-03-17T23:45:00,emp_138,ops-workstation-038,,10.0.0.38,login_success,IAM,low,0e14a61a,T1078,Initial Access,IN,low,internal,low,21,0.33,insider_data_theft
+2026-03-17T14:08:47,emp_111,risk-workstation-011,,10.0.0.11,logout,IAM,low,753b04ed,T1078,Defense Evasion,IN,low,internal,low,6,0.59,
+2026-03-17T03:53:00,emp_127,ops-workstation-027,,10.0.0.27,script_execution,EDR,high,d804cbc2,T1059.001,Execution,IN,low,internal,low,55,0.44,privilege_escalation
+2026-03-17T02:00:30,emp_117,risk-workstation-017,payments-server,10.0.0.17,privilege_escalation,EDR,critical,9a1af4d5,T1068,Privilege Escalation,IN,low,internal,critical,86,0.38,privilege_escalation
+2026-03-17T10:26:10,emp_108,risk-workstation-008,,10.0.0.8,file_download,EDR,medium,b400ae04,T1105,Command and Control,IN,low,internal,low,18,0.31,
+2026-03-17T05:05:44,emp_149,compliance-workstation-049,,116.101.28.230,login_failed,IAM,medium,3678bb44,T1110.001,Credential Access,SG,low,external,low,23,0.78,
+2026-03-17T02:58:16,emp_113,hr-laptop-013,,194.35.19.218,login_failed,IAM,medium,ca05ede5,T1110.001,Credential Access,VE,high,external,low,34,0.87,
+2026-03-17T12:56:48,emp_131,trading-workstation-031,,10.0.0.31,file_access,EDR,low,496c4c7e,T1083,Discovery,IN,low,internal,low,8,0.63,
+2026-03-17T11:09:02,emp_124,,,,vpn_connect,FIREWALL,low,56f5eae5,T1133,Initial Access,IN,low,internal,low,4,0.16,
+2026-03-17T13:59:53,emp_108,,,,connection_attempt,FIREWALL,low,fd6c3455,T1071,Command and Control,IN,low,internal,low,7,0.31,
+2026-03-17T09:46:00,emp_104,compliance-workstation-004,file-server,10.0.0.4,file_access,EDR,low,eff1d1c8,T1083,Discovery,IN,low,internal,medium,18,0.72,data_exfiltration
+2026-03-17T09:47:00,emp_104,,,10.0.0.4,port_scan,FIREWALL,high,eff1d1c8,T1046,Discovery,IN,low,internal,low,58,0.72,data_exfiltration

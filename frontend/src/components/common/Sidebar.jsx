@@ -1,10 +1,10 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { 
-  LayoutGrid, 
-  ShieldAlert, 
-  BookOpen, 
-  GitBranch, 
+import {
+  LayoutGrid,
+  ShieldAlert,
+  BookOpen,
+  GitBranch,
   Settings,
   LogOut,
   ChevronLeft,
@@ -22,47 +22,47 @@ const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const navItems = [
-    { 
+    {
       id: 'dashboard',
-      path: '/dashboard', 
-      icon: LayoutGrid, 
+      path: '/dashboard',
+      icon: LayoutGrid,
       label: 'Dashboard',
       description: 'System Overview'
     },
-    { 
+    {
       id: 'incidents',
-      path: '/incidents', 
-      icon: ShieldAlert, 
+      path: '/incidents',
+      icon: ShieldAlert,
       label: 'Incidents',
       description: 'Threat Queue'
     },
-    { 
+    {
       id: 'playbooks',
-      path: '/playbooks', 
-      icon: BookOpen, 
+      path: '/playbooks',
+      icon: BookOpen,
       label: 'Playbooks',
       description: 'Response logic'
     },
-    { 
+    {
       id: 'llmreasoning',
-      path: '/llm-reasoning', 
-      icon: BrainCircuit, 
+      path: '/llm-reasoning',
+      icon: BrainCircuit,
       label: 'AI Reasoning',
       description: 'Agent Logs'
     },
-    { 
+    {
       id: 'pipeline',
-      path: '/pipeline', 
-      icon: GitBranch, 
+      path: '/pipeline',
+      icon: GitBranch,
       label: 'AI Pipeline',
       description: 'Decision flow'
     },
-    { 
-      id: 'admin',
-      path: '/admin', 
-      icon: Settings, 
-      label: 'Admin',
-      description: 'SOC Command'
+    {
+      id: 'activity',
+      path: '/activity',
+      icon: Settings,
+      label: 'My Activity',
+      description: 'Performance Metrics'
     }
   ]
 
@@ -75,7 +75,7 @@ const Sidebar = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={false}
       animate={{ width: isCollapsed ? 80 : 260 }}
       style={{
@@ -90,19 +90,19 @@ const Sidebar = () => {
       }}
     >
       {/* Logo Section */}
-      <div style={{ 
-        padding: '24px', 
-        display: 'flex', 
+      <div style={{
+        padding: '24px',
+        display: 'flex',
         flexDirection: isCollapsed ? 'column' : 'row',
-        alignItems: 'center', 
+        alignItems: 'center',
         gap: isCollapsed ? '16px' : '12px',
         position: 'relative'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: isCollapsed ? 'auto' : '100%' }}>
-          <div style={{ 
-            width: '36px', 
-            height: '36px', 
-            background: '#00AEEF', 
+          <div style={{
+            width: '36px',
+            height: '36px',
+            background: '#00AEEF',
             borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
@@ -157,33 +157,33 @@ const Sidebar = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {visibleNavItems.map((item, index) => (
             <Fragment key={item.path}>
-            <NavLink
-              to={item.path}
-              style={({ isActive }) => ({
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px',
-                borderRadius: '10px',
-                color: isActive ? 'white' : 'rgba(255,255,255,0.6)',
-                background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
-                textDecoration: 'none',
-                transition: 'all 0.2s',
-                border: isActive ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent'
-              })}
-              className="hover:bg-white/[0.05]"
-            >
-              <item.icon size={20} strokeWidth={isCollapsed ? 2.5 : 2} />
-              {!isCollapsed && (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600 }}>{item.label}</span>
-                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '-2px' }}>{item.description}</span>
-                </div>
+              <NavLink
+                to={item.path}
+                style={({ isActive }) => ({
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px',
+                  borderRadius: '10px',
+                  color: isActive ? 'white' : 'rgba(255,255,255,0.6)',
+                  background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                  border: isActive ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent'
+                })}
+                className="hover:bg-white/[0.05]"
+              >
+                <item.icon size={20} strokeWidth={isCollapsed ? 2.5 : 2} />
+                {!isCollapsed && (
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600 }}>{item.label}</span>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '-2px' }}>{item.description}</span>
+                  </div>
+                )}
+              </NavLink>
+              {index < visibleNavItems.length - 1 && (
+                <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.05)', margin: '4px 12px' }} />
               )}
-            </NavLink>
-            {index < visibleNavItems.length - 1 && (
-              <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.05)', margin: '4px 12px' }} />
-            )}
             </Fragment>
           ))}
         </div>
@@ -191,70 +191,8 @@ const Sidebar = () => {
 
       {/* Footer / User Info */}
       <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-        <div style={{ padding: '0 4px 12px 4px' }}>
-          <ThemeToggle />
-        </div>
-        
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '12px',
-          background: 'rgba(0,0,0,0.15)',
-          borderRadius: '12px',
-          marginBottom: '8px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '8px',
-            background: 'linear-gradient(135deg, #00AEEF 0%, #0077B6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '12px',
-            fontWeight: 700,
-            flexShrink: 0
-          }}>
-            {user?.avatar || 'U'}
-          </div>
-          {!isCollapsed && (
-            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-              <span style={{ color: 'white', fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user?.name || 'User'}
-              </span>
-              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
-                {user?.roleLabel || 'Operator'}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={handleLogout}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '12px',
-            background: 'transparent',
-            border: 'none',
-            color: 'rgba(255,255,255,0.6)',
-            cursor: 'pointer',
-            borderRadius: '10px',
-            transition: 'all 0.2s',
-            fontSize: '14px',
-            fontWeight: 600
-          }}
-          className="hover:bg-red-500/10 hover:text-red-300"
-        >
-          <LogOut size={18} />
-          {!isCollapsed && <span>Logout</span>}
-        </button>
+        <ThemeToggle />
       </div>
-
     </motion.div>
   )
 }

@@ -4,11 +4,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
     Search, ExternalLink,
     ShieldOff, CheckCircle2, Sparkles,
-    GitBranch, Clock, ArrowRight, ChevronDown, ChevronUp, Check
+    GitBranch, Clock, ArrowRight, ChevronDown, ChevronUp, Check, Brain
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
-// ─── MOCK DATA ──────────────────────────────────────────────
+// API to integrate
 export const mockIncidents = [
     {
         id: 'INC-2091',
@@ -24,7 +24,12 @@ export const mockIncidents = [
         summary: 'User emp_104 initiated suspicious activity from external IP, moved laterally to core-banking via auth-server.',
         killChainStage: 3,
         entities: ['emp_104', 'auth-server', 'core-banking', '203.0.113.45'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.91 },
+            { label: 'Criticality', score: 0.85 },
+            { label: 'Similarity', score: 0.79 }
+        ]
     },
     {
         id: 'INC-2090',
@@ -40,7 +45,12 @@ export const mockIncidents = [
         summary: 'Unusual remote service usage detected between auth-server and loan-db-01.',
         killChainStage: 2,
         entities: ['auth-server', 'loan-db-01'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.68 },
+            { label: 'Criticality', score: 0.72 },
+            { label: 'Similarity', score: 0.55 }
+        ]
     },
     {
         id: 'INC-2089',
@@ -56,7 +66,12 @@ export const mockIncidents = [
         summary: 'Large data transfer detected from db_admin to external IP outside business hours.',
         killChainStage: 5,
         entities: ['db_admin', '198.51.100.22'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.94 },
+            { label: 'Criticality', score: 0.90 },
+            { label: 'Similarity', score: 0.88 }
+        ]
     },
     {
         id: 'INC-2088',
@@ -72,7 +87,12 @@ export const mockIncidents = [
         summary: 'Multiple failed login attempts detected on VPN gateway from single IP.',
         killChainStage: 1,
         entities: ['vpn_gateway', '203.0.113.99'],
-        playbookGenerated: false
+        playbookGenerated: false,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.42 },
+            { label: 'Criticality', score: 0.48 },
+            { label: 'Similarity', score: 0.40 }
+        ]
     },
     {
         id: 'INC-2087',
@@ -88,7 +108,12 @@ export const mockIncidents = [
         summary: 'Login from unusual location detected for emp_221 outside working hours.',
         killChainStage: 1,
         entities: ['emp_221', '10.0.0.45'],
-        playbookGenerated: false
+        playbookGenerated: false,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.35 },
+            { label: 'Criticality', score: 0.40 },
+            { label: 'Similarity', score: 0.32 }
+        ]
     },
     {
         id: 'INC-2086',
@@ -104,7 +129,12 @@ export const mockIncidents = [
         summary: 'Service account used to escalate privileges on file server.',
         killChainStage: 3,
         entities: ['svc_account_01', 'file-server-02'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.80 },
+            { label: 'Criticality', score: 0.75 },
+            { label: 'Similarity', score: 0.72 }
+        ]
     },
     {
         id: 'INC-2085',
@@ -120,7 +150,12 @@ export const mockIncidents = [
         summary: 'Powershell execution detected with encoded command on user endpoint.',
         killChainStage: 2,
         entities: ['user_laptop_88', '10.0.1.88'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.93 },
+            { label: 'Criticality', score: 0.89 },
+            { label: 'Similarity', score: 0.85 }
+        ]
     },
     {
         id: 'INC-2084',
@@ -136,7 +171,12 @@ export const mockIncidents = [
         summary: 'Unusual script execution on production web server.',
         killChainStage: 2,
         entities: ['web_server_prod'],
-        playbookGenerated: false
+        playbookGenerated: false,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.44 },
+            { label: 'Criticality', score: 0.38 },
+            { label: 'Similarity', score: 0.40 }
+        ]
     },
     {
         id: 'INC-2083',
@@ -152,7 +192,12 @@ export const mockIncidents = [
         summary: 'Sensitive financial records accessed and transferred externally.',
         killChainStage: 5,
         entities: ['finance_user_03', '185.220.101.45', 'finance-db'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.90 },
+            { label: 'Criticality', score: 0.86 },
+            { label: 'Similarity', score: 0.82 }
+        ]
     },
     {
         id: 'INC-2082',
@@ -168,7 +213,12 @@ export const mockIncidents = [
         summary: 'Unauthorized access attempt on SWIFT terminal from internal IP.',
         killChainStage: 3,
         entities: ['swift-terminal', '10.0.2.15'],
-        playbookGenerated: true
+        playbookGenerated: true,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.75 },
+            { label: 'Criticality', score: 0.70 },
+            { label: 'Similarity', score: 0.68 }
+        ]
     },
     {
         id: 'INC-2081',
@@ -184,7 +234,12 @@ export const mockIncidents = [
         summary: 'Automated brute force attack on admin portal detected and blocked.',
         killChainStage: 1,
         entities: ['admin_portal', '198.51.100.55'],
-        playbookGenerated: false
+        playbookGenerated: false,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.58 },
+            { label: 'Criticality', score: 0.52 },
+            { label: 'Similarity', score: 0.54 }
+        ]
     },
     {
         id: 'INC-2080',
@@ -200,17 +255,22 @@ export const mockIncidents = [
         summary: 'Login from new device detected for emp_089.',
         killChainStage: 1,
         entities: ['emp_089'],
-        playbookGenerated: false
+        playbookGenerated: false,
+        fidelityFactors: [
+            { label: 'Behavioral', score: 0.36 },
+            { label: 'Criticality', score: 0.30 },
+            { label: 'Similarity', score: 0.32 }
+        ]
     }
 ];
 
 const killChainStages = [
-  'Initial Access',
-  'Execution', 
-  'Persistence',
-  'Privilege Escalation',
-  'Lateral Movement',
-  'Exfiltration'
+    'Initial Access',
+    'Execution',
+    'Persistence',
+    'Privilege Escalation',
+    'Lateral Movement',
+    'Exfiltration'
 ];
 
 // ─── HELPER STYLES ──────────────────────────────────────────
@@ -340,8 +400,8 @@ const CustomSelect = ({
                             ? (isDark ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(0,174,239,0.25)')
                             : (isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)'),
                     borderRadius: '8px',
-                    color: isActive 
-                        ? (isDark ? '#FFFFFF' : '#007099') 
+                    color: isActive
+                        ? (isDark ? '#FFFFFF' : '#007099')
                         : 'var(--text-primary)',
                     fontWeight: isActive ? 600 : 400,
                     fontSize: '13px',
@@ -525,17 +585,17 @@ const KillChainStepper = ({ stage }) => {
                         ...(isCompleted
                             ? { background: '#00AEEF', color: 'white' }
                             : isCurrent
-                                ? { 
-                                    background: 'rgba(0,174,239,0.15)', 
-                                    border: '2px solid #00AEEF', 
+                                ? {
+                                    background: 'rgba(0,174,239,0.15)',
+                                    border: '2px solid #00AEEF',
                                     color: '#00AEEF',
                                     boxShadow: '0 0 0 4px rgba(0,174,239,0.15)'
-                                  }
-                                : { 
-                                    background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', 
-                                    color: 'var(--text-muted)', 
-                                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.15)'}` 
-                                  }
+                                }
+                                : {
+                                    background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+                                    color: 'var(--text-muted)',
+                                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.15)'}`
+                                }
                         ),
                     };
 
@@ -543,17 +603,17 @@ const KillChainStepper = ({ stage }) => {
                         flex: 1,
                         height: 2,
                         marginTop: 12,
-                        background: isCompleted 
-                            ? connectorCompleted 
-                            : isCurrent 
-                                ? connectorCurrent 
+                        background: isCompleted
+                            ? connectorCompleted
+                            : isCurrent
+                                ? connectorCurrent
                                 : connectorFuture,
                     };
 
                     return (
                         <div key={s} style={{ display: 'flex', alignItems: 'flex-start', flex: i < killChainStages.length - 1 ? 1 : 'none' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <motion.div 
+                                <motion.div
                                     style={dotStyle}
                                     animate={isCurrent ? {
                                         scale: [1, 1.08, 1],
@@ -683,8 +743,8 @@ const Incidents = () => {
                         { value: counts.escalated, label: 'Escalated' },
                     ].map(chip => (
                         <div key={chip.label} style={{
-                            background: isDark 
-                                ? 'rgba(255,255,255,0.05)' 
+                            background: isDark
+                                ? 'rgba(255,255,255,0.05)'
                                 : 'rgba(255,255,255,0.2)',
                             border: isDark
                                 ? '1px solid rgba(255,255,255,0.08)'
@@ -709,141 +769,141 @@ const Incidents = () => {
                 {/* Filter Bar */}
                 {/* Filter Bar */}
                 <div style={{ marginBottom: '16px', position: 'relative', zIndex: 50 }}>
-                {/* Main Filter Row: Search + Chips */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    flexWrap: 'wrap',
-                    padding: '0 0 8px 0',
-                }}>
-                {/* Search */}
-                <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
-                    <Search size={18} style={{
-                        position: 'absolute',
-                        left: 14,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        color: 'var(--text-muted)',
-                        pointerEvents: 'none',
-                    }} />
-                    <input
-                        type="text"
-                        placeholder="Search incidents, entities, IDs..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        style={{
-                            background: 'rgba(255,255,255,0.06)',
-                            border: '0.6px solid white',
-                            borderRadius: 20,
-                            height: 46,
-                            padding: '0 20px 0 42px',
-                            color: 'var(--text-color)',
-                            fontSize: 15,
-                            width: '100%',
-                            outline: 'none',
-                            boxSizing: 'border-box',
-                        }}
-                    />
-                </div>
-
-                {/* Severity dropdown */}
-                <CustomSelect
-                    value={severityFilter}
-                    onChange={setSeverityFilter}
-                    placeholder="All Severity"
-                    isActive={severityFilter !== 'all'}
-                    options={[
-                        { value: 'all', label: 'All Severity' },
-                        { value: 'high', label: 'High Severity' },
-                        { value: 'medium', label: 'Medium Severity' },
-                        { value: 'low', label: 'Low Severity' }
-                    ]}
-                />
-
-                {/* Status dropdown */}
-                <CustomSelect
-                    value={statusFilter}
-                    onChange={setStatusFilter}
-                    placeholder="All Status"
-                    isActive={statusFilter !== 'all'}
-                    options={[
-                        { value: 'all', label: 'All Status' },
-                        { value: 'investigating', label: 'Investigating' },
-                        { value: 'contained', label: 'Contained' },
-                        { value: 'escalated', label: 'Escalated' }
-                    ]}
-                />
-
-                {/* Time Range dropdown */}
-                <CustomSelect
-                    value={timeFilter}
-                    onChange={setTimeFilter}
-                    placeholder="Last 24 Hours"
-                    isActive={timeFilter !== '24hr'}
-                    options={[
-                        { value: '1hr', label: 'Last 1 Hour' },
-                        { value: '6hr', label: 'Last 6 Hours' },
-                        { value: '24hr', label: 'Last 24 Hours' },
-                        { value: '7days', label: 'Last 7 Days' }
-                    ]}
-                />
-
-                {/* Sort By dropdown */}
-                <CustomSelect
-                    value={sortBy}
-                    onChange={setSortBy}
-                    placeholder="Sort By"
-                    isActive={sortBy !== 'fidelity'}
-                    options={[
-                        { value: 'fidelity', label: 'Sort by Fidelity' },
-                        { value: 'time', label: 'Sort by Time' },
-                        { value: 'severity', label: 'Sort by Severity' }
-                    ]}
-                />
-
-                {/* Results count (Always show in Row 1) */}
-                <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-                    {filteredIncidents.length} incidents found
-                </span>
-                </div>
-
-                {/* Sub-row: Applied filters indicator and Reset button (Aligned Right) */}
-                {activeFiltersCount > 0 && (
-                    <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'flex-end', 
-                        minHeight: '24px',
-                        marginTop: '4px'
+                    {/* Main Filter Row: Search + Chips */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        flexWrap: 'wrap',
+                        padding: '0 0 8px 0',
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Filters Applied ({activeFiltersCount})
-                            </span>
-                            <button
-                                onClick={clearFilters}
+                        {/* Search */}
+                        <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
+                            <Search size={18} style={{
+                                position: 'absolute',
+                                left: 14,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                color: 'var(--text-muted)',
+                                pointerEvents: 'none',
+                            }} />
+                            <input
+                                type="text"
+                                placeholder="Search incidents, entities, IDs..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
                                 style={{
-                                    background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '6px',
-                                    padding: '2px 8px',
-                                    fontSize: '11px',
-                                    color: 'var(--text-secondary)',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    height: '22px',
-                                    display: 'flex',
-                                    alignItems: 'center'
+                                    background: 'rgba(255,255,255,0.06)',
+                                    border: '0.6px solid white',
+                                    borderRadius: 20,
+                                    height: 46,
+                                    padding: '0 20px 0 42px',
+                                    color: 'var(--text-color)',
+                                    fontSize: 15,
+                                    width: '100%',
+                                    outline: 'none',
+                                    boxSizing: 'border-box',
                                 }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
-                                onMouseLeave={e => e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}
-                            >
-                                Reset All
-                            </button>
+                            />
                         </div>
+
+                        {/* Severity dropdown */}
+                        <CustomSelect
+                            value={severityFilter}
+                            onChange={setSeverityFilter}
+                            placeholder="All Severity"
+                            isActive={severityFilter !== 'all'}
+                            options={[
+                                { value: 'all', label: 'All Severity' },
+                                { value: 'high', label: 'High Severity' },
+                                { value: 'medium', label: 'Medium Severity' },
+                                { value: 'low', label: 'Low Severity' }
+                            ]}
+                        />
+
+                        {/* Status dropdown */}
+                        <CustomSelect
+                            value={statusFilter}
+                            onChange={setStatusFilter}
+                            placeholder="All Status"
+                            isActive={statusFilter !== 'all'}
+                            options={[
+                                { value: 'all', label: 'All Status' },
+                                { value: 'investigating', label: 'Investigating' },
+                                { value: 'contained', label: 'Contained' },
+                                { value: 'escalated', label: 'Escalated' }
+                            ]}
+                        />
+
+                        {/* Time Range dropdown */}
+                        <CustomSelect
+                            value={timeFilter}
+                            onChange={setTimeFilter}
+                            placeholder="Last 24 Hours"
+                            isActive={timeFilter !== '24hr'}
+                            options={[
+                                { value: '1hr', label: 'Last 1 Hour' },
+                                { value: '6hr', label: 'Last 6 Hours' },
+                                { value: '24hr', label: 'Last 24 Hours' },
+                                { value: '7days', label: 'Last 7 Days' }
+                            ]}
+                        />
+
+                        {/* Sort By dropdown */}
+                        <CustomSelect
+                            value={sortBy}
+                            onChange={setSortBy}
+                            placeholder="Sort By"
+                            isActive={sortBy !== 'fidelity'}
+                            options={[
+                                { value: 'fidelity', label: 'Sort by Fidelity' },
+                                { value: 'time', label: 'Sort by Time' },
+                                { value: 'severity', label: 'Sort by Severity' }
+                            ]}
+                        />
+
+                        {/* Results count (Always show in Row 1) */}
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 'auto', whiteSpace: 'nowrap' }}>
+                            {filteredIncidents.length} incidents found
+                        </span>
                     </div>
-                )}
+
+                    {/* Sub-row: Applied filters indicator and Reset button (Aligned Right) */}
+                    {activeFiltersCount > 0 && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'flex-end',
+                            minHeight: '24px',
+                            marginTop: '4px'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    Filters Applied ({activeFiltersCount})
+                                </span>
+                                <button
+                                    onClick={clearFilters}
+                                    style={{
+                                        background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '6px',
+                                        padding: '2px 8px',
+                                        fontSize: '11px',
+                                        color: 'var(--text-secondary)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        height: '22px',
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}
+                                >
+                                    Reset All
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -859,10 +919,10 @@ const Incidents = () => {
                     gap: 12,
                 }}>
                     {['Incident ID', 'Attack Type', 'Affected Entity', 'Fidelity', 'Severity', 'Status', 'Detected'].map(h => (
-                        <span key={h} style={{ 
-                            fontFamily: "'Inter', sans-serif", 
-                            fontSize: 13, 
-                            color: 'var(--text-muted)', 
+                        <span key={h} style={{
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: 13,
+                            color: 'var(--text-muted)',
                             fontWeight: 600,
                             textAlign: (h === 'Severity' || h === 'Status') ? 'center' : 'left'
                         }}>{h}</span>
@@ -903,7 +963,7 @@ const Incidents = () => {
                         const sevStyle = severityBadgeStyle[incident.severity] || severityBadgeStyle.low;
 
                         return (
-                            <div 
+                            <div
                                 key={incident.id}
                                 className={`group transition-all duration-300 hover:scale-[1.01] relative z-0 hover:z-20 mx-2 rounded-lg border-white/10
                                     ${!isDark ? 'hover:border-white/80' : 'hover:border-white/40'} 
@@ -980,39 +1040,39 @@ const Incidents = () => {
 
                                     {/* Cell 5: Fidelity Score */}
                                     <div style={{
-                                      display: 'inline-flex',
-                                      flexDirection: 'column',
-                                      alignItems: 'flex-start',
-                                      gap: '3px'
+                                        display: 'inline-flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'flex-start',
+                                        gap: '3px'
                                     }}>
-                                      <span style={{
-                                        fontFamily: "'Inter', sans-serif",
-                                        fontSize: '13px',
-                                        fontWeight: '700',
-                                        color: 'var(--text-primary)'
-                                      }}>
-                                        {incident.fidelityScore}
-                                      </span>
-                                      <div style={{
-                                        width: '48px',
-                                        height: '3px',
-                                        borderRadius: '2px',
-                                        background: isDark 
-                                          ? 'rgba(255,255,255,0.08)' 
-                                          : 'rgba(0,0,0,0.08)',
-                                        overflow: 'hidden'
-                                      }}>
+                                        <span style={{
+                                            fontFamily: "'Inter', sans-serif",
+                                            fontSize: '13px',
+                                            fontWeight: '700',
+                                            color: 'var(--text-primary)'
+                                        }}>
+                                            {incident.fidelityScore}
+                                        </span>
                                         <div style={{
-                                          height: '100%',
-                                          borderRadius: '2px',
-                                          width: `${incident.fidelityScore * 100}%`,
-                                          background: incident.fidelityScore >= 0.85 
-                                            ? '#B91C1C' 
-                                            : incident.fidelityScore >= 0.5 
-                                              ? '#D97706' 
-                                              : '#15803D'
-                                        }} />
-                                      </div>
+                                            width: '48px',
+                                            height: '3px',
+                                            borderRadius: '2px',
+                                            background: isDark
+                                                ? 'rgba(255,255,255,0.08)'
+                                                : 'rgba(0,0,0,0.08)',
+                                            overflow: 'hidden'
+                                        }}>
+                                            <div style={{
+                                                height: '100%',
+                                                borderRadius: '2px',
+                                                width: `${incident.fidelityScore * 100}%`,
+                                                background: incident.fidelityScore >= 0.85
+                                                    ? '#B91C1C'
+                                                    : incident.fidelityScore >= 0.5
+                                                        ? '#D97706'
+                                                        : '#15803D'
+                                            }} />
+                                        </div>
                                     </div>
 
                                     {/* Cell 6: Severity Badge */}
@@ -1023,12 +1083,12 @@ const Incidents = () => {
                                     {/* Cell 7: Status Badge */}
                                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                                         <span style={statusBadgeStyle}>
-                                            <span style={{ 
-                                                width: 6, 
-                                                height: 6, 
-                                                borderRadius: '50%', 
+                                            <span style={{
+                                                width: 6,
+                                                height: 6,
+                                                borderRadius: '50%',
                                                 background: getStatusDotColor(incident.status),
-                                                flexShrink: 0 
+                                                flexShrink: 0
                                             }} />
                                             {incident.status}
                                         </span>
@@ -1062,7 +1122,7 @@ const Incidents = () => {
                                             transition={{ duration: 0.25, ease: 'easeInOut' }}
                                             style={{ overflow: 'hidden' }}
                                         >
-                                            <div 
+                                            <div
                                                 className="transition-all duration-300"
                                                 style={{
                                                     padding: '0 24px 24px 24px',
@@ -1081,12 +1141,70 @@ const Incidents = () => {
 
                                                     {/* Block 2: AI Summary */}
                                                     <div style={{ marginTop: 16 }}>
-                                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                                                             <Sparkles size={11} color="#00AEEF" />
                                                             AI Analysis
                                                         </div>
+
+                                                        {/* Ollama Header */}
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            gap: '8px',
+                                                            alignItems: 'center',
+                                                            marginBottom: '8px',
+                                                            padding: '6px 10px',
+                                                            borderRadius: '6px',
+                                                            background: isDark ? 'rgba(0,174,239,0.04)' : 'rgba(0,174,239,0.03)',
+                                                            border: '1px solid rgba(0,174,239,0.1)'
+                                                        }}>
+                                                            <Brain size={11} color="#00AEEF" />
+                                                            <span style={{ fontSize: '10px', fontWeight: 600, color: '#00AEEF', fontFamily: 'monospace' }}>
+                                                                Ollama · Llama 3.1 8B
+                                                            </span>
+                                                            <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>·</span>
+                                                            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Offline inference</span>
+                                                            <span style={{ color: 'var(--text-muted)' }}>·</span>
+                                                            <span style={{
+                                                                fontSize: '10px',
+                                                                fontFamily: 'monospace',
+                                                                color: getFidelityColor(incident.fidelityScore),
+                                                                fontWeight: 600
+                                                            }}>
+                                                                {Math.round(incident.fidelityScore * 100)}% confidence
+                                                            </span>
+                                                        </div>
+
                                                         <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, fontStyle: 'italic' }}>
                                                             {incident.summary}
+                                                        </div>
+
+                                                        {/* Scoring Breakdown Row */}
+                                                        <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
+                                                            {incident.fidelityFactors?.map(factor => {
+                                                                const factorColor = getFidelityColor(factor.score);
+                                                                return (
+                                                                    <div key={factor.label} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                                                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{factor.label}:</span>
+                                                                        <div style={{
+                                                                            width: '40px',
+                                                                            height: '3px',
+                                                                            borderRadius: '2px',
+                                                                            background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                                                                            overflow: 'hidden'
+                                                                        }}>
+                                                                            <div style={{
+                                                                                height: '100%',
+                                                                                width: `${factor.score * 100}%`,
+                                                                                background: factorColor,
+                                                                                borderRadius: '2px'
+                                                                            }} />
+                                                                        </div>
+                                                                        <span style={{ fontSize: '10px', fontFamily: 'monospace', color: factorColor, fontWeight: 600 }}>
+                                                                            {Math.round(factor.score * 100)}%
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
                                                     </div>
 
@@ -1100,12 +1218,12 @@ const Incidents = () => {
                                                                 <span key={ent} style={{
                                                                     display: 'inline-flex',
                                                                     alignItems: 'center',
-                                                                    background: isDark 
-                                                                      ? 'rgba(255,255,255,0.05)' 
-                                                                      : 'rgba(0,0,0,0.04)',
+                                                                    background: isDark
+                                                                        ? 'rgba(255,255,255,0.05)'
+                                                                        : 'rgba(0,0,0,0.04)',
                                                                     border: isDark
-                                                                      ? '1px solid rgba(255,255,255,0.1)'
-                                                                      : '1px solid rgba(0,0,0,0.1)',
+                                                                        ? '1px solid rgba(255,255,255,0.1)'
+                                                                        : '1px solid rgba(0,0,0,0.1)',
                                                                     borderRadius: '6px',
                                                                     padding: '4px 10px',
                                                                     fontSize: '11px',
@@ -1152,17 +1270,17 @@ const Incidents = () => {
                                                     {/* Fidelity Score */}
                                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                                                         <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'right' }}>Fidelity Score</div>
-                                                        <div style={{ 
-                                                            fontSize: 28, 
-                                                            fontWeight: 700, 
-                                                            fontFamily: "'Inter', sans-serif", 
+                                                        <div style={{
+                                                            fontSize: 28,
+                                                            fontWeight: 700,
+                                                            fontFamily: "'Inter', sans-serif",
                                                             color: incident.fidelityScore >= 0.85 ? '#B91C1C' : incident.fidelityScore >= 0.5 ? '#D97706' : '#15803D',
                                                             textAlign: 'right'
                                                         }}>
                                                             {incident.fidelityScore.toFixed(2)}
                                                         </div>
-                                                        <div style={{ 
-                                                            fontSize: 11, 
+                                                        <div style={{
+                                                            fontSize: 11,
                                                             textAlign: 'right',
                                                             color: incident.fidelityScore >= 0.85 ? '#B91C1C' : incident.fidelityScore >= 0.5 ? '#D97706' : '#15803D',
                                                         }}>
@@ -1216,8 +1334,8 @@ const Incidents = () => {
                         );
                     })
                 )}
-                </div>
             </div>
+        </div>
     );
 };
 

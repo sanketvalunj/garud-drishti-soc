@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Shield, 
-  Settings, 
-  Users, 
-  Activity, 
-  Lock, 
+import {
+  Shield,
+  Settings,
+  Users,
+  Activity,
+  Lock,
   Database,
   GitBranch,
   FileText,
@@ -27,6 +28,7 @@ import { useTheme } from '../context/ThemeContext'
 import clsx from 'clsx'
 
 const Admin = () => {
+  const navigate = useNavigate()
   const { user, hasPermission } = useAuth()
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
@@ -94,7 +96,7 @@ const Admin = () => {
                       <div className="text-xs text-[var(--text-muted)]">{row.time}</div>
                     </td>
                     <td className="px-4 py-4">
-                      <span className={clsx("px-2 py-1 rounded-full text-[10px] font-bold uppercase", 
+                      <span className={clsx("px-2 py-1 rounded-full text-[10px] font-bold uppercase",
                         row.priority === 'High' ? 'bg-red-500/10 text-red-500' : 'bg-amber-500/10 text-amber-500'
                       )}>
                         {row.priority}
@@ -143,7 +145,7 @@ const Admin = () => {
         <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
           <ShieldAlert size={22} className="text-amber-500" /> Active Containment Operations
         </h2>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
             <h3 className="text-sm font-bold mb-4 uppercase tracking-tighter text-[var(--text-muted)]">Suspicious Users (Isolation Required)</h3>
@@ -162,14 +164,17 @@ const Admin = () => {
                       <div className="text-xs text-orange-500/70">{su.reason}</div>
                     </div>
                   </div>
-                  <button className="bg-orange-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-orange-500/20 uppercase">
-                    Isolate Account
+                  <button
+                    onClick={() => navigate('/admin')}
+                    className="bg-[var(--glass-border)] text-[var(--text-secondary)] px-4 py-2 rounded-lg text-xs font-bold border border-[var(--glass-border)] hover:border-blue-500/50 transition-all uppercase"
+                  >
+                    View Profile
                   </button>
                 </div>
               ))}
             </div>
           </div>
-          
+
           <div className="space-y-6">
             <h3 className="text-sm font-bold mb-4 uppercase tracking-tighter text-[var(--text-muted)]">Response Metrics (Real-time)</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -182,7 +187,7 @@ const Admin = () => {
                 <div className="text-xs text-green-500 font-bold uppercase">Success Rate</div>
               </div>
             </div>
-            
+
             <div className="p-5 glass-card">
               <div className="flex justify-between mb-2">
                 <span className="text-xs font-bold uppercase">System Defensive Load</span>
@@ -279,7 +284,7 @@ const Admin = () => {
             </div>
           </div>
           <div className="text-[10px] uppercase mt-4 text-green-500 font-bold flex items-center gap-1">
-             <div className="w-1.5 h-1.5 rounded-full bg-green-500" /> 6 Online
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500" /> 6 Online
           </div>
         </div>
         <div className="glass-card p-6">
@@ -298,58 +303,58 @@ const Admin = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass-card p-5">
-           <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6">
             <h3 className="font-bold">Team Management</h3>
             <button className="text-xs font-bold text-[#00AEEF] flex items-center gap-1 hover:underline">
-               <UserPlus size={14} /> Add Operator
+              <UserPlus size={14} /> Add Operator
             </button>
           </div>
           <div className="space-y-4">
-             {[
-               { name: 'Sarah Chen', role: 'Tier 1 Analyst', load: 'Light', status: 'Online' },
-               { name: 'James Okafor', role: 'Tier 3 Analyst', load: 'Heavy', status: 'Online' },
-               { name: 'Marcus Wong', role: 'Tier 2 Analyst', load: 'Oversight', status: 'Offline' }
-             ].map((op, i) => (
-               <div key={i} className="flex justify-between items-center p-3 rounded-xl hover:bg-white/[0.02] border border-transparent hover:border-white/5 transition-all">
-                 <div className="flex gap-3 items-center">
-                   <div className="w-8 h-8 rounded-lg bg-gray-500/10 flex items-center justify-center text-[10px] font-bold">{op.name.split(' ').map(n=>n[0]).join('')}</div>
-                   <div>
-                     <div className="text-sm font-semibold">{op.name}</div>
-                     <div className="text-[10px] text-[var(--text-muted)]">{op.role}</div>
-                   </div>
-                 </div>
-                 <div className="text-right">
-                    <div className={clsx("text-[10px] font-bold uppercase", op.status === 'Online' ? 'text-green-500' : 'text-gray-500')}>{op.status}</div>
-                    <div className="text-[10px] text-[var(--text-muted)]">{op.load} Load</div>
-                 </div>
-               </div>
-             ))}
+            {[
+              { name: 'Sarah Chen', role: 'Tier 1 Analyst', load: 'Light', status: 'Online' },
+              { name: 'James Okafor', role: 'Tier 3 Analyst', load: 'Heavy', status: 'Online' },
+              { name: 'Marcus Wong', role: 'Tier 2 Analyst', load: 'Oversight', status: 'Offline' }
+            ].map((op, i) => (
+              <div key={i} className="flex justify-between items-center p-3 rounded-xl hover:bg-white/[0.02] border border-transparent hover:border-white/5 transition-all">
+                <div className="flex gap-3 items-center">
+                  <div className="w-8 h-8 rounded-lg bg-gray-500/10 flex items-center justify-center text-[10px] font-bold">{op.name.split(' ').map(n => n[0]).join('')}</div>
+                  <div>
+                    <div className="text-sm font-semibold">{op.name}</div>
+                    <div className="text-[10px] text-[var(--text-muted)]">{op.role}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className={clsx("text-[10px] font-bold uppercase", op.status === 'Online' ? 'text-green-500' : 'text-gray-500')}>{op.status}</div>
+                  <div className="text-[10px] text-[var(--text-muted)]">{op.load} Load</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="glass-card p-5">
-           <h3 className="font-bold mb-6">Security Audit Trail</h3>
-           <div className="space-y-4">
-              {[
-                { actor: 'J. Okafor', action: 'ISOLATION_CANCEL', target: 'legacy_svc_atm', time: '4m ago' },
-                { actor: 'S. Chen', action: 'INCIDENT_ESCALATE', target: 'INC-2024-04', time: '12m ago' },
-                { actor: 'P. Sharma', action: 'PERM_MGR_UPDATE', target: 'M. Wong', time: '1h ago' },
-                { actor: 'System', action: 'VECTOR_DB_PURGE', target: 'GlobalCache', time: '2h ago' }
-              ].map((trail, i) => (
-                <div key={i} className="flex gap-4 items-start">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <div className="text-xs">
-                       <span className="font-bold text-[#00AEEF]">{trail.actor}</span>
-                       <span className="mx-1 text-[var(--text-muted)]">executed</span>
-                       <span className="font-bold text-[var(--text-color)]">{trail.action}</span>
-                    </div>
-                    <div className="text-[10px] text-[var(--text-muted)] mt-1">Target: {trail.target} · {trail.time}</div>
+          <h3 className="font-bold mb-6">Security Audit Trail</h3>
+          <div className="space-y-4">
+            {[
+              { actor: 'J. Okafor', action: 'ISOLATION_CANCEL', target: 'legacy_svc_atm', time: '4m ago' },
+              { actor: 'S. Chen', action: 'INCIDENT_ESCALATE', target: 'INC-2024-04', time: '12m ago' },
+              { actor: 'P. Sharma', action: 'PERM_MGR_UPDATE', target: 'M. Wong', time: '1h ago' },
+              { actor: 'System', action: 'VECTOR_DB_PURGE', target: 'GlobalCache', time: '2h ago' }
+            ].map((trail, i) => (
+              <div key={i} className="flex gap-4 items-start">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="text-xs">
+                    <span className="font-bold text-[#00AEEF]">{trail.actor}</span>
+                    <span className="mx-1 text-[var(--text-muted)]">executed</span>
+                    <span className="font-bold text-[var(--text-color)]">{trail.action}</span>
                   </div>
+                  <div className="text-[10px] text-[var(--text-muted)] mt-1">Target: {trail.target} · {trail.time}</div>
                 </div>
-              ))}
-           </div>
-           <button className="w-full mt-6 py-2 rounded-lg bg-white/5 text-[10px] font-bold uppercase tracking-widest text-[#00AEEF] hover:bg-blue-500 hover:text-white transition-all">Download Full Audit Report (CSV)</button>
+              </div>
+            ))}
+          </div>
+          <button className="w-full mt-6 py-2 rounded-lg bg-white/5 text-[10px] font-bold uppercase tracking-widest text-[#00AEEF] hover:bg-blue-500 hover:text-white transition-all">Download Full Audit Report (CSV)</button>
         </div>
       </div>
     </div>
@@ -411,18 +416,18 @@ const Admin = () => {
 
       {/* Shared Footer Log Section */}
       <div className="glass-card">
-         <div className="p-4 border-b border-[var(--glass-border)] flex justify-between items-center">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-2">
-               <Database size={14} /> System Access Log
-            </h3>
-            <span className="text-[10px] font-mono text-[var(--text-muted)]">LOG_LEVEL: VERBOSE</span>
-         </div>
-         <div className="p-4 font-mono text-[10px] text-[var(--text-muted)] space-y-1">
-            <div>[00:00:01] <span className="text-green-500">AUTH_SUCCESS</span>: Session initialized for {user?.name} ({user?.role})</div>
-            <div>[00:00:02] <span className="text-blue-500">INFO</span>: Loading {user?.role}-specific modules...</div>
-            <div>[00:00:03] <span className="text-blue-500">INFO</span>: Synchronizing with vector storage...</div>
-            <div>[00:00:04] <span className="text-green-500">READY</span>: Interface operational.</div>
-         </div>
+        <div className="p-4 border-b border-[var(--glass-border)] flex justify-between items-center">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-2">
+            <Database size={14} /> System Access Log
+          </h3>
+          <span className="text-[10px] font-mono text-[var(--text-muted)]">LOG_LEVEL: VERBOSE</span>
+        </div>
+        <div className="p-4 font-mono text-[10px] text-[var(--text-muted)] space-y-1">
+          <div>[00:00:01] <span className="text-green-500">AUTH_SUCCESS</span>: Session initialized for {user?.name} ({user?.role})</div>
+          <div>[00:00:02] <span className="text-blue-500">INFO</span>: Loading {user?.role}-specific modules...</div>
+          <div>[00:00:03] <span className="text-blue-500">INFO</span>: Synchronizing with vector storage...</div>
+          <div>[00:00:04] <span className="text-green-500">READY</span>: Interface operational.</div>
+        </div>
       </div>
     </div>
   )

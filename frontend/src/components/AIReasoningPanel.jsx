@@ -2,7 +2,7 @@ import React from 'react';
 import { Shield, FileCheck, DollarSign } from 'lucide-react';
 
 const AIReasoningPanel = ({ reasoningData }) => {
-    // Determine static fallback if data not provided
+    // API to integrate — Determine static fallback if data not provided
     const defaultData = {
         risk: { score: 8, severity: 'HIGH' },
         compliance: { score: 7, violations: 'MITRE T1078' },

@@ -1,17 +1,18 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import ReactFlow, { 
-  Background, 
-  Controls, 
-  MarkerType, 
-  useNodesState, 
+import ReactFlow, {
+  Background,
+  Controls,
+  MarkerType,
+  useNodesState,
   useEdgesState,
   Handle,
   Position
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
 import {
   ArrowLeft, Clock, AlertTriangle, Sparkles, GitBranch, Play, Network,
   Users, Server, Wifi, Shield, ShieldAlert, Brain, Scale, TrendingUp,
@@ -48,6 +49,7 @@ const MAX_ENTITIES_VISIBLE = 2
 // graphNodes: [{ id, type, label, compromised, suspected, position }]
 // graphEdges: [{ id, source, target, label }]
 
+// API to integrate
 const MOCK_INCIDENT = {
   id: 'INC-2091',
   type: 'Privilege Escalation',
@@ -233,31 +235,43 @@ const MOCK_INCIDENT = {
   },
 
   graphNodes: [
-    { id: 'ip1', type: 'ip', 
+    {
+      id: 'ip1', type: 'ip',
       label: '203.0.113.45',
       compromised: true,
-      position: { x: 0, y: 60 } },
-    { id: 'u1', type: 'user',
+      position: { x: 280, y: 0 }
+    },
+    {
+      id: 'u1', type: 'user',
       label: 'emp_104',
       compromised: true,
-      position: { x: 180, y: 60 } },
-    { id: 's1', type: 'server',
+      position: { x: 280, y: 120 }
+    },
+    {
+      id: 's1', type: 'server',
       label: 'auth-server',
       compromised: true,
-      position: { x: 360, y: 60 } },
-    { id: 's2', type: 'server',
+      position: { x: 280, y: 240 }
+    },
+    {
+      id: 's2', type: 'server',
       label: 'loan-db',
       compromised: true,
-      position: { x: 540, y: 0 } },
-    { id: 's3', type: 'server',
+      position: { x: 100, y: 360 }
+    },
+    {
+      id: 's3', type: 'server',
       label: 'core-banking',
       compromised: true,
-      position: { x: 540, y: 120 } },
-    { id: 's4', type: 'server',
+      position: { x: 460, y: 360 }
+    },
+    {
+      id: 's4', type: 'server',
       label: 'swift-terminal',
       compromised: false,
       suspected: true,
-      position: { x: 720, y: 60 } }
+      position: { x: 460, y: 480 }
+    }
   ],
   graphEdges: [
     { id: 'e1', source: 'ip1', target: 'u1', label: 'Login' },
@@ -301,18 +315,18 @@ const getStatusDotColor = (status) => ({
 
 const getFidelityColor = (score) =>
   score >= 0.85 ? '#B91C1C'
-  : score >= 0.5 ? '#D97706'
-  : '#15803D'
+    : score >= 0.5 ? '#D97706'
+      : '#15803D'
 
 const getFidelityBg = (score) =>
   score >= 0.85 ? 'rgba(185,28,28,0.08)'
-  : score >= 0.5 ? 'rgba(217,119,6,0.08)'
-  : 'rgba(21,128,61,0.08)'
+    : score >= 0.5 ? 'rgba(217,119,6,0.08)'
+      : 'rgba(21,128,61,0.08)'
 
 const getFidelityBorder = (score) =>
   score >= 0.85 ? 'rgba(185,28,28,0.15)'
-  : score >= 0.5 ? 'rgba(217,119,6,0.15)'
-  : 'rgba(21,128,61,0.15)'
+    : score >= 0.5 ? 'rgba(217,119,6,0.15)'
+      : 'rgba(21,128,61,0.15)'
 
 // SVG gauge helpers
 const polarToCartesian = (cx, cy, r, angle) => {
@@ -367,54 +381,35 @@ const CustomNode = ({ data }) => {
         : '0 2px 8px rgba(0,0,0,0.08)',
       position: 'relative'
     }}>
-      
-      {/* Required for edges to connect */}
+
+      {/* Top handle — target (incoming edges) */}
       <Handle
         type="target"
-        position={Position.Left}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          width: 8,
-          height: 8
-        }}
+        position={Position.Top}
+        style={{ background: 'transparent', border: 'none', width: 8, height: 8 }}
       />
 
-      <Icon
-        size={13}
-        color={statusColor}
-        style={{ marginBottom: '5px' }}
-      />
+      <Icon size={13} color={statusColor} style={{ marginBottom: '5px' }} />
 
       <div style={{
-        fontSize: '8px',
-        color: 'var(--text-muted)',
-        letterSpacing: '0.08em',
-        marginBottom: '4px',
-        textTransform: 'uppercase'
+        fontSize: '8px', color: 'var(--text-muted)',
+        letterSpacing: '0.08em', marginBottom: '4px', textTransform: 'uppercase'
       }}>
         {data.type}
       </div>
 
       <div style={{
-        fontSize: '11px',
-        fontWeight: '700',
-        color: 'var(--text-color)',
-        whiteSpace: 'nowrap'
+        fontSize: '11px', fontWeight: '700',
+        color: 'var(--text-color)', whiteSpace: 'nowrap'
       }}>
         {data.label}
       </div>
 
-      {/* Required for edges to connect */}
+      {/* Bottom handle — source (outgoing edges) */}
       <Handle
         type="source"
-        position={Position.Right}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          width: 8,
-          height: 8
-        }}
+        position={Position.Bottom}
+        style={{ background: 'transparent', border: 'none', width: 8, height: 8 }}
       />
     </div>
   )
@@ -436,12 +431,18 @@ const IncidentDetail = () => {
   const navigate = useNavigate()
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
+  const { user } = useAuth()
+
+  const RECIPIENTS = [
+    { id: 'ciso', label: 'CISO' },
+    { id: 'lead', label: 'Security Lead' },
+    { id: 'compliance', label: 'Compliance Officer' }
+  ]
   const [incident] = useState(MOCK_INCIDENT)
   const [activeStep, setActiveStep] = useState(null)
   const [loading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showAllEntities, setShowAllEntities] = useState(false)
-  
   const [showActivateModal, setShowActivateModal] = useState(false)
   const [showEscalateModal, setShowEscalateModal] = useState(false)
   const [isActivating, setIsActivating] = useState(false)
@@ -452,6 +453,15 @@ const IncidentDetail = () => {
   )
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+
+  // Change 1 — Activation Terminal
+  const [showActivationTerminal, setShowActivationTerminal] = useState(false)
+  const [terminalLines, setTerminalLines] = useState([])
+  const terminalBodyRef = useRef(null)
+
+  // Change 2 — Narrative typing animation
+  const [displayedNarrative, setDisplayedNarrative] = useState('')
+  const fullNarrative = incident.narrative
 
   const playbookRef = useRef(null)
 
@@ -524,6 +534,27 @@ const IncidentDetail = () => {
     setEdges(graphEdges)
   }, [graphNodes, graphEdges, setNodes, setEdges])
 
+  // Typing animation for narrative (Change 2)
+  useEffect(() => {
+    let i = 0
+    const interval = setInterval(() => {
+      if (i < fullNarrative.length) {
+        setDisplayedNarrative(fullNarrative.slice(0, i + 1))
+        i++
+      } else {
+        clearInterval(interval)
+      }
+    }, 18)
+    return () => clearInterval(interval)
+  }, [fullNarrative])
+
+  // Auto-scroll terminal body on new lines
+  useEffect(() => {
+    if (terminalBodyRef.current) {
+      terminalBodyRef.current.scrollTop = terminalBodyRef.current.scrollHeight
+    }
+  }, [terminalLines])
+
   const [stepStatuses, setStepStatuses] = useState(
     Object.fromEntries(incident.playbook.steps.map(s => [s.id, 'pending']))
   )
@@ -535,67 +566,68 @@ const IncidentDetail = () => {
     }))
   }
 
+  const addTerminalLine = (line, delay) => {
+    setTimeout(() => {
+      setTerminalLines(prev => [...prev, line])
+    }, delay)
+  }
+
   const handleActivateResponse = async () => {
     setShowActivateModal(false)
-    
-    // Scroll to playbook section
-    setTimeout(() => {
-      playbookRef.current?.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      })
-    }, 300)
-    
+    setShowActivationTerminal(true)
+    setTerminalLines([])
     setIsActivating(true)
-    
-    // Get automated steps
-    const automatedSteps = incident.playbook.steps
-      .filter(s => s.type === 'automated')
-    
-    // Execute each automated step with delay
-    for (const step of automatedSteps) {
-      // Show spinner on this step
-      setStepStatuses(prev => ({
-        ...prev,
-        [step.id]: 'running'
-      }))
-      
-      // Simulate execution time
-      await new Promise(resolve => 
-        setTimeout(resolve, 1500)
-      )
-      
-      // Mark as completed
-      setStepStatuses(prev => ({
-        ...prev,
-        [step.id]: 'completed'
-      }))
-    }
-    
+
+    addTerminalLine('$ cryptix-response --incident INC-2091', 100)
+    addTerminalLine('> Initializing response engine...', 200)
+    addTerminalLine('> Connecting to IAM API...', 600)
+    addTerminalLine('> [STEP 1] Isolating emp_104...', 1000)
+
+    setStepStatuses(prev => ({ ...prev, [1]: 'running' }))
+    await new Promise(r => setTimeout(r, 1500))
+    setStepStatuses(prev => ({ ...prev, [1]: 'completed' }))
+    addTerminalLine('[OK] emp_104 suspended -- sessions revoked', 2600)
+
+    addTerminalLine('> [STEP 2] Blocking 203.0.113.45...', 2800)
+    setStepStatuses(prev => ({ ...prev, [2]: 'running' }))
+    await new Promise(r => setTimeout(r, 1500))
+    setStepStatuses(prev => ({ ...prev, [2]: 'completed' }))
+    addTerminalLine('[OK] IP blocked at perimeter firewall', 4400)
+
+    addTerminalLine('> [STEP 3] Revoking auth sessions...', 4600)
+    setStepStatuses(prev => ({ ...prev, [3]: 'running' }))
+    await new Promise(r => setTimeout(r, 1500))
+    setStepStatuses(prev => ({ ...prev, [3]: 'completed' }))
+    addTerminalLine('[OK] All sessions on auth-server terminated', 6200)
+
+    addTerminalLine('', 6400)
+    addTerminalLine('> Automated steps complete.', 6600)
+    addTerminalLine('> Manual steps require analyst action.', 6900)
+    addTerminalLine('[OK] Incident status -> CONTAINED', 7200)
+    addTerminalLine('> Audit trail updated.', 7500)
+
     setIsActivating(false)
-    
-    // Update incident status
     setIncidentStatus('contained')
+
+    setTimeout(() => {
+      playbookRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 300)
   }
+
+  const escalationTarget = user?.role === 'tier1' ? 'Tier 2' : 'Tier 3'
 
   const handleEscalate = () => {
     setShowEscalateModal(false)
     setIncidentStatus('escalated')
-    
-    const recipients = [
-      { id: 'ciso', label: 'CISO' },
-      { id: 'lead', label: 'Security Lead' },
-      { id: 'compliance', label: 'Compliance Officer' }
-    ]
+
+    const notifiedList = escalateRecipients
+      .map(r => RECIPIENTS.find(x => x.id === r)?.label)
+      .filter(Boolean)
+      .join(', ')
 
     // Show toast notification
     setToastMessage(
-      `Incident escalated to ${
-        escalateRecipients
-          .map(r => recipients.find(x => x.id === r)?.label)
-          .filter(Boolean)
-          .join(', ')
-      }`
+      `Incident escalated to ${escalationTarget}${notifiedList ? ` — notified ${notifiedList}` : ''}`
     )
     setShowToast(true)
     setTimeout(() => setShowToast(false), 4000)
@@ -612,6 +644,17 @@ const IncidentDetail = () => {
   }
 
   if (loading) return null
+
+  // Change 4 — Plain English explanation helper
+  const getPlainEnglishExplanation = (score, factors) => {
+    const deviation = factors.find(f => f.label === 'Behavioral Deviation')?.score || 0
+    const criticality = factors.find(f => f.label === 'Asset Criticality')?.score || 0
+    const similarity = factors.find(f => f.label === 'Historical Similarity')?.score || 0
+    return `CRYPTIX is ${Math.round(score * 100)}% confident this is a real attack. The user's behavior was ${deviation >= 0.8 ? 'extremely unusual' : deviation >= 0.5 ? 'suspicious' : 'slightly unusual'
+      } compared to their baseline (${Math.round(deviation * 100)}% deviation). The systems targeted are ${criticality >= 0.8 ? 'business-critical' : 'important'
+      } banking infrastructure (${Math.round(criticality * 100)}% criticality). This pattern closely matches ${similarity >= 0.7 ? 'known attack signatures' : 'some known patterns'
+      } in our threat database (${Math.round(similarity * 100)}% match).`
+  }
 
   const glassStyle = {
     background: 'var(--surface-color)',
@@ -644,13 +687,13 @@ const IncidentDetail = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
         style={{
-            background: 'var(--surface-color)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
-            borderRadius: '12px',
-            padding: '24px'
+          background: 'var(--surface-color)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+          borderRadius: '12px',
+          padding: '24px'
         }}
       >
         {/* TOP BAR */}
@@ -726,79 +769,82 @@ const IncidentDetail = () => {
           </div>
 
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            {incidentStatus === 'escalated' ? (
-              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', color: '#D97706' }}>
-                <CheckCircle2 size={14} />
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>Escalated</span>
-              </div>
-            ) : (
-              <button 
-                onClick={() => setShowEscalateModal(true)}
-                style={{
-                  background: 'transparent',
-                  border: '1.5px solid rgba(217,119,6,0.3)',
-                  color: '#D97706',
-                  borderRadius: '8px',
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  transition: 'all 0.15s ease'
-                }}
-                onMouseEnter={(e) => { 
-                  e.currentTarget.style.background = '#D97706';
-                  e.currentTarget.style.color = 'white';
-                  const icon = e.currentTarget.querySelector('svg');
-                  if (icon) icon.style.stroke = 'white';
-                }}
-                onMouseLeave={(e) => { 
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#D97706';
-                  const icon = e.currentTarget.querySelector('svg');
-                  if (icon) icon.style.stroke = '#D97706';
-                }}
-              >
-                <AlertTriangle size={14} color="#D97706" style={{ transition: 'stroke 0.15s ease' }} />
-                Escalate
-              </button>
+            {/* Role-based escalation: Tier 1 → Tier 2, Tier 2 → Tier 3, Tier 3 → hidden */}
+            {user?.role !== 'tier3' && (
+              incidentStatus === 'escalated' ? (
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', color: '#D97706' }}>
+                  <CheckCircle2 size={14} />
+                  <span style={{ fontSize: '13px', fontWeight: 600 }}>Escalated</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowEscalateModal(true)}
+                  style={{
+                    background: 'transparent',
+                    border: '1.5px solid rgba(217,119,6,0.3)',
+                    color: '#D97706',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#D97706';
+                    e.currentTarget.style.color = 'white';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.stroke = 'white';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = '#D97706';
+                    const icon = e.currentTarget.querySelector('svg');
+                    if (icon) icon.style.stroke = '#D97706';
+                  }}
+                >
+                  <AlertTriangle size={14} color="#D97706" style={{ transition: 'stroke 0.15s ease' }} />
+                  Escalate
+                </button>
+              )
             )}
 
             <button
-                onClick={() => setShowActivateModal(true)}
-                style={{
-                  background: '#B91C1C',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  boxShadow: '0 2px 8px rgba(185,28,28,0.35)',
-                  transition: 'all 0.15s ease',
-                  opacity: isActivating ? 0.7 : 1,
-                  pointerEvents: isActivating ? 'none' : 'auto'
-                }}
-                onMouseEnter={(e) => { 
-                    e.currentTarget.style.background = '#991B1B';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(185,28,28,0.5)';
-                }}
-                onMouseLeave={(e) => { 
-                    e.currentTarget.style.background = '#B91C1C';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(185,28,28,0.35)';
-                }}
-              >
-                <Zap size={14} color="white" />
-                {isActivating ? 'Activating...' : 'Activate Response'}
+              onClick={() => setShowActivateModal(true)}
+              style={{
+                background: '#B91C1C',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 8px rgba(185,28,28,0.35)',
+                transition: 'all 0.15s ease',
+                opacity: isActivating ? 0.7 : 1,
+                pointerEvents: isActivating ? 'none' : 'auto'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#991B1B';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(185,28,28,0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#B91C1C';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(185,28,28,0.35)';
+              }}
+            >
+              <Zap size={14} color="white" />
+              {isActivating ? 'Activating...' : 'Activate Response'}
             </button>
 
-            <button 
+            <button
               onClick={() => setShowShareModal(true)}
               style={{
                 background: 'transparent',
@@ -825,7 +871,7 @@ const IncidentDetail = () => {
             initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            style={{ 
+            style={{
               display: 'flex',
               flexDirection: 'column',
               gap: '16px'
@@ -833,26 +879,45 @@ const IncidentDetail = () => {
           >
             {/* AI Narrative */}
             <div style={{ ...glassStyle, borderLeft: '3px solid rgba(0,174,239,0.3)', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Incident Narrative</div>
                 <div style={{
-                  background: 'rgba(0,174,239,0.08)',
-                  border: '1px solid rgba(0,174,239,0.15)',
-                  borderRadius: '20px',
-                  padding: '3px 10px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: '#00AEEF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
+                  background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.15)',
+                  borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, color: '#00AEEF',
+                  display: 'flex', alignItems: 'center', gap: '4px'
                 }}>
                   <Sparkles size={11} />
                   AI Generated
                 </div>
               </div>
+
+              {/* Ollama Attribution Row (Change 2) */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12,
+                padding: '8px 12px', borderRadius: 8,
+                background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                border: '1px solid var(--glass-border)'
+              }}>
+                <Brain size={12} color="#00AEEF" />
+                <span style={{ fontSize: 10, color: '#00AEEF', fontWeight: 600 }}>Generated by Ollama</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>·</span>
+                <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)' }}>Llama 3.1 8B</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>·</span>
+                <span style={{ fontSize: 10, color: '#15803D', fontWeight: 600 }}>Offline</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>·</span>
+                <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)' }}>2,847 tokens</span>
+              </div>
+
               <div style={{ fontSize: '14px', lineHeight: 1.8, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                {incident.narrative}
+                {displayedNarrative}
+                {displayedNarrative.length < fullNarrative.length && (
+                  <span style={{
+                    display: 'inline-block', width: '2px', height: '14px',
+                    background: 'var(--text-color)',
+                    animation: 'blink 0.7s step-end infinite',
+                    verticalAlign: 'text-bottom', marginLeft: 2
+                  }} />
+                )}
               </div>
             </div>
 
@@ -866,7 +931,7 @@ const IncidentDetail = () => {
               <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                 {incident.killChainStages.map((stage, idx) => {
                   const state = idx < completedCount ? 'completed' : idx === completedCount ? 'current' : 'future'
-                  
+
                   return (
                     <div key={stage} style={{ display: 'flex', alignItems: 'flex-start', flex: idx < incident.killChainStages.length - 1 ? 1 : 'none' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -906,7 +971,7 @@ const IncidentDetail = () => {
                       {idx < incident.killChainStages.length - 1 && (
                         <div style={{
                           flex: 1, height: '2px', marginTop: '19px',
-                          background: state === 'completed' 
+                          background: state === 'completed'
                             ? (idx === completedCount - 1 ? 'linear-gradient(90deg, #00AEEF, rgba(0,174,239,0.2))' : '#00AEEF')
                             : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.12)'
                         }} />
@@ -928,7 +993,7 @@ const IncidentDetail = () => {
                   fontSize: '11px',
                   color: '#00AEEF'
                 }}>
-                  {Math.round((completedCount/6)*100)}% through attack chain
+                  {Math.round((completedCount / 6) * 100)}% through attack chain
                 </div>
               </div>
             </div>
@@ -985,49 +1050,51 @@ const IncidentDetail = () => {
               padding: '20px',
               marginBottom: '20px',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              flex: 1
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <Network size={15} color="#00AEEF" />
-                    <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Attack Graph Reconstruction</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <Network size={15} color="#00AEEF" />
+                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Attack Graph Reconstruction</div>
+                </div>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#B91C1C' }} /> Compromised
                   </div>
-                  <div style={{ display: 'flex', gap: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#B91C1C' }} /> Compromised
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D97706' }} /> Suspected
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(128,128,128,0.3)' }} /> Clean
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D97706' }} /> Suspected
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(128,128,128,0.3)' }} /> Clean
                   </div>
                 </div>
+              </div>
 
-                <div style={{ height: '360px', width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--glass-border)', background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)' }}>
-                  <ReactFlow
+              <div style={{ flex: 1, minHeight: 420, width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--glass-border)', background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)', position: 'relative' }}>
+                {/* Entry Point label */}
+                <div style={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: 'var(--text-muted)', zIndex: 10, pointerEvents: 'none', letterSpacing: '0.05em' }}>Entry Point ↓</div>
+                {/* Target Systems label */}
+                <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: 'var(--text-muted)', zIndex: 10, pointerEvents: 'none', letterSpacing: '0.05em' }}>↓ Target Systems</div>
+                <ReactFlow
                   nodes={nodes}
                   edges={edges}
                   onNodesChange={onNodesChange}
                   onEdgesChange={onEdgesChange}
                   nodeTypes={nodeTypes}
                   fitView={true}
-                  fitViewOptions={{ 
-                    padding: 0.3,
-                    minZoom: 0.5,
-                    maxZoom: 1.5
-                  }}
+                  fitViewOptions={{ padding: 0.15 }}
+                  onInit={(instance) => { setTimeout(() => { instance.fitView({ padding: 0.15 }) }, 100) }}
                   minZoom={0.3}
                   maxZoom={2}
                   proOptions={{ hideAttribution: true }}
                   style={{ width: '100%', height: '100%' }}
                 >
                   <Background
-                    color={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'} 
-                    variant="dots" 
-                    gap={20} 
-                    size={1} 
+                    color={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}
+                    variant="dots"
+                    gap={20}
+                    size={1}
                   />
                   <Controls showInteractive={false} />
                 </ReactFlow>
@@ -1042,13 +1109,13 @@ const IncidentDetail = () => {
             transition={{ duration: 0.3, delay: 0.15 }}
           >
             {/* Fidelity Score */}
-            <div style={{ 
-              ...glassStyle, 
+            <div style={{
+              ...glassStyle,
               border: incident.fidelityScore > 0.7 ? '1px solid rgba(185,28,28,0.2)' : 'var(--glass-border)',
-              marginBottom: '16px' 
+              marginBottom: '16px'
             }}>
               <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '20px' }}>AI Fidelity Score</div>
-              
+
               <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
                 <svg width="200" height="120" viewBox="0 0 200 120" style={{ overflow: 'visible' }}>
                   <path
@@ -1088,6 +1155,7 @@ const IncidentDetail = () => {
                 </div>
               </div>
 
+              {/* Factors */}
               <div style={{ marginTop: '20px', borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
                 {incident.fidelityFactors.map((factor) => (
                   <div key={factor.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -1109,10 +1177,18 @@ const IncidentDetail = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Plain English Explanation (Change 4) */}
+              <div style={{ borderTop: '1px solid var(--glass-border)', marginTop: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10, marginTop: 14 }}>How this score was calculated</div>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
+                  {getPlainEnglishExplanation(incident.fidelityScore, incident.fidelityFactors)}
+                </p>
+              </div>
             </div>
 
             {/* Entities Involved */}
-              <div style={{ ...glassStyle, marginBottom: '16px' }}>
+            <div style={{ ...glassStyle, marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                 <Users size={15} color="#00AEEF" />
                 <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Entities Involved</div>
@@ -1132,7 +1208,7 @@ const IncidentDetail = () => {
                   ...incident.entities.servers,
                   ...incident.entities.ips
                 ]
-                
+
                 const counts = allEntities.reduce((acc, label) => {
                   const { status } = getEntityStatus(label)
                   const s = status.toLowerCase()
@@ -1156,13 +1232,13 @@ const IncidentDetail = () => {
                 }
 
                 const totalCount = allEntities.length
-                const visibleCount = Math.min(incident.entities.users.length, MAX_ENTITIES_VISIBLE) + 
-                                   Math.min(incident.entities.servers.length, MAX_ENTITIES_VISIBLE)
+                const visibleCount = Math.min(incident.entities.users.length, MAX_ENTITIES_VISIBLE) +
+                  Math.min(incident.entities.servers.length, MAX_ENTITIES_VISIBLE)
                 const hasHidden = totalCount > visibleCount
 
                 return (
                   <>
-                    <div style={{ 
+                    <div style={{
                       borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px', marginBottom: '16px'
                     }}>
                       <div style={{ display: 'flex', gap: '12px' }}>
@@ -1179,7 +1255,7 @@ const IncidentDetail = () => {
                           {counts.clean} clean
                         </div>
                       </div>
-                      
+
                       {incident.entities.ips.length > 0 && (
                         <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '6px' }}>
                           {incident.entities.ips.length} IP addresses — view details
@@ -1309,7 +1385,7 @@ const IncidentDetail = () => {
                     {incident.agentScores.finalDecision}
                   </div>
                 </div>
-                
+
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', fontSize: '11px', color: '#15803D' }}>
                   <CheckCircle2 size={13} color="#15803D" />
                   Playbook Generated
@@ -1319,6 +1395,92 @@ const IncidentDetail = () => {
           </motion.div>
         </div>
 
+        {/* ACTIVATION TERMINAL (Change 1) — shown above playbook */}
+        <AnimatePresence>
+          {showActivationTerminal && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              style={{ marginBottom: 20, overflow: 'hidden' }}
+            >
+              <div style={{
+                background: '#0A0F1A', border: '1px solid rgba(0,174,239,0.2)',
+                borderRadius: 12, overflow: 'hidden'
+              }}>
+                {/* Terminal header */}
+                <div style={{
+                  background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.08)',
+                  padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12
+                }}>
+                  <div style={{
+                    display: 'flex', gap: 6, fontSize: '10px', color: 'rgba(255,255,255,0.2)',
+                    fontFamily: "'JetBrains Mono', monospace"
+                  }} className="font-mono">
+                    [ TERMINAL ]
+                  </div>
+                  <span style={{
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.4)',
+                    letterSpacing: '0.05em'
+                  }} className="font-mono">
+                    CRYPTIX INTERACTIVE SHELL v1.0.4 -- INC-2091
+                  </span>
+                </div>
+                {/* Terminal body */}
+                <div ref={terminalBodyRef} style={{
+                  padding: '16px 20px', maxHeight: 200, overflowY: 'auto',
+                  fontFamily: "'JetBrains Mono', monospace", fontSize: 13, lineHeight: 1.6
+                }} className="font-mono">
+                  {terminalLines.map((line, i) => (
+                    line === '' ? (
+                      <div key={i} style={{ height: 8 }} />
+                    ) : (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -4 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.15 }}
+                        style={{
+                          fontFamily: "inherit",
+                          color: line.startsWith('[OK]') ? '#4EC9B0'
+                            : line.startsWith('$') ? '#00AEEF'
+                              : line.startsWith('>') ? 'rgba(204,204,204,0.9)'
+                                : 'rgba(204,204,204,0.7)'
+                        }}
+                      >
+                        {line}
+                      </motion.div>
+                    )
+                  ))}
+                  {isActivating && (
+                    <span style={{
+                      display: 'inline-block', width: 8, height: 14,
+                      background: '#00AEEF',
+                      fontFamily: 'inherit',
+                      animation: 'blink 1s step-end infinite',
+                      verticalAlign: 'text-bottom', marginLeft: 4
+                    }} />
+                  )}
+                  {!isActivating && (
+                    <div style={{ marginTop: 8, textAlign: 'right' }}>
+                      <button
+                        onClick={() => setShowActivationTerminal(false)}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: 'rgba(255,255,255,0.3)', fontSize: 11
+                        }}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* PLAYBOOK PANEL - Full Width */}
         <div ref={playbookRef} style={{ ...glassStyle, borderLeft: '3px solid rgba(0,174,239,0.3)', marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -1326,71 +1488,44 @@ const IncidentDetail = () => {
               <BookOpen size={15} color="#00AEEF" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Response Playbook</div>
-                    <div style={{
-                        background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.15)',
-                        borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, color: '#00AEEF',
-                        display: 'flex', alignItems: 'center', gap: '4px'
-                      }}>
-                        <Sparkles size={11} /> AI Generated
-                    </div>
+                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Response Playbook</div>
+                  <div style={{
+                    background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.15)',
+                    borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, color: '#00AEEF',
+                    display: 'flex', alignItems: 'center', gap: '4px'
+                  }}>
+                    <Sparkles size={11} /> AI Generated
+                  </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                        {completedStepsCount} of 6 steps completed
-                    </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    {completedStepsCount} of 6 steps completed
+                  </div>
+                  <div style={{
+                    width: '120px',
+                    height: '3px',
+                    borderRadius: '2px',
+                    background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                    overflow: 'hidden'
+                  }}>
                     <div style={{
-                        width: '120px',
-                        height: '3px',
-                        borderRadius: '2px',
-                        background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                        overflow: 'hidden'
-                    }}>
-                        <div style={{
-                            width: `${(completedStepsCount / 6) * 100}%`,
-                            height: '100%',
-                            background: '#15803D',
-                            transition: 'width 0.3s ease'
-                        }} />
-                    </div>
+                      width: `${(completedStepsCount / 6) * 100}%`,
+                      height: '100%',
+                      background: '#15803D',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
                 </div>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <button 
-                  onClick={() => alert('Download starting...')}
-                  style={{
-                    background: 'transparent',
-                    color: '#00AEEF',
-                    border: '1.5px solid rgba(0,174,239,0.4)',
-                    borderRadius: '8px',
-                    padding: '8px 16px',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    gap: '6px',
-                    alignItems: 'center',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={(e) => { 
-                    e.currentTarget.style.background = '#00AEEF'
-                    e.currentTarget.style.color = 'white'
-                  }}
-                  onMouseLeave={(e) => { 
-                    e.currentTarget.style.background = 'transparent'
-                    e.currentTarget.style.color = '#00AEEF'
-                  }}
-                >
-                  <Download size={14} />
-                  Download
-                </button>
-
-                <button style={{
+              <button
+                onClick={() => alert('Download starting...')}
+                style={{
                   background: 'transparent',
-                  color: '#15803D',
-                  border: '1.5px solid rgba(21,128,61,0.4)',
+                  color: '#00AEEF',
+                  border: '1.5px solid rgba(0,174,239,0.4)',
                   borderRadius: '8px',
                   padding: '8px 16px',
                   fontSize: '13px',
@@ -1401,18 +1536,45 @@ const IncidentDetail = () => {
                   alignItems: 'center',
                   transition: 'all 0.15s ease'
                 }}
-                onMouseEnter={(e) => { 
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#00AEEF'
+                  e.currentTarget.style.color = 'white'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.color = '#00AEEF'
+                }}
+              >
+                <Download size={14} />
+                Download
+              </button>
+
+              <button style={{
+                background: 'transparent',
+                color: '#15803D',
+                border: '1.5px solid rgba(21,128,61,0.4)',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                gap: '6px',
+                alignItems: 'center',
+                transition: 'all 0.15s ease'
+              }}
+                onMouseEnter={(e) => {
                   e.currentTarget.style.background = '#15803D'
                   e.currentTarget.style.color = 'white'
                 }}
-                onMouseLeave={(e) => { 
+                onMouseLeave={(e) => {
                   e.currentTarget.style.background = 'transparent'
                   e.currentTarget.style.color = '#15803D'
                 }}
-                >
-                  <CheckCircle2 size={14} />
-                  Mark Reviewed
-                </button>
+              >
+                <CheckCircle2 size={14} />
+                Mark Reviewed
+              </button>
             </div>
           </div>
 
@@ -1445,10 +1607,10 @@ const IncidentDetail = () => {
                       background: isCompleted
                         ? (isDark ? 'rgba(21,128,61,0.05)' : 'rgba(21,128,61,0.03)')
                         : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'),
-                      border: isCompleted 
-                          ? '1px solid rgba(21,128,61,0.3)' 
-                          : '1px solid var(--glass-border)',
-                      borderRadius: '10px', padding: '16px 20px', 
+                      border: isCompleted
+                        ? '1px solid rgba(21,128,61,0.3)'
+                        : '1px solid var(--glass-border)',
+                      borderRadius: '10px', padding: '16px 20px',
                       cursor: 'pointer', transition: 'all 0.15s',
                       position: 'relative',
                       opacity: isRunning ? 0.9 : 1
@@ -1459,65 +1621,65 @@ const IncidentDetail = () => {
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                       {/* Step Node (Circle) */}
                       <div style={{
-                          width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-                          background: isCompleted 
-                            ? '#15803D' 
-                            : isRunning
-                              ? 'rgba(0,174,239,0.15)'
-                              : (isDark ? '#1E293B' : '#EFF6FF'),
-                          border: isCompleted ? 'none' : isRunning ? '2px solid #00AEEF' : '1px solid rgba(0,174,239,0.2)',
-                          color: isCompleted ? 'white' : '#00AEEF', fontWeight: 700, fontSize: '13px',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          position: 'relative', zIndex: 2
+                        width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
+                        background: isCompleted
+                          ? '#15803D'
+                          : isRunning
+                            ? 'rgba(0,174,239,0.15)'
+                            : (isDark ? '#1E293B' : '#EFF6FF'),
+                        border: isCompleted ? 'none' : isRunning ? '2px solid #00AEEF' : '1px solid rgba(0,174,239,0.2)',
+                        color: isCompleted ? 'white' : '#00AEEF', fontWeight: 700, fontSize: '13px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        position: 'relative', zIndex: 2
                       }}>
-                          {isCompleted ? (
-                            <Check size={14} />
-                          ) : isRunning ? (
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                              style={{ display: 'flex' }}
-                            >
-                              <Loader2 size={14} color="#00AEEF" />
-                            </motion.div>
-                          ) : (
-                            step.id
-                          )}
+                        {isCompleted ? (
+                          <Check size={14} />
+                        ) : isRunning ? (
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                            style={{ display: 'flex' }}
+                          >
+                            <Loader2 size={14} color="#00AEEF" />
+                          </motion.div>
+                        ) : (
+                          step.id
+                        )}
                       </div>
 
                       {/* Content Container */}
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                          <div style={{ 
-                              fontSize: '13px', fontWeight: 600, marginTop: '7px',
-                              color: isCompleted ? 'var(--text-muted)' : 'var(--text-color)',
-                              textDecoration: isCompleted ? 'line-through' : 'none'
+                          <div style={{
+                            fontSize: '13px', fontWeight: 600, marginTop: '7px',
+                            color: isCompleted ? 'var(--text-muted)' : 'var(--text-color)',
+                            textDecoration: isCompleted ? 'line-through' : 'none'
                           }}>
-                              {step.title}
+                            {step.title}
                           </div>
-                          
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
-                              {/* Type Badge */}
-                              <div style={{
-                                  background: step.type === 'automated' ? 'rgba(0,174,239,0.08)' : 'rgba(255,255,255,0.06)',
-                                  border: `1px solid ${step.type === 'automated' ? 'rgba(0,174,239,0.15)' : 'var(--glass-border)'}`,
-                                  color: step.type === 'automated' ? '#00AEEF' : 'var(--text-muted)',
-                                  borderRadius: '20px', padding: '3px 10px', fontSize: '10px', fontWeight: 600,
-                                  display: 'flex', gap: '3px', alignItems: 'center'
-                              }}>
-                                  {step.type === 'automated' ? <Zap size={10} /> : <User size={10} />}
-                                  {step.type === 'automated' ? 'Auto' : 'Manual'}
-                              </div>
 
-                              {/* Priority Badge */}
-                              <div style={{
-                                  background: prio.bg,
-                                  border: `1px solid ${prio.border}`,
-                                  color: prio.color,
-                                  borderRadius: '20px', padding: '3px 10px', fontSize: '10px', fontWeight: 600
-                              }}>
-                                  {prio.label}
-                              </div>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
+                            {/* Type Badge */}
+                            <div style={{
+                              background: step.type === 'automated' ? 'rgba(0,174,239,0.08)' : 'rgba(255,255,255,0.06)',
+                              border: `1px solid ${step.type === 'automated' ? 'rgba(0,174,239,0.15)' : 'var(--glass-border)'}`,
+                              color: step.type === 'automated' ? '#00AEEF' : 'var(--text-muted)',
+                              borderRadius: '20px', padding: '3px 10px', fontSize: '10px', fontWeight: 600,
+                              display: 'flex', gap: '3px', alignItems: 'center'
+                            }}>
+                              {step.type === 'automated' ? <Zap size={10} /> : <User size={10} />}
+                              {step.type === 'automated' ? 'Auto' : 'Manual'}
+                            </div>
+
+                            {/* Priority Badge */}
+                            <div style={{
+                              background: prio.bg,
+                              border: `1px solid ${prio.border}`,
+                              color: prio.color,
+                              borderRadius: '20px', padding: '3px 10px', fontSize: '10px', fontWeight: 600
+                            }}>
+                              {prio.label}
+                            </div>
                           </div>
                         </div>
 
@@ -1527,33 +1689,33 @@ const IncidentDetail = () => {
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ display: 'flex', gap: '12px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                                  <User size={11} /> {step.owner}
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                                  <Clock size={11} /> {step.estimatedTime}
-                              </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                              <User size={11} /> {step.owner}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                              <Clock size={11} /> {step.estimatedTime}
+                            </div>
                           </div>
 
                           <div>
-                              {isCompleted ? (
-                                  <div style={{ color: '#15803D', fontSize: '11px', fontWeight: 500, display: 'flex', gap: '3px', alignItems: 'center' }}>
-                                      <CheckCircle2 size={12} /> Completed
-                                  </div>
-                              ) : (
-                                  <button
-                                      onClick={(e) => {
-                                          e.stopPropagation()
-                                          toggleStepStatus(step.id)
-                                      }}
-                                      style={{
-                                          color: '#00AEEF', background: 'transparent', border: 'none',
-                                          fontSize: '11px', fontWeight: 500, cursor: 'pointer'
-                                      }}
-                                  >
-                                      Mark Done
-                                  </button>
-                              )}
+                            {isCompleted ? (
+                              <div style={{ color: '#15803D', fontSize: '11px', fontWeight: 500, display: 'flex', gap: '3px', alignItems: 'center' }}>
+                                <CheckCircle2 size={12} /> Completed
+                              </div>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleStepStatus(step.id)
+                                }}
+                                style={{
+                                  color: '#00AEEF', background: 'transparent', border: 'none',
+                                  fontSize: '11px', fontWeight: 500, cursor: 'pointer'
+                                }}
+                              >
+                                Mark Done
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1582,7 +1744,7 @@ const IncidentDetail = () => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-color)' }}>Share Incident Report</div>
-              <button 
+              <button
                 onClick={() => setShowShareModal(false)}
                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
               >
@@ -1596,7 +1758,7 @@ const IncidentDetail = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {['CISO', 'Compliance Team', 'Legal Team', 'External Auditor'].map((name, i) => (
-                <div 
+                <div
                   key={name}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '12px', padding: '12px',
@@ -1614,9 +1776,9 @@ const IncidentDetail = () => {
                   <div>
                     <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-color)' }}>{name}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      {i === 0 ? "Chief Information Security Officer" : 
-                       i === 1 ? "Regulatory compliance review" :
-                       i === 2 ? "Legal implications assessment" : "Third-party audit trail"}
+                      {i === 0 ? "Chief Information Security Officer" :
+                        i === 1 ? "Regulatory compliance review" :
+                          i === 2 ? "Legal implications assessment" : "Third-party audit trail"}
                     </div>
                   </div>
                 </div>
@@ -1646,7 +1808,7 @@ const IncidentDetail = () => {
       {/* MODALS */}
       <AnimatePresence>
         {showAllEntities && (
-          <div 
+          <div
             style={{
               position: 'fixed', inset: 0, zIndex: 1000,
               background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
@@ -1701,7 +1863,7 @@ const IncidentDetail = () => {
                       )
                     })()}
                   </div>
-                  <button 
+                  <button
                     onClick={() => setShowAllEntities(false)}
                     style={{
                       background: 'transparent', border: 'none', color: 'var(--text-muted)',
@@ -1780,7 +1942,7 @@ const IncidentDetail = () => {
         )}
 
         {showActivateModal && (
-          <div 
+          <div
             style={{
               position: 'fixed', inset: 0, zIndex: 1000,
               background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
@@ -1812,7 +1974,7 @@ const IncidentDetail = () => {
               </div>
 
               <div style={{ padding: '24px' }}>
-                <div style={{ 
+                <div style={{
                   background: 'rgba(185,28,28,0.06)', border: '1px solid rgba(185,28,28,0.15)',
                   borderRadius: '8px', padding: '12px', display: 'flex', gap: '10px', marginBottom: '20px'
                 }}>
@@ -1825,7 +1987,7 @@ const IncidentDetail = () => {
                 <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Automated steps to execute:
                 </div>
-                
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {incident.playbook.steps.filter(s => s.type === 'automated').map(step => (
                     <div key={step.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1837,7 +1999,7 @@ const IncidentDetail = () => {
               </div>
 
               <div style={{ padding: '16px 24px', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button 
+                <button
                   onClick={() => setShowActivateModal(false)}
                   style={{
                     background: 'transparent', border: '1px solid var(--glass-border)',
@@ -1865,7 +2027,7 @@ const IncidentDetail = () => {
         )}
 
         {showEscalateModal && (
-          <div 
+          <div
             style={{
               position: 'fixed', inset: 0, zIndex: 1000,
               background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
@@ -1889,7 +2051,9 @@ const IncidentDetail = () => {
               <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <AlertTriangle size={16} color="#D97706" />
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-color)' }}>Escalate Incident</div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-color)' }}>
+                    Escalate Incident
+                  </div>
                 </div>
                 <button onClick={() => setShowEscalateModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                   <X size={18} />
@@ -1903,7 +2067,7 @@ const IncidentDetail = () => {
 
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>Escalation reason</div>
-                  <textarea 
+                  <textarea
                     value={escalateReason}
                     onChange={e => setEscalateReason(e.target.value)}
                     rows={3}
@@ -1916,20 +2080,16 @@ const IncidentDetail = () => {
                 </div>
 
                 <div>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px' }}>Notify</div>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px' }}>Notify (optional)</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {[
-                      { id: 'ciso', label: 'CISO' },
-                      { id: 'lead', label: 'Security Lead' },
-                      { id: 'compliance', label: 'Compliance Officer' }
-                    ].map(recipient => {
+                    {RECIPIENTS.map(recipient => {
                       const isSelected = escalateRecipients.includes(recipient.id)
                       return (
-                        <div 
+                        <div
                           key={recipient.id}
                           onClick={() => {
-                            setEscalateRecipients(prev => 
-                              prev.includes(recipient.id) 
+                            setEscalateRecipients(prev =>
+                              prev.includes(recipient.id)
                                 ? prev.filter(r => r !== recipient.id)
                                 : [...prev, recipient.id]
                             )
@@ -1959,7 +2119,7 @@ const IncidentDetail = () => {
               </div>
 
               <div style={{ padding: '16px 24px', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button 
+                <button
                   onClick={() => setShowEscalateModal(false)}
                   style={{
                     background: 'transparent', border: '1px solid var(--glass-border)',
@@ -1971,16 +2131,15 @@ const IncidentDetail = () => {
                 </button>
                 <button
                   onClick={handleEscalate}
-                  disabled={escalateRecipients.length === 0}
                   style={{
                     background: '#D97706', color: 'white', border: 'none',
                     borderRadius: '8px', padding: '9px 20px', fontSize: '13px',
-                    fontWeight: 700, cursor: 'pointer', opacity: escalateRecipients.length === 0 ? 0.5 : 1,
+                    fontWeight: 700, cursor: 'pointer', opacity: 1,
                     display: 'flex', alignItems: 'center', gap: '8px'
                   }}
                 >
                   <AlertTriangle size={14} />
-                  Escalate Now
+                  Escalate
                 </button>
               </div>
             </motion.div>

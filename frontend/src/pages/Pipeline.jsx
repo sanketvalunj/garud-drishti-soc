@@ -24,6 +24,7 @@ import {
 // Structure matches API response exactly.
 // ─────────────────────────────────────
 
+// API to integrate
 const MOCK_PIPELINE_STATUS = {
   isRunning: false,
   lastRun: {
@@ -93,6 +94,7 @@ const MOCK_PIPELINE_STATUS = {
   ]
 }
 
+// API to integrate
 const MOCK_PIPELINE_STATS = {
   totalRuns: 47,
   avgDuration: '48s',
@@ -100,6 +102,7 @@ const MOCK_PIPELINE_STATS = {
   successRate: '98.9%'
 }
 
+// API to integrate
 const MOCK_PIPELINE_HISTORY = [
   {
     id: 'RUN-047',
@@ -158,7 +161,7 @@ const MOCK_PIPELINE_HISTORY = [
 ]
 
 const Pipeline = () => {
-  const { isRunning, lastRun, runPipeline } = usePipeline()
+  const { isRunning, lastRun, runPipeline, currentStage } = usePipeline()
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
   const navigate = useNavigate()
@@ -167,23 +170,16 @@ const Pipeline = () => {
   const [pipelineStatus] = useState(MOCK_PIPELINE_STATUS)
   const [history] = useState(MOCK_PIPELINE_HISTORY)
   const [stats] = useState(MOCK_PIPELINE_STATS)
-  
+
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [isDragging, setIsDragging] = useState(false)
   const [uploadSource, setUploadSource] = useState('windows_event')
   const [isUploading, setIsUploading] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState(false)
-  const [currentStage, setCurrentStage] = useState(6)
 
-  // Simulate pipeline running stage by stage
-  const handleRunPipeline = async () => {
-    if (isRunning) return;
-    setCurrentStage(0)
-    runPipeline()
-    for (let i = 1; i <= 6; i++) {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      setCurrentStage(i)
-    }
+  // Pipeline run is now handled globally via context
+  const handleRunPipeline = () => {
+    runPipeline();
   }
 
   // File upload handlers
@@ -200,8 +196,8 @@ const Pipeline = () => {
     e.preventDefault()
     setIsDragging(false)
     const files = Array.from(e.dataTransfer.files)
-    const validFiles = files.filter(f => 
-      ['.log', '.json', '.csv', '.txt', '.evtx', '.xml'].some(ext => 
+    const validFiles = files.filter(f =>
+      ['.log', '.json', '.csv', '.txt', '.evtx', '.xml'].some(ext =>
         f.name.endsWith(ext)
       )
     )
@@ -399,7 +395,7 @@ const Pipeline = () => {
                       <div style={{ fontSize: '14px', fontWeight: 600, color: getStageColor(status) }}>
                         {stage.name}
                       </div>
-                      
+
                       {status === 'completed' ? (
                         <div style={{
                           fontSize: '10px',
@@ -523,7 +519,7 @@ const Pipeline = () => {
                         {file.name}
                       </div>
                       <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                        {(file.size/1024).toFixed(1)} KB
+                        {(file.size / 1024).toFixed(1)} KB
                       </div>
                     </div>
                     <button

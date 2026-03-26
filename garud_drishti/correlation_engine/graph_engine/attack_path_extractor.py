@@ -1,13 +1,83 @@
+<<<<<<< HEAD
+"""
+attack_path_extractor.py
+
+Extracts possible attack paths from the attack graph.
+"""
+=======
 """Extract ordered attack paths from the sequence-aware attack graph."""
 
 from __future__ import annotations
 
 from typing import Any
+>>>>>>> 6bd384c36c960584426c4e6347a32d9f9c031e3e
 
 import networkx as nx
 
 
 class AttackPathExtractor:
+<<<<<<< HEAD
+
+    def __init__(self, graph):
+
+        self.graph = graph
+
+    def get_all_paths(self):
+        """
+        Extract all sequential paths in the graph.
+        """
+
+        paths = []
+
+        # nodes with no incoming edges
+        start_nodes = [
+            node for node in self.graph.nodes
+            if self.graph.in_degree(node) == 0
+        ]
+
+        # nodes with no outgoing edges
+        end_nodes = [
+            node for node in self.graph.nodes
+            if self.graph.out_degree(node) == 0
+        ]
+
+        for start in start_nodes:
+            for end in end_nodes:
+
+                try:
+
+                    for path in nx.all_simple_paths(
+                        self.graph,
+                        source=start,
+                        target=end
+                    ):
+
+                        paths.append(path)
+
+                except nx.NetworkXNoPath:
+                    continue
+
+        return paths
+
+    def print_paths(self, paths):
+        """
+        Display attack paths in readable format.
+        """
+
+        print("\nAttack Paths:\n")
+
+        for path in paths:
+
+            actions = []
+
+            for node in path:
+
+                actions.append(
+                    self.graph.nodes[node]["action"]
+                )
+
+            print(" → ".join(actions))
+=======
     """Walk sequence paths across the correlation graph."""
 
     def __init__(self, graph: nx.DiGraph) -> None:
@@ -65,3 +135,4 @@ class AttackPathExtractor:
 
         for path in paths[:15]:
             print(" -> ".join(path["event_codes"]))
+>>>>>>> 6bd384c36c960584426c4e6347a32d9f9c031e3e

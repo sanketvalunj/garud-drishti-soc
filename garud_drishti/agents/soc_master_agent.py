@@ -14,9 +14,9 @@ from garud_drishti.ai_engine.playbook.playbook_generator import PlaybookGenerato
 from garud_drishti.ai_engine.playbook.playbook_selector import PlaybookSelector
 from garud_drishti.ai_engine.orchestration.automation_engine import AutomationEngine
 from garud_drishti.ai_engine.orchestration.decision_logger import DecisionLogger
-
-logger = logging.getLogger("SOCMasterAgent")
-logger.setLevel(logging.INFO)
+<<<<<<< HEAD
+import logging
+import uuid
 
 if not logger.handlers:
     fh = logging.FileHandler("soc_pipeline.log")
@@ -42,9 +42,9 @@ def validate(data: dict, schema: dict, module: str) -> None:
         KeyError: If a required key is missing.
         TypeError: If a value has the wrong type.
     """
+>>>>>>> 6bd384c36c960584426c4e6347a32d9f9c031e3e
     if not data:
         raise ValueError(f"Empty data output from {module}")
-    for key, expected_type in schema.items():
         if key not in data:
             raise KeyError(f"Missing required key '{key}' from {module}")
         if not isinstance(data[key], expected_type):

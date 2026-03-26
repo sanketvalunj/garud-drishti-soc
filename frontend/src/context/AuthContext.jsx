@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 
+// API to integrate
 const MOCK_USERS = {
   tier1: {
     id: 'U001',
@@ -21,8 +22,9 @@ const MOCK_USERS = {
     },
     navItems: [
       'dashboard',
+      'alerts',
       'incidents',
-      'admin'
+      'activity'
     ]
   },
   tier2: {
@@ -45,10 +47,11 @@ const MOCK_USERS = {
     },
     navItems: [
       'dashboard',
+      'alerts',
       'incidents',
       'playbooks',
       'llmreasoning',
-      'admin'
+      'activity'
     ]
   },
   tier3: {
@@ -71,11 +74,12 @@ const MOCK_USERS = {
     },
     navItems: [
       'dashboard',
+      'alerts',
       'incidents',
       'playbooks',
       'llmreasoning',
       'pipeline',
-      'admin'
+      'activity'
     ]
   },
   manager: {
@@ -98,11 +102,12 @@ const MOCK_USERS = {
     },
     navItems: [
       'dashboard',
+      'alerts',
       'incidents',
       'playbooks',
       'llmreasoning',
       'pipeline',
-      'admin'
+      'activity'
     ]
   }
 }
@@ -118,16 +123,16 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const storedUser = localStorage.getItem('user_role')
     const storedOnboarding = localStorage.getItem('is_onboarded')
-    
+
     if (storedUser && MOCK_USERS[storedUser]) {
       setUser(MOCK_USERS[storedUser])
       setIsAuthenticated(true)
     }
-    
+
     if (storedOnboarding === 'true') {
       setIsOnboarded(true)
     }
-    
+
     setLoading(false)
   }, [])
 

@@ -31,9 +31,12 @@ from fastapi.responses import JSONResponse
 from backend.services.scheduler import start_scheduler
 from backend.api.ueba_api import router as ueba_router
 from backend.api.anomaly_api import router as anomaly_router
+<<<<<<< HEAD
+=======
 from backend.api.auth import router as auth_router
 from backend.api.admin import router as admin_router
 from backend.api.incidents_api import router as incidents_router
+>>>>>>> 6bd384c36c960584426c4e6347a32d9f9c031e3e
 
 # ─────────────────────────────────────────────
 # Ensure project root is on sys.path
@@ -250,13 +253,19 @@ app.add_middleware(
 )
 
 # ── REGISTER ROUTERS ──
+<<<<<<< HEAD
+=======
 app.include_router(auth_router)       # POST /auth/login, GET /auth/me
 app.include_router(admin_router)      # POST /admin/users (SOC_MANAGER only)
+>>>>>>> 6bd384c36c960584426c4e6347a32d9f9c031e3e
 app.include_router(events_router)
 app.include_router(simulate_router)
 app.include_router(ueba_router)
 app.include_router(anomaly_router)
+<<<<<<< HEAD
+=======
 app.include_router(incidents_router)  # GET/PATCH /incidents
+>>>>>>> 6bd384c36c960584426c4e6347a32d9f9c031e3e
 
 # ─────────────────────────────────────────────
 # ROOT ENDPOINTS
@@ -329,8 +338,11 @@ async def toggle_stream():
         streaming_task = asyncio.create_task(_stream_logs())
         return {"streaming": True, "message": "Streaming started"}
 
+<<<<<<< HEAD
+=======
 from fastapi import FastAPI
 from backend.api import feedback_api  # Import the new API
 
 # Register the feedback loop
 app.include_router(feedback_api.router)
+>>>>>>> 6bd384c36c960584426c4e6347a32d9f9c031e3e

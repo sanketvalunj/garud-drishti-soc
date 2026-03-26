@@ -31,6 +31,7 @@ import {
 // API endpoint: GET /reasoning/:incidentId
 // ─────────────────────────────────────
 
+// API to integrate
 const ALL_MOCK_REASONING = {
   'INC-2091': {
     incidentId: 'INC-2091',
@@ -433,16 +434,16 @@ const LLMReasoning = () => {
 
   const handleSearch = () => {
     if (!searchQuery.trim()) return
-    
+
     setHasSearched(true)
     setVisibleLines({})
     setExpandedPrompts({})
-    
+
     const query = searchQuery.trim().toUpperCase()
     const id = query.startsWith('INC-') ? query : `INC-${query}`
-    
+
     const found = ALL_MOCK_REASONING[id]
-    
+
     if (found) {
       setReasoning(found)
       setNotFound(false)
@@ -483,7 +484,7 @@ const LLMReasoning = () => {
     padding: '20px',
     boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
   }
-  
+
   const renderAgentCards = (isEmptyState) => {
     const defaultAgents = [
       { name: 'Risk Agent', color: '#B91C1C', icon: ShieldAlert },
@@ -619,275 +620,275 @@ const LLMReasoning = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-        {/* 
+      {/* 
           Blink animation moved to index.css for consistency 
         */}
 
-        {/* HEADER */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div>
-            <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-color)', margin: 0 }}>Agent Deliberation Log</h1>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>AI decision trace</p>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {['Llama 3.1 8B', 'Offline', 'Air-gapped', 'FAISS index'].map((item, i, arr) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item}</span>
-                {i < arr.length - 1 && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>·</span>}
-              </div>
-            ))}
-          </div>
+      {/* HEADER */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div>
+          <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-color)', margin: 0 }}>Agent Deliberation Log</h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>AI decision trace</p>
         </div>
 
-        {/* SEARCH BAR */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={{ flex: 1, position: 'relative' }}>
-              <Search size={18} style={{
-                position: 'absolute',
-                left: 14,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--text-muted)',
-                pointerEvents: 'none',
-                zIndex: 10
-              }} />
-              <input
-                type="text"
-                placeholder="Search incident ID e.g. INC-2091"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: isDark ? '0.6px solid rgba(255,255,255,0.2)' : '0.6px solid rgba(0,0,0,0.1)',
-                  borderRadius: 20,
-                  height: 46,
-                  padding: '0 20px 0 42px',
-                  color: 'var(--text-color)',
-                  fontSize: '15px',
-                  width: '100%',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
-                  transition: 'all 0.2s ease'
-                }}
-              />
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {['Llama 3.1 8B', 'Offline', 'Air-gapped', 'FAISS index'].map((item, i, arr) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item}</span>
+              {i < arr.length - 1 && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>·</span>}
             </div>
+          ))}
+        </div>
+      </div>
 
-            <button
-              onClick={handleSearch}
+      {/* SEARCH BAR */}
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Search size={18} style={{
+              position: 'absolute',
+              left: 14,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'var(--text-muted)',
+              pointerEvents: 'none',
+              zIndex: 10
+            }} />
+            <input
+              type="text"
+              placeholder="Search incident ID e.g. INC-2091"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
               style={{
-                background: '#00AEEF',
-                color: 'white',
-                border: 'none',
-                borderRadius: '20px',
-                height: '46px',
-                padding: '0 24px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'background 0.2s ease'
+                background: 'rgba(255,255,255,0.06)',
+                border: isDark ? '0.6px solid rgba(255,255,255,0.2)' : '0.6px solid rgba(0,0,0,0.1)',
+                borderRadius: 20,
+                height: 46,
+                padding: '0 20px 0 42px',
+                color: 'var(--text-color)',
+                fontSize: '15px',
+                width: '100%',
+                outline: 'none',
+                boxSizing: 'border-box',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                transition: 'all 0.2s ease'
               }}
-            >
-              Analyze Incident
-            </button>
+            />
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', paddingLeft: '14px' }}>
-            Available for demo: INC-2091, INC-2089
-          </div>
+
+          <button
+            onClick={handleSearch}
+            style={{
+              background: '#00AEEF',
+              color: 'white',
+              border: 'none',
+              borderRadius: '20px',
+              height: '46px',
+              padding: '0 24px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'background 0.2s ease'
+            }}
+          >
+            Analyze Incident
+          </button>
         </div>
+        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', paddingLeft: '14px' }}>
+          Available for demo: INC-2091, INC-2089
+        </div>
+      </div>
 
-        {/* EMPTY STATE */}
-        {!hasSearched && (
-          <>
-            <div style={{ marginBottom: '20px' }}>
-              <div style={{ width: '100%', background: '#0A0F1A', border: '1px solid rgba(0,174,239,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
-                <div style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#FF5F57' }} />
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#FFBD2E' }} />
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#28C840' }} />
-                  </div>
-                  <span className="font-mono" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginLeft: '8px' }}>
-                    cryptix-agent-trace
-                  </span>
+      {/* EMPTY STATE */}
+      {!hasSearched && (
+        <>
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ width: '100%', background: '#0A0F1A', border: '1px solid rgba(0,174,239,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#FF5F57' }} />
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#FFBD2E' }} />
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#28C840' }} />
                 </div>
-                <div style={{ padding: '60px 20px', minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <Brain size={32} color="rgba(0,174,239,0.3)" style={{ marginBottom: '12px' }} />
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span className="font-mono" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
-                      Enter an incident ID to view the AI deliberation trace
-                    </span>
-                    <div style={{ 
-                      display: 'inline-block', 
-                      width: '8px', 
-                      height: '14px', 
-                      background: '#00AEEF', 
-                      opacity: 0.8,
-                      marginLeft: '8px',
-                      verticalAlign: 'text-bottom',
-                      animation: 'blink 1s step-end infinite'
-                    }} />
-                  </div>
-                </div>
+                <span className="font-mono" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginLeft: '8px' }}>
+                  cryptix-agent-trace
+                </span>
               </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
-              {renderAgentCards(true)}
-            </div>
-          </>
-        )}
-
-        {/* NOT FOUND STATE */}
-        {hasSearched && notFound && (
-          <>
-            <div style={{ marginBottom: '20px' }}>
-              <div style={{ width: '100%', background: '#0A0F1A', border: '1px solid rgba(0,174,239,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
-                <div style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#FF5F57' }} />
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#FFBD2E' }} />
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#28C840' }} />
-                  </div>
-                  <span className="font-mono" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginLeft: '8px' }}>
-                    cryptix-agent-trace
+              <div style={{ padding: '60px 20px', minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <Brain size={32} color="rgba(0,174,239,0.3)" style={{ marginBottom: '12px' }} />
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span className="font-mono" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
+                    Enter an incident ID to view the AI deliberation trace
                   </span>
-                </div>
-                <div className="font-mono" style={{ padding: '40px 30px', minHeight: '300px', fontSize: '13px', lineHeight: 1.8 }}>
-                  <div style={{ color: 'rgba(185,28,28,0.8)', marginBottom: '16px' }}>
-                    ✗ Incident '{searchQuery}' not found
-                  </div>
-                  <div style={{ color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>
-                    Available incidents:
-                  </div>
-                  <div style={{ color: 'rgba(0,174,239,0.6)', paddingLeft: '16px' }}>
-                    <div>· INC-2091 (Privilege Escalation)</div>
-                    <div>· INC-2089 (Data Exfiltration)</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
-              {renderAgentCards(true)}
-            </div>
-          </>
-        )}
-
-        {/* RESULTS STATE */}
-        {hasSearched && !notFound && reasoning && (
-          <>
-            <div style={{ marginBottom: '20px' }}>
-              <div style={{ width: '100%', background: '#0A0F1A', border: '1px solid rgba(0,174,239,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
-                <div style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#FF5F57' }} />
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#FFBD2E' }} />
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#28C840' }} />
-                  </div>
-                  <span className="font-mono" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginLeft: '8px' }}>
-                    cryptix-agent-trace — {reasoning.incidentId}
-                  </span>
-                </div>
-                <div className="font-mono" style={{ 
-                  padding: '20px', 
-                  minHeight: '400px', 
-                  maxHeight: '600px', 
-                  overflowY: 'auto', 
-                  fontSize: '13px', 
-                  lineHeight: '1.6',
-                  letterSpacing: '0.02em',
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: 'rgba(0,174,239,0.3) transparent'
-                }}>
-                  {reasoning.orchestratorTrace.map((phase, pIdx) => (
-                    <div key={pIdx} style={{ marginBottom: '12px' }}>
-                      <div style={{ color: '#00AEEF', fontWeight: '600', fontSize: '13px', marginBottom: '6px', marginTop: pIdx === 0 ? '0' : '16px' }}>
-                        $ [{phase.phase}] 
-                        <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '13px', fontWeight: '400', marginLeft: '8px' }}>
-                          ({phase.duration})
-                        </span>
-                      </div>
-                      {phase.lines.map((line, lIdx) => {
-                        const isVisible = visibleLines[`${pIdx}-${lIdx}`]
-                        if (!isVisible && line !== '') return null
-                        
-                        let color = 'rgba(204, 204, 204, 0.9)'
-                        if (line.startsWith('✓')) color = '#4EC9B0'
-                        else if (line.startsWith('✗')) color = 'rgba(185,28,28,0.7)'
-                        else if (line.startsWith('─')) color = 'rgba(255,255,255,0.1)'
-                        
-                        if (line === '') return <div key={lIdx} style={{ height: '8px' }} />
-
-                        return (
-                          <motion.div
-                            key={lIdx}
-                            initial={{ opacity: 0, x: -4 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.15 }}
-                            style={{ color }}
-                          >
-                            {line}
-                          </motion.div>
-                        )
-                      })}
-                    </div>
-                  ))}
-                  <span style={{
+                  <div style={{
                     display: 'inline-block',
                     width: '8px',
                     height: '14px',
                     background: '#00AEEF',
                     opacity: 0.8,
-                    marginLeft: '2px',
+                    marginLeft: '8px',
                     verticalAlign: 'text-bottom',
                     animation: 'blink 1s step-end infinite'
                   }} />
                 </div>
               </div>
             </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+            {renderAgentCards(true)}
+          </div>
+        </>
+      )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
-              {renderAgentCards(false)}
-            </div>
-            
-            <div style={{ ...glassStyle, marginTop: '20px', padding: '12px 24px', display: 'flex', alignItems: 'center' }}>
-              {[
-                { icon: Cpu, label: 'Model', value: reasoning.model },
-                { icon: Wifi, label: 'Mode', value: 'Offline · Air-gapped', chip: true },
-                { icon: Database, label: 'Vector DB', value: reasoning.vectorDb },
-                { icon: FileText, label: 'Events processed', value: reasoning.eventsProcessed },
-                { icon: Hash, label: 'Incident object', value: `${reasoning.incidentObjectTokens} tokens` },
-                { icon: CheckCircle2, label: 'Status', value: reasoning.status, status: true }
-              ].map((item, i, arr) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <item.icon size={13} color="var(--text-muted)" />
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em', fontWeight: 600 }}>{item.label}</span>
-                      {item.chip ? (
-                        <div style={{ background: 'rgba(21,128,61,0.08)', border: '1px solid rgba(21,128,61,0.15)', color: '#15803D', borderRadius: '20px', padding: '1px 8px', fontSize: '10px', marginTop: '2px', width: 'fit-content' }}>
-                          {item.value}
-                        </div>
-                      ) : item.status ? (
-                        <div style={{ background: 'rgba(21,128,61,0.08)', color: '#15803D', borderRadius: '20px', padding: '1px 8px', fontSize: '10px', marginTop: '2px', width: 'fit-content', textTransform: 'capitalize' }}>
-                          {item.value}
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-color)', marginTop: '1px' }}>{item.value}</span>
-                      )}
-                    </div>
-                  </div>
-                  {i < arr.length - 1 && <div style={{ width: '1px', height: '30px', background: 'var(--glass-border)', margin: '0 24px' }} />}
+      {/* NOT FOUND STATE */}
+      {hasSearched && notFound && (
+        <>
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ width: '100%', background: '#0A0F1A', border: '1px solid rgba(0,174,239,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#FF5F57' }} />
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#FFBD2E' }} />
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#28C840' }} />
                 </div>
-              ))}
+                <span className="font-mono" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginLeft: '8px' }}>
+                  cryptix-agent-trace
+                </span>
+              </div>
+              <div className="font-mono" style={{ padding: '40px 30px', minHeight: '300px', fontSize: '13px', lineHeight: 1.8 }}>
+                <div style={{ color: 'rgba(185,28,28,0.8)', marginBottom: '16px' }}>
+                  ✗ Incident '{searchQuery}' not found
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>
+                  Available incidents:
+                </div>
+                <div style={{ color: 'rgba(0,174,239,0.6)', paddingLeft: '16px' }}>
+                  <div>· INC-2091 (Privilege Escalation)</div>
+                  <div>· INC-2089 (Data Exfiltration)</div>
+                </div>
+              </div>
             </div>
-          </>
-        )}
-      </motion.div>
-    );
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+            {renderAgentCards(true)}
+          </div>
+        </>
+      )}
+
+      {/* RESULTS STATE */}
+      {hasSearched && !notFound && reasoning && (
+        <>
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ width: '100%', background: '#0A0F1A', border: '1px solid rgba(0,174,239,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#FF5F57' }} />
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#FFBD2E' }} />
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#28C840' }} />
+                </div>
+                <span className="font-mono" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginLeft: '8px' }}>
+                  cryptix-agent-trace — {reasoning.incidentId}
+                </span>
+              </div>
+              <div className="font-mono" style={{
+                padding: '20px',
+                minHeight: '400px',
+                maxHeight: '600px',
+                overflowY: 'auto',
+                fontSize: '13px',
+                lineHeight: '1.6',
+                letterSpacing: '0.02em',
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(0,174,239,0.3) transparent'
+              }}>
+                {reasoning.orchestratorTrace.map((phase, pIdx) => (
+                  <div key={pIdx} style={{ marginBottom: '12px' }}>
+                    <div style={{ color: '#00AEEF', fontWeight: '600', fontSize: '13px', marginBottom: '6px', marginTop: pIdx === 0 ? '0' : '16px' }}>
+                      $ [{phase.phase}]
+                      <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '13px', fontWeight: '400', marginLeft: '8px' }}>
+                        ({phase.duration})
+                      </span>
+                    </div>
+                    {phase.lines.map((line, lIdx) => {
+                      const isVisible = visibleLines[`${pIdx}-${lIdx}`]
+                      if (!isVisible && line !== '') return null
+
+                      let color = 'rgba(204, 204, 204, 0.9)'
+                      if (line.startsWith('✓')) color = '#4EC9B0'
+                      else if (line.startsWith('✗')) color = 'rgba(185,28,28,0.7)'
+                      else if (line.startsWith('─')) color = 'rgba(255,255,255,0.1)'
+
+                      if (line === '') return <div key={lIdx} style={{ height: '8px' }} />
+
+                      return (
+                        <motion.div
+                          key={lIdx}
+                          initial={{ opacity: 0, x: -4 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.15 }}
+                          style={{ color }}
+                        >
+                          {line}
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                ))}
+                <span style={{
+                  display: 'inline-block',
+                  width: '8px',
+                  height: '14px',
+                  background: '#00AEEF',
+                  opacity: 0.8,
+                  marginLeft: '2px',
+                  verticalAlign: 'text-bottom',
+                  animation: 'blink 1s step-end infinite'
+                }} />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+            {renderAgentCards(false)}
+          </div>
+
+          <div style={{ ...glassStyle, marginTop: '20px', padding: '12px 24px', display: 'flex', alignItems: 'center' }}>
+            {[
+              { icon: Cpu, label: 'Model', value: reasoning.model },
+              { icon: Wifi, label: 'Mode', value: 'Offline · Air-gapped', chip: true },
+              { icon: Database, label: 'Vector DB', value: reasoning.vectorDb },
+              { icon: FileText, label: 'Events processed', value: reasoning.eventsProcessed },
+              { icon: Hash, label: 'Incident object', value: `${reasoning.incidentObjectTokens} tokens` },
+              { icon: CheckCircle2, label: 'Status', value: reasoning.status, status: true }
+            ].map((item, i, arr) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <item.icon size={13} color="var(--text-muted)" />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.02em', fontWeight: 600 }}>{item.label}</span>
+                    {item.chip ? (
+                      <div style={{ background: 'rgba(21,128,61,0.08)', border: '1px solid rgba(21,128,61,0.15)', color: '#15803D', borderRadius: '20px', padding: '1px 8px', fontSize: '10px', marginTop: '2px', width: 'fit-content' }}>
+                        {item.value}
+                      </div>
+                    ) : item.status ? (
+                      <div style={{ background: 'rgba(21,128,61,0.08)', color: '#15803D', borderRadius: '20px', padding: '1px 8px', fontSize: '10px', marginTop: '2px', width: 'fit-content', textTransform: 'capitalize' }}>
+                        {item.value}
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-color)', marginTop: '1px' }}>{item.value}</span>
+                    )}
+                  </div>
+                </div>
+                {i < arr.length - 1 && <div style={{ width: '1px', height: '30px', background: 'var(--glass-border)', margin: '0 24px' }} />}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </motion.div>
+  );
 };
 
 export default LLMReasoning;

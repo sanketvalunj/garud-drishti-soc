@@ -26,7 +26,7 @@ const getStepStatus = (step, automationReport) => {
     return 'pending';
 };
 
-// ─── Helper: Extract entities from playbook or incident ─────────────────────
+// API to integrate — Extract entities from real playbook/incident data
 const extractEntities = (playbook, incident) => {
     const pb = playbook?.playbook || playbook;
 
@@ -44,7 +44,7 @@ const extractEntities = (playbook, incident) => {
     return { users: finalUsers, assets: finalAssets, ips: finalIps };
 };
 
-// ─── Helper: Build timeline entries ─────────────────────────────────────────
+// API to integrate — Build timeline entries from backend events
 const buildTimeline = (playbook, incident, automationReport) => {
     const pb = playbook?.playbook || playbook;
     const steps = pb?.steps || pb?.response_steps || [];

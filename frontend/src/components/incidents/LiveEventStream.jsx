@@ -65,6 +65,7 @@ const LiveEventStream = () => {
                 console.log('[SSE] Connected to /stream-events');
             };
 
+            // API to integrate — Handle real-time event ingestion from SSE
             es.onmessage = (e) => {
                 try {
                     const data = JSON.parse(e.data);
@@ -116,7 +117,7 @@ const LiveEventStream = () => {
         return () => clearInterval(t);
     }, [isRunning]);
 
-    // ── 3. Incident feed ──────────────────────────────────────────────
+    // API to integrate — Fetch real-time incidents from backend
     const fetchIncidents = async () => {
         try {
             const res = await api.getIncidents();
@@ -151,11 +152,11 @@ const LiveEventStream = () => {
     // ─────────────────────────────────────────────────────────────────
     return (
         <div className="p-0 rounded-2xl overflow-hidden border grid grid-cols-1 lg:grid-cols-12 h-[350px]"
-            style={{ 
-                background: 'var(--surface-color)', 
+            style={{
+                background: 'var(--surface-color)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                borderColor: 'var(--glass-border)' 
+                borderColor: 'var(--glass-border)'
             }}
         >
 
