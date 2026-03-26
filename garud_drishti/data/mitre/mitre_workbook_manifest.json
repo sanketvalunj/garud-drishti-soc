@@ -1,0 +1,232 @@
+{
+  "workbook_path": "C:\\Users\\vishv\\Downloads\\enterprise-attack-v18.1.xlsx",
+  "workbook_size": 4011609,
+  "workbook_mtime": 1774412359.604867,
+  "exported_at": "2026-03-26T07:08:44.106857+00:00",
+  "sheet_exports": {
+    "techniques": {
+      "output_file": "garud_drishti\\data\\mitre\\mitre_techniques_sheet.json",
+      "row_count": 691,
+      "headers": [
+        "ID",
+        "STIX ID",
+        "name",
+        "description",
+        "url",
+        "created",
+        "last modified",
+        "domain",
+        "version",
+        "tactics",
+        "detection",
+        "platforms",
+        "is sub-technique",
+        "sub-technique of",
+        "contributors",
+        "supports remote",
+        "impact type",
+        "relationship citations"
+      ]
+    },
+    "tactics": {
+      "output_file": "garud_drishti\\data\\mitre\\mitre_tactics_sheet.json",
+      "row_count": 14,
+      "headers": [
+        "ID",
+        "STIX ID",
+        "name",
+        "description",
+        "url",
+        "created",
+        "last modified",
+        "domain",
+        "version"
+      ]
+    },
+    "software": {
+      "output_file": "garud_drishti\\data\\mitre\\mitre_software_sheet.json",
+      "row_count": 784,
+      "headers": [
+        "ID",
+        "STIX ID",
+        "name",
+        "description",
+        "url",
+        "created",
+        "last modified",
+        "domain",
+        "version",
+        "contributors",
+        "platforms",
+        "aliases",
+        "type",
+        "relationship citations"
+      ]
+    },
+    "groups": {
+      "output_file": "garud_drishti\\data\\mitre\\mitre_groups_sheet.json",
+      "row_count": 172,
+      "headers": [
+        "ID",
+        "STIX ID",
+        "name",
+        "description",
+        "url",
+        "created",
+        "last modified",
+        "domain",
+        "version",
+        "contributors",
+        "associated groups",
+        "associated groups citations",
+        "relationship citations"
+      ]
+    },
+    "campaigns": {
+      "output_file": "garud_drishti\\data\\mitre\\mitre_campaigns_sheet.json",
+      "row_count": 52,
+      "headers": [
+        "ID",
+        "STIX ID",
+        "name",
+        "description",
+        "url",
+        "created",
+        "last modified",
+        "domain",
+        "version",
+        "associated campaigns",
+        "associated campaigns citations",
+        "first seen",
+        "first seen citation",
+        "last seen",
+        "last seen citation",
+        "contributors",
+        "relationship citations"
+      ]
+    },
+    "mitigations": {
+      "output_file": "garud_drishti\\data\\mitre\\mitre_mitigations_sheet.json",
+      "row_count": 44,
+      "headers": [
+        "ID",
+        "STIX ID",
+        "name",
+        "description",
+        "url",
+        "created",
+        "last modified",
+        "domain",
+        "version",
+        "relationship citations"
+      ]
+    },
+    "Enterprise ATT&CK matrix": {
+      "output_file": "garud_drishti\\data\\mitre\\mitre_enterprise_attack_matrix_sheet.json",
+      "row_count": 189,
+      "headers": [
+        "Reconnaissance",
+        "column_2",
+        "Resource Development",
+        "column_4",
+        "Initial Access",
+        "column_6",
+        "Execution",
+        "column_8",
+        "Persistence",
+        "column_10",
+        "Privilege Escalation",
+        "column_12",
+        "Defense Evasion",
+        "column_14",
+        "Credential Access",
+        "column_16",
+        "Discovery",
+        "column_18",
+        "Lateral Movement",
+        "column_20",
+        "Collection",
+        "column_22",
+        "Command and Control",
+        "column_24",
+        "Exfiltration",
+        "column_26",
+        "Impact",
+        "column_28"
+      ]
+    },
+    "relationships": {
+      "output_file": "garud_drishti\\data\\mitre\\mitre_relationships_sheet.json",
+      "row_count": 19431,
+      "headers": [
+        "source ID",
+        "source name",
+        "source ref",
+        "source type",
+        "mapping type",
+        "target ID",
+        "target name",
+        "target ref",
+        "target type",
+        "mapping description",
+        "STIX ID",
+        "created",
+        "last modified"
+      ]
+    },
+    "datacomponents": {
+      "output_file": "garud_drishti\\data\\mitre\\mitre_datacomponents_sheet.json",
+      "row_count": 106,
+      "headers": [
+        "ID",
+        "STIX ID",
+        "name",
+        "description",
+        "url",
+        "created",
+        "last modified",
+        "domain",
+        "version"
+      ]
+    },
+    "analytics": {
+      "output_file": "garud_drishti\\data\\mitre\\mitre_analytics_sheet.json",
+      "row_count": 1739,
+      "headers": [
+        "ID",
+        "STIX ID",
+        "name",
+        "description",
+        "url",
+        "created",
+        "last modified",
+        "domain",
+        "version"
+      ]
+    },
+    "detectionstrategies": {
+      "output_file": "garud_drishti\\data\\mitre\\mitre_detectionstrategies_sheet.json",
+      "row_count": 691,
+      "headers": [
+        "ID",
+        "STIX ID",
+        "name",
+        "url",
+        "created",
+        "last modified",
+        "domain",
+        "version",
+        "analytic_refs"
+      ]
+    },
+    "citations": {
+      "output_file": "garud_drishti\\data\\mitre\\mitre_citations_sheet.json",
+      "row_count": 4246,
+      "headers": [
+        "reference",
+        "citation",
+        "url"
+      ]
+    }
+  }
+}

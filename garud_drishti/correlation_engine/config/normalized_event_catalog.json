@@ -1,0 +1,157 @@
+{
+  "__meta__": {
+    "description": "Canonical event catalog for GARUD-DRISHTI correlation engine normalization.",
+    "version": "1.0",
+    "default_event_code": "unknown.event"
+  },
+  "__default__": {
+    "event_code": "unknown.event",
+    "event_category": "unknown",
+    "event_outcome": "unknown",
+    "severity": "low"
+  },
+  "alert": {
+    "event_code": "detection.alert",
+    "event_category": "detection",
+    "event_outcome": "detected",
+    "severity": "medium"
+  },
+  "connection_allowed": {
+    "event_code": "network.connection.allowed",
+    "event_category": "network",
+    "event_outcome": "success",
+    "severity": "low"
+  },
+  "data_download": {
+    "event_code": "data.download",
+    "event_category": "data_access",
+    "event_outcome": "success",
+    "severity": "medium"
+  },
+  "export_report": {
+    "event_code": "data.report.export",
+    "event_category": "data_access",
+    "event_outcome": "success",
+    "severity": "medium"
+  },
+  "file_access": {
+    "event_code": "file.access",
+    "event_category": "file",
+    "event_outcome": "success",
+    "severity": "medium"
+  },
+  "large_data_transfer": {
+    "event_code": "data.transfer.large",
+    "event_category": "network",
+    "event_outcome": "success",
+    "severity": "high"
+  },
+  "large_transaction": {
+    "event_code": "app.transaction.large",
+    "event_category": "application",
+    "event_outcome": "success",
+    "severity": "high"
+  },
+  "login_failed": {
+    "event_code": "auth.login.failed",
+    "event_category": "authentication",
+    "event_outcome": "failure",
+    "severity": "medium"
+  },
+  "login_failure": {
+    "event_code": "auth.login.failed",
+    "event_category": "authentication",
+    "event_outcome": "failure",
+    "severity": "medium"
+  },
+  "login_success": {
+    "event_code": "auth.login.success",
+    "event_category": "authentication",
+    "event_outcome": "success",
+    "severity": "low"
+  },
+  "logout": {
+    "event_code": "auth.logout",
+    "event_category": "authentication",
+    "event_outcome": "success",
+    "severity": "low"
+  },
+  "malicious_process": {
+    "event_code": "process.execution.suspicious",
+    "event_category": "process",
+    "event_outcome": "success",
+    "severity": "high"
+  },
+  "password_reset": {
+    "event_code": "auth.password.reset",
+    "event_category": "authentication",
+    "event_outcome": "success",
+    "severity": "medium"
+  },
+  "port_scan": {
+    "event_code": "network.scan.port",
+    "event_category": "network",
+    "event_outcome": "observed",
+    "severity": "high"
+  },
+  "powershell_execution": {
+    "event_code": "process.powershell.execution",
+    "event_category": "process",
+    "event_outcome": "success",
+    "severity": "high"
+  },
+  "privilege_change": {
+    "event_code": "privilege.change",
+    "event_category": "privilege",
+    "event_outcome": "success",
+    "severity": "high"
+  },
+  "privilege_escalation": {
+    "event_code": "privilege.escalation",
+    "event_category": "privilege",
+    "event_outcome": "success",
+    "severity": "high"
+  },
+  "process_execution": {
+    "event_code": "process.execution",
+    "event_category": "process",
+    "event_outcome": "success",
+    "severity": "medium"
+  },
+  "registry_modification": {
+    "event_code": "registry.modify",
+    "event_category": "persistence",
+    "event_outcome": "success",
+    "severity": "high"
+  },
+  "transaction": {
+    "event_code": "app.transaction",
+    "event_category": "application",
+    "event_outcome": "success",
+    "severity": "low"
+  },
+  "transaction_failed": {
+    "event_code": "app.transaction.failed",
+    "event_category": "application",
+    "event_outcome": "failure",
+    "severity": "medium"
+  },
+  "unknown": {
+    "event_code": "unknown.event",
+    "event_category": "unknown",
+    "event_outcome": "unknown",
+    "severity": "low"
+  },
+  "usb_insert": {
+    "event_code": "device.usb.insert",
+    "event_category": "device",
+    "event_outcome": "success",
+    "severity": "medium"
+  },
+  "user_activity": {
+    "event_code": "user.activity",
+    "event_category": "activity",
+    "event_outcome": "observed",
+    "severity": "low"
+  }
+}

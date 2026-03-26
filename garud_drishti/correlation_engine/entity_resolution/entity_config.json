@@ -1,0 +1,18 @@
+{
+  "description": "Entity resolution configuration for GARUD-DRISHTI correlation engine.",
+  "primary_identifiers": [
+    "user_id",
+    "session_id",
+    "src_ip",
+    "device_id",
+    "asset_id",
+    "entity_id"
+  ],
+  "fallback_order": [
+    "session_id",
+    "user_id",
+    "src_ip",
+    "device_id",
+    "asset_id"
+  ]
+}
