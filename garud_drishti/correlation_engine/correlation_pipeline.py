@@ -46,7 +46,6 @@ from garud_drishti.correlation_engine.scoring.risk_scoring_engine import RiskSco
 DEFAULT_RAW_INPUT = REPO_ROOT / "garud_drishti/data/normalized_events/normalized_events.json"
 DEFAULT_NORMALIZED_OUTPUT = REPO_ROOT / "garud_drishti/data/normalized_events/vishvesh_normalized_events.json"
 DEFAULT_ANOMALY_INPUT = REPO_ROOT / "garud_drishti/data/processed/anomaly_events.json"
-DEFAULT_MITRE_WORKBOOK = Path(r"C:\Users\vishv\Downloads\enterprise-attack-v18.1.xlsx")
 DEFAULT_ENRICHED_OUTPUT = REPO_ROOT / "garud_drishti/data/correlation/enriched_events.json"
 DEFAULT_INCIDENT_INDEX = REPO_ROOT / "garud_drishti/data/incidents/correlated_incidents.json"
 DEFAULT_BY_INCIDENT_DIR = REPO_ROOT / "garud_drishti/data/incidents/by_incident"
@@ -77,7 +76,7 @@ def run_pipeline(
     normalized_input: str | Path = DEFAULT_RAW_INPUT,
     normalized_output: str | Path = DEFAULT_NORMALIZED_OUTPUT,
     anomaly_input: str | Path = DEFAULT_ANOMALY_INPUT,
-    mitre_workbook_path: str | Path = DEFAULT_MITRE_WORKBOOK,
+    mitre_workbook_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Run the full offline correlation pipeline end to end."""
 
@@ -89,10 +88,17 @@ def run_pipeline(
     print("GARUD-DRISHTI Offline Correlation Engine Start")
     print("==============================================\n")
 
-    print("[1/13] Exporting offline MITRE workbook assets...")
+    print("[1/13] Loading offline MITRE knowledge base...")
     mitre_mapper = MitreMapper(workbook_path=mitre_workbook_path)
-    mitre_manifest = _load_json(REPO_ROOT / "garud_drishti/data/mitre/mitre_workbook_manifest.json")
-    print(f"Phase completed: workbook exported from {Path(mitre_workbook_path)}")
+    mitre_manifest = mitre_mapper.knowledge_base_status
+    knowledge_base_mode = str(mitre_manifest.get("knowledge_base_mode", "unknown")).strip().lower()
+    if knowledge_base_mode == "local_cache":
+        print("Phase completed: cached MITRE JSON assets loaded from garud_drishti/data/mitre")
+    elif knowledge_base_mode == "exported_from_workbook":
+        workbook_display = str(mitre_workbook_path) if mitre_workbook_path else "provided workbook"
+        print(f"Phase completed: MITRE JSON assets rebuilt from workbook {workbook_display}")
+    else:
+        print("Phase completed: MITRE knowledge base loaded")
     print(f"MITRE sheets exported: {len(mitre_manifest.get('sheet_exports', {}))}\n")
 
     print("[2/13] Normalizing Avantika input into canonical Vishvesh events...")
@@ -265,6 +271,7 @@ def run_pipeline(
         "enriched_output": str(enriched_output),
         "incident_index": str(incident_index_path),
         "incident_files": [str(path) for path in saved_incident_files],
+        "mitre_knowledge_base_mode": knowledge_base_mode,
         "mitre_manifest": str(REPO_ROOT / "garud_drishti/data/mitre/mitre_workbook_manifest.json"),
     }
 
@@ -278,7 +285,11 @@ def main() -> None:
         help="Canonical Vishvesh normalized output path.",
     )
     parser.add_argument("--anomaly-input", default=str(DEFAULT_ANOMALY_INPUT), help="Shreya anomaly JSON path.")
-    parser.add_argument("--mitre-workbook", default=str(DEFAULT_MITRE_WORKBOOK), help="Offline MITRE workbook path.")
+    parser.add_argument(
+        "--mitre-workbook",
+        default=None,
+        help="Optional offline MITRE workbook path used only to rebuild local MITRE JSON assets if needed.",
+    )
     args = parser.parse_args()
 
     run_pipeline(

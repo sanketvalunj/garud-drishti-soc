@@ -17,6 +17,7 @@ passlib[bcrypt]           # Optional helper; bcrypt used directly here
 # Data Processing
 pandas
 numpy
+networkx
 
 # Storage
 elasticsearch>=8.0.0

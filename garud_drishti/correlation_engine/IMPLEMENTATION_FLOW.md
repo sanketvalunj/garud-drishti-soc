@@ -14,7 +14,7 @@ The correlation engine is the offline, air-gapped part of GARUD-DRISHTI that:
 - computes incident-local risk scores
 - writes final incident JSON outputs under `garud_drishti/data/incidents/`
 
-The engine is offline-only. It does not call the internet. The MITRE workbook is parsed locally from `C:\Users\vishv\Downloads\enterprise-attack-v18.1.xlsx`, and any `http...` content stored in exported JSON is passive workbook metadata only.
+The engine is offline-only. It does not call the internet. Normal pipeline runs use the cached MITRE JSON knowledge base under `garud_drishti/data/mitre/`, and any `http...` content stored in exported JSON is passive workbook metadata only.
 
 ## Why The Normalization Layer Lives In `preprocessing/`
 
@@ -239,11 +239,17 @@ Behavior:
 - maps detected pattern names to stronger confirmed techniques
 - adds higher-confidence ATT&CK context than event-only mapping
 
-#### Local Workbook Export
+#### Local Workbook Export / Cache Rebuild
 
 Workbook source:
 
 - `C:\Users\vishv\Downloads\enterprise-attack-v18.1.xlsx`
+
+Runtime behavior:
+
+- the pipeline uses `garud_drishti/data/mitre/*.json` by default
+- the workbook is only needed when those local MITRE JSON assets are missing and you want to rebuild them
+- `--mitre-workbook` is optional during normal execution
 
 Generated files:
 
@@ -326,7 +332,7 @@ It supports:
 
 Pipeline stages:
 
-1. export offline MITRE workbook assets
+1. load offline MITRE knowledge base
 2. normalize Avantika input
 3. load canonical normalized events
 4. load anomaly feed
@@ -342,22 +348,36 @@ Pipeline stages:
 
 ## How To Run
 
+Fresh pull setup:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+The committed repo already contains the correlation-engine configs, the local MITRE cache under `garud_drishti/data/mitre/`, and the offline input datasets used by the pipeline:
+
+- `garud_drishti/data/normalized_events/normalized_events.json`
+- `garud_drishti/data/processed/anomaly_events.json`
+
 Normalizing only:
 
 ```powershell
-C:\Users\vishv\AppData\Local\Programs\Python\Python313\python.exe .\garud_drishti\correlation_engine\preprocessing\event_normalizer.py
+python .\garud_drishti\correlation_engine\preprocessing\event_normalizer.py
 ```
 
 Running the full pipeline:
 
 ```powershell
-C:\Users\vishv\AppData\Local\Programs\Python\Python313\python.exe .\garud_drishti\correlation_engine\correlation_pipeline.py
+python .\garud_drishti\correlation_engine\correlation_pipeline.py
 ```
 
 Module execution:
 
 ```powershell
-C:\Users\vishv\AppData\Local\Programs\Python\Python313\python.exe -m garud_drishti.correlation_engine.correlation_pipeline
+python -m garud_drishti.correlation_engine.correlation_pipeline
 ```
 
 ## Files Read At Each Stage
@@ -373,6 +393,10 @@ C:\Users\vishv\AppData\Local\Programs\Python\Python313\python.exe -m garud_drish
 - `garud_drishti/correlation_engine/config/entity_linking_rules.json`
 - `garud_drishti/correlation_engine/config/entity_weights.json`
 - `garud_drishti/correlation_engine/entity_resolution/entity_config.json`
+- `garud_drishti/data/mitre/*.json`
+
+Optional only for MITRE cache rebuild:
+
 - `C:\Users\vishv\Downloads\enterprise-attack-v18.1.xlsx`
 
 ## Files Written At Each Stage
@@ -389,4 +413,4 @@ C:\Users\vishv\AppData\Local\Programs\Python\Python313\python.exe -m garud_drish
 - late or out-of-order events are handled correctly only within a batch replay, not as incremental stateful updates
 - incidents are regenerated per batch run rather than upserted into a long-lived incident state store
 - correlation windows are sequence-based and event-time-driven, but there is no continuously running in-memory state cleanup loop
-- MITRE mapping is workbook-backed and offline, but candidate/confirmed associations are still config-driven and should be expanded as the event catalog grows
+- MITRE mapping is cache-backed and offline, but candidate/confirmed associations are still config-driven and should be expanded as the event catalog grows

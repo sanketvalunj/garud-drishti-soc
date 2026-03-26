@@ -39,17 +39,17 @@ class MitreMapper:
         self,
         event_mapping_path: str | Path = r"garud_drishti\correlation_engine\config\mitre_event_mapping.json",
         pattern_mapping_path: str | Path = r"garud_drishti\correlation_engine\config\mitre_pattern_mapping.json",
-        workbook_path: str | Path = r"C:\Users\vishv\Downloads\enterprise-attack-v18.1.xlsx",
+        workbook_path: str | Path | None = None,
         output_dir: str | Path = r"garud_drishti\data\mitre",
     ) -> None:
         self.event_mapping_path = Path(event_mapping_path)
         self.pattern_mapping_path = Path(pattern_mapping_path)
-        self.workbook_path = Path(workbook_path)
+        self.workbook_path = Path(workbook_path) if workbook_path else None
         self.output_dir = Path(output_dir)
 
         self.event_mapping = self._load_json(self.event_mapping_path)
         self.pattern_mapping = self._load_json(self.pattern_mapping_path)
-        self.ensure_local_knowledge_base()
+        self.knowledge_base_status = self.ensure_local_knowledge_base()
 
         self.technique_index = self._load_json(self.output_dir / "mitre_techniques_index.json")
         self.tactic_index = self._load_json(self.output_dir / "mitre_tactics_index.json")
@@ -72,6 +72,15 @@ class MitreMapper:
         with open(path, "w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2)
         return path
+
+    def _local_assets_ready(self) -> bool:
+        required_files = [
+            "mitre_workbook_manifest.json",
+            "mitre_techniques_index.json",
+            "mitre_tactics_index.json",
+            *self.SHEET_FILE_MAP.values(),
+        ]
+        return all((self.output_dir / filename).exists() for filename in required_files)
 
     @classmethod
     def _column_index(cls, cell_reference: str) -> int:
@@ -165,26 +174,24 @@ class MitreMapper:
         return headers, records
 
     def ensure_local_knowledge_base(self) -> dict[str, Any]:
-        """Export the workbook sheets and runtime indexes when missing or outdated."""
+        """Load cached MITRE assets or export them from a workbook when required."""
 
+        manifest_path = self.output_dir / "mitre_workbook_manifest.json"
+        if self._local_assets_ready():
+            with open(manifest_path, encoding="utf-8") as handle:
+                manifest = json.load(handle)
+            manifest["knowledge_base_mode"] = "local_cache"
+            return manifest
+
+        if self.workbook_path is None:
+            raise FileNotFoundError(
+                "MITRE local JSON assets are missing and no workbook path was provided for rebuild."
+            )
         if not self.workbook_path.exists():
             raise FileNotFoundError(f"MITRE workbook not found: {self.workbook_path}")
 
-        manifest_path = self.output_dir / "mitre_workbook_manifest.json"
         workbook_size = self.workbook_path.stat().st_size
         workbook_mtime = self.workbook_path.stat().st_mtime
-
-        if manifest_path.exists():
-            with open(manifest_path, encoding="utf-8") as handle:
-                manifest = json.load(handle)
-            if (
-                manifest.get("workbook_size") == workbook_size
-                and manifest.get("workbook_mtime") == workbook_mtime
-                and all((self.output_dir / filename).exists() for filename in self.SHEET_FILE_MAP.values())
-                and (self.output_dir / "mitre_techniques_index.json").exists()
-                and (self.output_dir / "mitre_tactics_index.json").exists()
-            ):
-                return manifest
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(self.workbook_path) as archive:
@@ -270,6 +277,7 @@ class MitreMapper:
             "workbook_size": workbook_size,
             "workbook_mtime": workbook_mtime,
             "exported_at": datetime.now(timezone.utc).isoformat(),
+            "knowledge_base_mode": "exported_from_workbook",
             "sheet_exports": exported_sheets,
         }
         self._write_json(manifest_path, manifest)
