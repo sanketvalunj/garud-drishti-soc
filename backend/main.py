@@ -329,3 +329,8 @@ async def toggle_stream():
         streaming_task = asyncio.create_task(_stream_logs())
         return {"streaming": True, "message": "Streaming started"}
 
+from fastapi import FastAPI
+from backend.api import feedback_api  # Import the new API
+
+# Register the feedback loop
+app.include_router(feedback_api.router)

@@ -13,8 +13,8 @@ import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 
-INPUT_PATH = "garud_drishti/data/processed/features.csv"
-OUTPUT_PATH = "garud_drishti/data/processed/anomaly_events.json"
+INPUT_PATH = "garud_drishti/data/ai_engine/features.csv"
+OUTPUT_PATH = "garud_drishti/data/ai_engine/anomaly_events.json"
 
 
 # ─────────────────────────────────────────

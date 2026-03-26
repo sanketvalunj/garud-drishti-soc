@@ -16,8 +16,22 @@ class AgentOrchestrator:
         self.voting = VotingEngine()
         self.memory = AgentMemory()
 
-    def run(self, incident: dict) -> dict:
-        risk = self.risk.analyze(incident)
+    def run(self, context: dict) -> dict:
+        """
+        Accept either a plain incident dict or the enriched context wrapper
+        from SOCMasterAgent: {incident, threat_analysis, attack_analysis}.
+        Sub-agents always receive the raw incident so their .get() calls work correctly.
+        """
+        # Unpack enriched context if present, otherwise treat the whole dict as the incident
+        incident = context.get("incident", context)
+        threat_analysis = context.get("threat_analysis", {})
+        attack_analysis = context.get("attack_analysis", {})
+
+        risk = self.risk.analyze(
+            incident,
+            attack_chain=attack_analysis.get("attack_chain"),
+            risk_factors=threat_analysis,
+        )
         self.memory.store("risk", risk)
 
         compliance = self.compliance.analyze(incident)
@@ -26,11 +40,7 @@ class AgentOrchestrator:
         impact = self.impact.assess(incident)
         self.memory.store("impact", impact)
 
-        decision = self.voting.decide(
-            risk,
-            compliance,
-            impact
-        )
+        decision = self.voting.decide(risk, compliance, impact)
 
         return {
             "decision": decision,

@@ -3,10 +3,10 @@ CRYPTIX — GARUD-DRISHTI
 scripts/extract_features.py
 
 INPUT:
- garud_drishti/data/normalized_events/normalized_events.json
+ garud_drishti/data/ai_engine/normalized_events.json
 
 OUTPUT:
- garud_drishti/data/processed/features.csv
+ garud_drishti/data/ai_engine/features.csv
 
 GOAL:
  Convert normalized SOC events → ML-ready UEBA features
@@ -17,8 +17,8 @@ import os
 import json
 import pandas as pd
 
-INPUT_PATH = "garud_drishti/data/normalized_events/normalized_events.json"
-OUTPUT_PATH = "garud_drishti/data/processed/features.csv"
+INPUT_PATH = "garud_drishti/data/ai_engine/normalized_events.json"
+OUTPUT_PATH = "garud_drishti/data/ai_engine/features.csv"
 
 # ─────────────────────────────────────────
 # LOAD
