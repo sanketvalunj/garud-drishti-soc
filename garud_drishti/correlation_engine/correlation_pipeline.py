@@ -1,187 +1,293 @@
-"""
-correlation_pipeline.py
+"""Offline, air-gapped correlation pipeline for GARUD-DRISHTI."""
 
-Main execution pipeline for the Correlation Engine.
+from __future__ import annotations
 
-Pipeline Steps
---------------
-1. Load anomaly results from UEBA engine
-2. Identify suspicious users
-3. Load normalized logs
-4. Build event sequences
-5. Build attack graph
-6. Extract attack paths
-7. Detect attack patterns
-8. Map MITRE ATT&CK techniques
-9. Compute risk score
-10. Generate incident JSON
-"""
-
-from loaders.anomaly_loader import AnomalyLoader
-from loaders.normalized_log_loader import NormalizedLogLoader
-
-from preprocessing.event_sequence_builder import EventSequenceBuilder
-
-from graph_engine.attack_graph_builder import AttackGraphBuilder
-from graph_engine.attack_path_extractor import AttackPathExtractor
-
-from detection.pattern_detector import PatternDetector
-from detection.mitre_mapper import MitreMapper
-
-from scoring.risk_scoring_engine import RiskScoringEngine
-from outputs.incident_builder import IncidentBuilder
+import argparse
+import json
+from pathlib import Path
+import sys
+from typing import Any
 
 
-def run_pipeline():
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-    print("\n==============================")
-    print("Correlation Engine Started")
-    print("==============================\n")
 
-    # --------------------------------------------------
-    # STEP 1 : Load anomaly results
-    # --------------------------------------------------
+def _bootstrap_site_packages() -> None:
+    for candidate in (
+        REPO_ROOT / ".venv/Lib/site-packages",
+        REPO_ROOT / "venv/Lib/site-packages",
+    ):
+        if candidate.exists() and str(candidate) not in sys.path:
+            sys.path.insert(0, str(candidate))
 
-    anomaly_loader = AnomalyLoader()
 
-    suspicious_users = anomaly_loader.get_anomalous_users()
+_bootstrap_site_packages()
 
-    print("Suspicious users detected by UEBA:")
-    print(suspicious_users)
+import pandas as pd
 
-    if len(suspicious_users) == 0:
-        print("\nNo suspicious users detected. Exiting pipeline.")
-        return
+from garud_drishti.correlation_engine.detection.mitre_mapper import MitreMapper
+from garud_drishti.correlation_engine.detection.pattern_detector import PatternDetector
+from garud_drishti.correlation_engine.graph_engine.attack_graph_builder import AttackGraphBuilder
+from garud_drishti.correlation_engine.graph_engine.attack_path_extractor import AttackPathExtractor
+from garud_drishti.correlation_engine.loaders.anomaly_loader import AnomalyLoader
+from garud_drishti.correlation_engine.loaders.normalized_log_loader import NormalizedLogLoader
+from garud_drishti.correlation_engine.outputs.incident_builder import IncidentBuilder
+from garud_drishti.correlation_engine.preprocessing.event_normalizer import (
+    load_raw_logs,
+    normalize_events,
+    write_normalized_events,
+)
+from garud_drishti.correlation_engine.preprocessing.event_sequence_builder import EventSequenceBuilder
+from garud_drishti.correlation_engine.scoring.risk_scoring_engine import RiskScoringEngine
 
-    # Get anomaly score of the most suspicious user
-    user = suspicious_users[0]
 
-    anomaly_score = anomaly_loader.get_anomaly_score(user)
+DEFAULT_RAW_INPUT = REPO_ROOT / "garud_drishti/data/normalized_events/normalized_events.json"
+DEFAULT_NORMALIZED_OUTPUT = REPO_ROOT / "garud_drishti/data/normalized_events/vishvesh_normalized_events.json"
+DEFAULT_ANOMALY_INPUT = REPO_ROOT / "garud_drishti/data/processed/anomaly_events.json"
+DEFAULT_MITRE_WORKBOOK = Path(r"C:\Users\vishv\Downloads\enterprise-attack-v18.1.xlsx")
+DEFAULT_ENRICHED_OUTPUT = REPO_ROOT / "garud_drishti/data/correlation/enriched_events.json"
+DEFAULT_INCIDENT_INDEX = REPO_ROOT / "garud_drishti/data/incidents/correlated_incidents.json"
+DEFAULT_BY_INCIDENT_DIR = REPO_ROOT / "garud_drishti/data/incidents/by_incident"
+DEFAULT_CORRELATION_CONFIG = REPO_ROOT / "garud_drishti/correlation_engine/config/correlation_config.json"
 
-    print(f"\nAnomaly Score: {anomaly_score}")
 
-    # --------------------------------------------------
-    # STEP 2 : Load normalized logs
-    # --------------------------------------------------
+def _ensure_output_dir(path_value: str | Path) -> Path:
+    path = Path(path_value)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
-    log_loader = NormalizedLogLoader()
 
-    logs = log_loader.get_logs_for_users(suspicious_users)
+def _write_json(path_value: str | Path, payload: Any) -> Path:
+    path = Path(path_value)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2, default=str)
+    return path
 
-    logs = log_loader.get_logs_sorted(logs)
 
-    print("\nLogs for suspicious users:")
-    print(logs.head())
+def _load_json(path_value: str | Path) -> dict[str, Any]:
+    path = Path(path_value)
+    with open(path, encoding="utf-8") as handle:
+        return json.load(handle)
 
-    # --------------------------------------------------
-    # STEP 3 : Build event sequences
-    # --------------------------------------------------
 
-    sequence_builder = EventSequenceBuilder(logs)
+def run_pipeline(
+    normalized_input: str | Path = DEFAULT_RAW_INPUT,
+    normalized_output: str | Path = DEFAULT_NORMALIZED_OUTPUT,
+    anomaly_input: str | Path = DEFAULT_ANOMALY_INPUT,
+    mitre_workbook_path: str | Path = DEFAULT_MITRE_WORKBOOK,
+) -> dict[str, Any]:
+    """Run the full offline correlation pipeline end to end."""
 
-    event_sequences = sequence_builder.build_sequences()
+    correlation_config = _load_json(DEFAULT_CORRELATION_CONFIG)
+    min_incident_risk_score = int(correlation_config.get("min_incident_risk_score", 45))
+    max_timeline_events = int(correlation_config.get("max_timeline_events", 50))
 
-    print("\nEvent Sequences:\n")
+    print("\n==============================================")
+    print("GARUD-DRISHTI Offline Correlation Engine Start")
+    print("==============================================\n")
 
-    sequence_builder.print_sequences(event_sequences)
+    print("[1/13] Exporting offline MITRE workbook assets...")
+    mitre_mapper = MitreMapper(workbook_path=mitre_workbook_path)
+    mitre_manifest = _load_json(REPO_ROOT / "garud_drishti/data/mitre/mitre_workbook_manifest.json")
+    print(f"Phase completed: workbook exported from {Path(mitre_workbook_path)}")
+    print(f"MITRE sheets exported: {len(mitre_manifest.get('sheet_exports', {}))}\n")
 
-    print("\nEvent Sequence Stage Completed\n")
+    print("[2/13] Normalizing Avantika input into canonical Vishvesh events...")
+    raw_logs = load_raw_logs(normalized_input)
+    normalized_events = normalize_events(raw_logs)
+    normalized_output_path = write_normalized_events(normalized_events, normalized_output)
+    print(f"Phase completed: canonical normalization written to {normalized_output_path}")
+    print(f"Input records : {len(raw_logs)}")
+    print(f"Output records: {len(normalized_events)}\n")
 
-    # --------------------------------------------------
-    # STEP 4 : Build Attack Graph
-    # --------------------------------------------------
+    print("[3/13] Loading canonical normalized events...")
+    log_loader = NormalizedLogLoader(normalized_output_path)
+    normalized_logs = log_loader.get_logs_sorted()
+    log_loader.summary()
+    print(f"Phase completed: canonical logs loaded from {normalized_output_path}\n")
 
-    graph_builder = AttackGraphBuilder(event_sequences)
+    print("[4/13] Loading anomaly enrichment feed...")
+    anomaly_loader = AnomalyLoader(
+        file_path=anomaly_input,
+        tolerance_seconds=int(correlation_config.get("anomaly_match_tolerance_seconds", 120)),
+    )
+    anomaly_loader.summary()
+    print(f"Phase completed: anomaly feed loaded from {Path(anomaly_input)}\n")
 
+    print("[5/13] Enriching normalized events with anomaly context...")
+    enriched_logs = anomaly_loader.enrich_logs(normalized_logs)
+    enriched_output = _write_json(DEFAULT_ENRICHED_OUTPUT, enriched_logs.to_dict("records"))
+    match_counts = (
+        enriched_logs["anomaly_match_strategy"].value_counts(dropna=False).to_dict()
+        if "anomaly_match_strategy" in enriched_logs.columns
+        else {}
+    )
+    print(f"Phase completed: enriched events written to {enriched_output}")
+    print(f"Enriched records: {len(enriched_logs)}")
+    print(f"Match strategies : {match_counts}\n")
+
+    print("[6/13] Building correlation sequences across all relevant events...")
+    sequence_builder = EventSequenceBuilder(enriched_logs)
+    sequences = sequence_builder.build_sequences()
+    print("Phase completed: event sequences built")
+    print(f"Sequence count : {len(sequences)}")
+    print(f"Sequenced events: {sum(sequence['event_count'] for sequence in sequences)}\n")
+
+    print("[7/13] Building attack graph...")
+    graph_builder = AttackGraphBuilder(sequences)
     graph = graph_builder.build_graph()
-
     graph_builder.print_graph_summary()
+    print("Phase completed: attack graph built\n")
 
-    print("\nAttack Graph Built Successfully\n")
-
-    # --------------------------------------------------
-    # STEP 5 : Extract Attack Paths
-    # --------------------------------------------------
-
+    print("[8/13] Extracting attack paths...")
     path_extractor = AttackPathExtractor(graph)
+    attack_paths = path_extractor.get_all_paths()
+    print("Phase completed: attack paths extracted")
+    print(f"Attack path count: {len(attack_paths)}\n")
 
-    paths = path_extractor.get_all_paths()
+    print("[9/13] Detecting multi-stage patterns...")
+    pattern_detector = PatternDetector(paths=attack_paths, graph=graph)
+    pattern_matches = pattern_detector.detect_patterns()
+    pattern_summary = pattern_detector.summarize_patterns(pattern_matches)
+    pattern_detector.print_patterns(pattern_matches)
+    print("Phase completed: pattern detection finished")
+    print(f"Pattern count : {len(pattern_matches)}")
+    print(f"Pattern summary: {pattern_summary}\n")
 
-    path_extractor.print_paths(paths)
+    print("[10/13] Applying event-level MITRE candidate mapping...")
+    event_mitre_by_sequence: dict[str, list[dict[str, Any]]] = {}
+    for sequence in sequences:
+        event_codes = [str(event.get("event_code", "unknown.event")) for event in sequence.get("events", [])]
+        event_mitre_by_sequence[str(sequence["sequence_id"])] = mitre_mapper.map_event_codes(event_codes)
+    total_event_mitre = sum(len(items) for items in event_mitre_by_sequence.values())
+    print("Phase completed: event-level MITRE mapping finished")
+    print(f"Event-level mappings: {total_event_mitre}\n")
 
-    print("\nAttack Path Extraction Completed\n")
+    print("[11/13] Applying pattern-level MITRE confirmed mapping...")
+    patterns_by_sequence: dict[str, list[dict[str, Any]]] = {}
+    for pattern in pattern_matches:
+        patterns_by_sequence.setdefault(str(pattern["sequence_id"]), []).append(pattern)
 
-    # --------------------------------------------------
-    # STEP 6 : Detect Attack Patterns
-    # --------------------------------------------------
+    pattern_mitre_by_sequence: dict[str, list[dict[str, Any]]] = {}
+    for sequence_id, matches in patterns_by_sequence.items():
+        pattern_names = [pattern["pattern_name"] for pattern in matches]
+        pattern_mitre_by_sequence[sequence_id] = mitre_mapper.map_pattern_matches(pattern_names)
+    total_pattern_mitre = sum(len(items) for items in pattern_mitre_by_sequence.values())
+    print("Phase completed: pattern-level MITRE mapping finished")
+    print(f"Pattern-level mappings: {total_pattern_mitre}\n")
 
-    pattern_detector = PatternDetector(paths, graph)
-
-    patterns = pattern_detector.detect_patterns()
-
-    pattern_detector.print_patterns(patterns)
-
-    print("\nPattern Detection Completed\n")
-
-    # --------------------------------------------------
-    # STEP 7 : MITRE ATT&CK Mapping
-    # --------------------------------------------------
-
-    mitre_mapper = MitreMapper()
-
-    techniques = mitre_mapper.map_graph(graph)
-
-    mitre_mapper.print_mitre(techniques)
-
-    print("\nMITRE Mapping Completed\n")
-
-    # --------------------------------------------------
-    # STEP 8 : Risk Scoring
-    # --------------------------------------------------
-
+    print("[12/13] Computing incident-local risk scores...")
     risk_engine = RiskScoringEngine()
+    path_by_sequence = {str(path["sequence_id"]): path for path in attack_paths}
+    incident_candidates: list[dict[str, Any]] = []
 
-    risk_score = risk_engine.calculate_risk_score(
-        anomaly_score,
-        patterns,
-        techniques,
-        paths
-    )
+    for sequence in sequences:
+        sequence_id = str(sequence["sequence_id"])
+        path = path_by_sequence.get(sequence_id)
+        if path is None:
+            continue
 
-    risk_level = risk_engine.classify_risk(risk_score)
+        pattern_list = patterns_by_sequence.get(sequence_id, [])
+        event_level_mitre = event_mitre_by_sequence.get(sequence_id, [])
+        pattern_level_mitre = pattern_mitre_by_sequence.get(sequence_id, [])
+        combined_mitre = MitreMapper.combine_mappings(event_level_mitre, pattern_level_mitre)
+        risk = risk_engine.calculate_incident_risk(
+            sequence=sequence,
+            path=path,
+            pattern_matches=pattern_list,
+            event_mitre=event_level_mitre,
+            pattern_mitre=pattern_level_mitre,
+        )
 
-    print("\n==============================")
-    print("RISK ASSESSMENT")
-    print("==============================")
+        if risk["risk_score"] >= min_incident_risk_score or pattern_list:
+            incident_candidates.append(
+                {
+                    "sequence": sequence,
+                    "path": path,
+                    "patterns": pattern_list,
+                    "event_level_mitre": event_level_mitre,
+                    "pattern_level_mitre": pattern_level_mitre,
+                    "combined_mitre": combined_mitre,
+                    "risk": risk,
+                }
+            )
 
-    print(f"Risk Score : {risk_score}")
-    print(f"Risk Level : {risk_level}")
+    print("Phase completed: risk scoring finished")
+    print(f"Incident candidates above threshold: {len(incident_candidates)}\n")
 
-    # --------------------------------------------------
-    # STEP 9 : Build Final Incident
-    # --------------------------------------------------
-
+    print("[13/13] Generating final incident JSON output...")
     incident_builder = IncidentBuilder(
-        user=user,
-        anomaly_score=anomaly_score,
-        patterns=patterns,
-        mitre_techniques=techniques,
-        attack_paths=paths,
-        event_sequences=event_sequences,
-        risk_score=risk_score,
-        risk_level=risk_level
+        by_incident_dir=DEFAULT_BY_INCIDENT_DIR,
+        index_path=DEFAULT_INCIDENT_INDEX,
     )
+    incidents = [
+        incident_builder.build_incident(
+            sequence=candidate["sequence"],
+            path=candidate["path"],
+            patterns=candidate["patterns"],
+            event_level_mitre=candidate["event_level_mitre"],
+            pattern_level_mitre=candidate["pattern_level_mitre"],
+            combined_mitre=candidate["combined_mitre"],
+            risk=candidate["risk"],
+            max_timeline_events=max_timeline_events,
+        )
+        for candidate in incident_candidates
+    ]
+    incident_index_path, saved_incident_files = incident_builder.save_incidents(incidents)
+    print("Phase completed: incident output generated")
+    print(f"Incident count : {len(incidents)}")
+    print(f"Incident index : {incident_index_path}")
+    print(f"By-incident dir: {DEFAULT_BY_INCIDENT_DIR}\n")
 
-    incident = incident_builder.build_incident()
+    print("==============================================")
+    print("GARUD-DRISHTI Offline Correlation Engine Ended")
+    print("==============================================")
+    print(f"Normalized events : {len(normalized_events)}")
+    print(f"Enriched events   : {len(enriched_logs)}")
+    print(f"Sequences         : {len(sequences)}")
+    print(f"Paths             : {len(attack_paths)}")
+    print(f"Pattern matches   : {len(pattern_matches)}")
+    print(f"Incidents         : {len(incidents)}")
+    print(f"Outputs written   : {normalized_output_path}, {enriched_output}, {incident_index_path}\n")
 
-    incident_builder.save_incident(incident)
+    return {
+        "normalized_events": len(normalized_events),
+        "enriched_events": len(enriched_logs),
+        "sequence_count": len(sequences),
+        "path_count": len(attack_paths),
+        "pattern_match_count": len(pattern_matches),
+        "pattern_summary": pattern_summary,
+        "incident_count": len(incidents),
+        "normalized_output": str(normalized_output_path),
+        "enriched_output": str(enriched_output),
+        "incident_index": str(incident_index_path),
+        "incident_files": [str(path) for path in saved_incident_files],
+        "mitre_manifest": str(REPO_ROOT / "garud_drishti/data/mitre/mitre_workbook_manifest.json"),
+    }
 
-    print("\n==============================")
-    print("Incident JSON Generated")
-    print("==============================")
 
-    print("\nCorrelation Engine Finished\n")
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Run the GARUD-DRISHTI offline correlation pipeline.")
+    parser.add_argument("--normalized-input", default=str(DEFAULT_RAW_INPUT), help="Input Avantika JSON path.")
+    parser.add_argument(
+        "--normalized-output",
+        default=str(DEFAULT_NORMALIZED_OUTPUT),
+        help="Canonical Vishvesh normalized output path.",
+    )
+    parser.add_argument("--anomaly-input", default=str(DEFAULT_ANOMALY_INPUT), help="Shreya anomaly JSON path.")
+    parser.add_argument("--mitre-workbook", default=str(DEFAULT_MITRE_WORKBOOK), help="Offline MITRE workbook path.")
+    args = parser.parse_args()
+
+    run_pipeline(
+        normalized_input=args.normalized_input,
+        normalized_output=args.normalized_output,
+        anomaly_input=args.anomaly_input,
+        mitre_workbook_path=args.mitre_workbook,
+    )
 
 
 if __name__ == "__main__":
-    run_pipeline()
+    main()
