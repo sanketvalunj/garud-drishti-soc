@@ -15,7 +15,7 @@ class CorrelationService:
         detected: Any = None,
         normalized_input: str | Path = r"garud_drishti\data\normalized_events\normalized_events.json",
         anomaly_input: str | Path = r"garud_drishti\data\processed\anomaly_events.json",
-        mitre_workbook_path: str | Path = r"C:\Users\vishv\Downloads\enterprise-attack-v18.1.xlsx",
+        mitre_workbook_path: str | Path | None = None,
     ) -> list[dict[str, Any]]:
         del detected  # Correlation consumes offline file inputs, not a suspicious-only event subset.
 
