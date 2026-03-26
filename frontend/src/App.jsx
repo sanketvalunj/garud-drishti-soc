@@ -20,6 +20,7 @@ import Reasoning from './pages/Reasoning';
 import LLMReasoning from './pages/LLMReasoning';
 import Admin from './pages/Admin';
 import MyActivity from './pages/MyActivity';
+import Alerts from './pages/Alerts';
 import AboutPage from './pages/AboutPage';
 import ServicesPage from './pages/ServicesPage';
 
@@ -79,6 +80,7 @@ const App = () => {
               <Route path="/llm-reasoning" element={<LLMReasoning />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/activity" element={<MyActivity />} />
+              <Route path="/alerts" element={<Alerts />} />
             </Route>
 
             {/* Catch-all */}

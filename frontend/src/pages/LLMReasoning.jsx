@@ -31,6 +31,7 @@ import {
 // API endpoint: GET /reasoning/:incidentId
 // ─────────────────────────────────────
 
+// API to integrate
 const ALL_MOCK_REASONING = {
   'INC-2091': {
     incidentId: 'INC-2091',

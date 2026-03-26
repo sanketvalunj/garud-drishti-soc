@@ -65,6 +65,7 @@ const LiveEventStream = () => {
                 console.log('[SSE] Connected to /stream-events');
             };
 
+            // API to integrate — Handle real-time event ingestion from SSE
             es.onmessage = (e) => {
                 try {
                     const data = JSON.parse(e.data);
@@ -116,7 +117,7 @@ const LiveEventStream = () => {
         return () => clearInterval(t);
     }, [isRunning]);
 
-    // ── 3. Incident feed ──────────────────────────────────────────────
+    // API to integrate — Fetch real-time incidents from backend
     const fetchIncidents = async () => {
         try {
             const res = await api.getIncidents();

@@ -49,6 +49,7 @@ const MAX_ENTITIES_VISIBLE = 2
 // graphNodes: [{ id, type, label, compromised, suspected, position }]
 // graphEdges: [{ id, source, target, label }]
 
+// API to integrate
 const MOCK_INCIDENT = {
   id: 'INC-2091',
   type: 'Privilege Escalation',

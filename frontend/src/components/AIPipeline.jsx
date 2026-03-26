@@ -1,6 +1,7 @@
 import React from 'react';
 
 const AIPipeline = () => {
+    // API to integrate
     const stages = [
         { id: 1, name: 'Logs', status: 'Completed' },
         { id: 2, name: 'UEBA Detection', status: 'Completed' },

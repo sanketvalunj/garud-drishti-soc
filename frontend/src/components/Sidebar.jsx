@@ -41,6 +41,7 @@ const Sidebar = () => {
 
     const navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+        { icon: Zap, label: 'Alerts', path: '/alerts' },
         { icon: ShieldAlert, label: 'Incidents', path: '/incidents' },
         { icon: BookOpen, label: 'Playbooks', path: '/playbooks' },
         { icon: BrainCircuit, label: 'LLM Reasoning', path: '/llm-reasoning' },

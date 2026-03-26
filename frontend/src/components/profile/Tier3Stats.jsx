@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 const Tier3Stats = () => {
+  // API to integrate
   const stats = [
     { label: 'Resolved', value: '34', icon: ShieldCheck, color: '#00AEEF' },
     { label: 'Esc. Received', value: '28', icon: Users, color: 'rgba(0,174,239,0.7)' },

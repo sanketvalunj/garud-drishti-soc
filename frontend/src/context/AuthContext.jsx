@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 
+// API to integrate
 const MOCK_USERS = {
   tier1: {
     id: 'U001',
@@ -21,6 +22,7 @@ const MOCK_USERS = {
     },
      navItems: [
        'dashboard',
+       'alerts',
        'incidents',
        'activity'
      ]
@@ -45,6 +47,7 @@ const MOCK_USERS = {
      },
      navItems: [
        'dashboard',
+       'alerts',
        'incidents',
        'playbooks',
        'llmreasoning',
@@ -71,6 +74,7 @@ const MOCK_USERS = {
      },
      navItems: [
        'dashboard',
+       'alerts',
        'incidents',
        'playbooks',
        'llmreasoning',
@@ -98,6 +102,7 @@ const MOCK_USERS = {
      },
      navItems: [
        'dashboard',
+       'alerts',
        'incidents',
        'playbooks',
        'llmreasoning',

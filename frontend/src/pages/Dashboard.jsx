@@ -27,12 +27,14 @@ import PlaybookViewer from '../components/incidents/PlaybookViewer';
 import AutomationPanel from '../components/AutomationPanel';
 
 // ─── LIVE STREAM CONSTANTS ──────────────────────────────────
+// API to integrate
 const INITIAL_LIVE_EVENTS = [
     { id: 'evt-001', time: '12:13:45', type: 'Login Failed', entity: 'swift-terminal', severity: 'medium', source: 'IAM', isNew: false, incidentId: 'INC-2091' },
     { id: 'evt-002', time: '12:13:01', type: 'Access Attempt', entity: 'core-banking', severity: 'high', source: 'EDR', isNew: false, incidentId: 'INC-2090' },
     { id: 'evt-003', time: '12:12:33', type: 'Lateral Movement', entity: 'loan-db', severity: 'high', source: 'SIEM', isNew: false, incidentId: 'INC-2089' }
 ];
 
+// API to integrate
 const NEW_EVENTS_POOL = [
     { type: 'Anomalous Login', entity: 'emp_201', severity: 'medium', source: 'IAM', incidentId: 'INC-2091' },
     { type: 'Port Scan Detected', entity: 'vpn-gateway', severity: 'low', source: 'SIEM', incidentId: 'INC-2088' },
@@ -46,6 +48,7 @@ const generateSparkline = (points, min, max) => {
 };
 
 // ─── MOCK DATA ──────────────────────────────────────────────
+// API to integrate
 const mockIncidents = [
     { id: 'INC-2091', type: 'Privilege Escalation', entity: 'emp_104', score: 0.87, severity: 'HIGH', status: 'Investigating', time: '2 min ago' },
     { id: 'INC-2090', type: 'Lateral Movement', entity: 'auth-server', score: 0.65, severity: 'HIGH', status: 'Investigating', time: '5 min ago' },
@@ -57,12 +60,14 @@ const mockIncidents = [
     { id: 'INC-2084', type: 'Suspicious Execution', entity: 'web_server_prod', score: 0.41, severity: 'MEDIUM', status: 'Contained', time: '6 hrs ago' },
 ];
 
+// API to integrate
 const mockSeverityData = [
     { name: 'High', value: 23, color: '#B91C1C' },
     { name: 'Medium', value: 18, color: '#D97706' },
     { name: 'Low', value: 6, color: '#00AEEF' }
 ];
 
+// API to integrate
 const mockCategoryData = [
     { name: 'Privilege Escalation', value: 28, color: '#00395D' },
     { name: 'Lateral Movement', value: 22, color: '#0067A5' },
@@ -127,6 +132,7 @@ const Dashboard = () => {
     const navigate = useNavigate();
     const { isRunning, lastRun, runPipeline } = usePipeline();
     const { user } = useAuth();
+    // API to integrate
     const [stats, setStats] = useState({
         incidents: 0,
         activeThreats: 0,
@@ -158,13 +164,14 @@ const Dashboard = () => {
     }, [isRunning]);
 
     // CHANGE 2 — SYSTEM HEALTH STATE
+    // API to integrate
     const [healthData] = useState({
         eventsPerMin: generateSparkline(12, 40, 120),
         aiLatency: generateSparkline(12, 0.8, 2.4),
         pipelineLoad: generateSparkline(12, 20, 80)
     });
 
-    // SIMULATE LIVE STREAM
+    // API to integrate — Real-time simulation
     useEffect(() => {
         if (!isStreamActive) return;
 

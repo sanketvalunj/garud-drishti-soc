@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 const Tier1Stats = () => {
+  // API to integrate
   const stats = [
     { label: 'Incidents handled', value: '124', icon: ShieldCheck, color: '#00AEEF' },
     { label: 'Escalations made', value: '18', icon: AlertTriangle, color: 'rgba(0,174,239,0.7)' },
@@ -21,6 +22,7 @@ const Tier1Stats = () => {
     { label: 'Avg triage time', value: '4.2m', icon: Clock, color: 'rgba(0,174,239,0.3)' }
   ];
 
+  // API to integrate
   const chartData = [
     { name: 'Escalated', value: 18, color: 'rgba(0,174,239,0.5)' },
     { name: 'Resolved', value: 106, color: '#00AEEF' }

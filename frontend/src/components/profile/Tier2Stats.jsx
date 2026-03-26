@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 const Tier2Stats = () => {
+  // API to integrate
   const stats = [
     { label: 'Investigated', value: '86', icon: FileText, color: '#00AEEF' },
     { label: 'Esc. Received', value: '42', icon: ShieldAlert, color: 'rgba(0,174,239,0.7)' },

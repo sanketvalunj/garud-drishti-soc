@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
-// ─── MOCK DATA ──────────────────────────────────────────────
+// API to integrate
 export const mockIncidents = [
     {
         id: 'INC-2091',

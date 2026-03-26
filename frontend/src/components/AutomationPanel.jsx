@@ -2,6 +2,7 @@ import React from 'react';
 import { Settings, CheckCircle } from 'lucide-react';
 
 const AutomationPanel = ({ actions = [] }) => {
+    // API to integrate
     const defaultActions = [
         { action: "Disable account", status: "simulated" },
         { action: "Audit activity", status: "simulated" },

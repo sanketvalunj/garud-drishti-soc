@@ -24,6 +24,7 @@ import {
 // Structure matches API response exactly.
 // ─────────────────────────────────────
 
+// API to integrate
 const MOCK_PIPELINE_STATUS = {
   isRunning: false,
   lastRun: {
@@ -93,6 +94,7 @@ const MOCK_PIPELINE_STATUS = {
   ]
 }
 
+// API to integrate
 const MOCK_PIPELINE_STATS = {
   totalRuns: 47,
   avgDuration: '48s',
@@ -100,6 +102,7 @@ const MOCK_PIPELINE_STATS = {
   successRate: '98.9%'
 }
 
+// API to integrate
 const MOCK_PIPELINE_HISTORY = [
   {
     id: 'RUN-047',

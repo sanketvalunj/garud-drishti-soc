@@ -16,7 +16,7 @@ export const PipelineProvider = ({ children }) => {
         setCurrentStage(0);
         
         try {
-            // Simulate stage progression
+            // API to integrate — Simulate stage progression
             for (let i = 1; i <= 6; i++) {
                 await new Promise(resolve => setTimeout(resolve, 1500));
                 setCurrentStage(i);
