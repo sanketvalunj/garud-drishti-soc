@@ -121,12 +121,23 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user_role')
+    const storedUser = localStorage.getItem('cryptix_user')
+    const token = localStorage.getItem('cryptix_token')
     const storedOnboarding = localStorage.getItem('is_onboarded')
 
-    if (storedUser && MOCK_USERS[storedUser]) {
-      setUser(MOCK_USERS[storedUser])
-      setIsAuthenticated(true)
+    if (storedUser && token) {
+      try {
+        setUser(JSON.parse(storedUser))
+        setIsAuthenticated(true)
+      } catch {
+        localStorage.removeItem('cryptix_user')
+      }
+    } else {
+      const legacyRole = localStorage.getItem('user_role')
+      if (legacyRole && MOCK_USERS[legacyRole]) {
+        setUser(MOCK_USERS[legacyRole])
+        setIsAuthenticated(true)
+      }
     }
 
     if (storedOnboarding === 'true') {
@@ -136,12 +147,14 @@ export const AuthProvider = ({ children }) => {
     setLoading(false)
   }, [])
 
-  const login = (role) => {
-    const userData = MOCK_USERS[role]
+  const login = (userData) => {
     if (userData) {
-      setUser(userData)
+      const resolvedUser = typeof userData === 'string' ? MOCK_USERS[userData] : userData
+      if (!resolvedUser) return
+      setUser(resolvedUser)
       setIsAuthenticated(true)
-      localStorage.setItem('user_role', role)
+      localStorage.setItem('cryptix_user', JSON.stringify(resolvedUser))
+      localStorage.setItem('user_role', resolvedUser.role)
     }
   }
 
@@ -155,6 +168,8 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false)
     setIsOnboarded(false)
     localStorage.removeItem('user_role')
+    localStorage.removeItem('cryptix_user')
+    localStorage.removeItem('cryptix_token')
     localStorage.removeItem('is_onboarded')
   }
 

@@ -26,6 +26,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import clsx from 'clsx'
+import api from '../services/api'
 
 const Admin = () => {
   const navigate = useNavigate()
@@ -34,10 +35,32 @@ const Admin = () => {
   const isDark = resolvedTheme === 'dark'
 
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [suspiciousUsers, setSuspiciousUsers] = useState([])
+  const [isolateBusy, setIsolateBusy] = useState('')
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    if (user?.role === 'tier2' || user?.role === 'tier3' || user?.role === 'manager') {
+      api.getSuspiciousUsers()
+        .then(setSuspiciousUsers)
+        .catch((err) => console.error('Failed to load suspicious users', err))
+    }
+  }, [user])
+
+  const handleIsolate = async (id) => {
+    setIsolateBusy(id)
+    try {
+      await api.isolateUser(id)
+      setSuspiciousUsers((prev) => prev.filter((u) => u.id !== id))
+    } catch (err) {
+      console.error('Failed to isolate user', err)
+    } finally {
+      setIsolateBusy('')
+    }
+  }
 
   // ─── TIER 1: TRIAGE CENTER ────────────────────────────────────
   const TriageCenter = () => (
@@ -150,25 +173,26 @@ const Admin = () => {
           <div>
             <h3 className="text-sm font-bold mb-4 uppercase tracking-tighter text-[var(--text-muted)]">Suspicious Users (Isolation Required)</h3>
             <div className="space-y-4">
-              {[
-                { user: 'j.smith_branch01', risk: 88, reason: 'Credential Stuffing pattern', country: 'RU' },
-                { user: 'legacy_svc_atm', risk: 94, reason: 'Outbound C2 connection', country: 'CN' }
-              ].map((su, i) => (
+              {(suspiciousUsers.length ? suspiciousUsers : [
+                { id: 'fallback-1', username: 'j.smith_branch01', risk_score: 88, reason: 'Credential Stuffing pattern' },
+                { id: 'fallback-2', username: 'legacy_svc_atm', risk_score: 94, reason: 'Outbound C2 connection' }
+              ]).map((su, i) => (
                 <div key={i} className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/20 flex justify-between items-center">
                   <div className="flex gap-4 items-center">
                     <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center font-bold text-orange-500">
-                      {su.risk}
+                      {Math.round(su.risk_score || 0)}
                     </div>
                     <div>
-                      <div className="font-bold">{su.user}</div>
+                      <div className="font-bold">{su.username}</div>
                       <div className="text-xs text-orange-500/70">{su.reason}</div>
                     </div>
                   </div>
                   <button
-                    onClick={() => navigate('/admin')}
+                    disabled={isolateBusy === su.id}
+                    onClick={() => handleIsolate(su.id)}
                     className="bg-[var(--glass-border)] text-[var(--text-secondary)] px-4 py-2 rounded-lg text-xs font-bold border border-[var(--glass-border)] hover:border-blue-500/50 transition-all uppercase"
                   >
-                    View Profile
+                    {isolateBusy === su.id ? 'Isolating...' : 'Isolate'}
                   </button>
                 </div>
               ))}

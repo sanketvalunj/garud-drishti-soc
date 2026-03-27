@@ -1,8 +1,9 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTheme } from '../context/ThemeContext'
 import { usePipeline } from '../context/PipelineContext'
+import api from '../services/api'
 import {
   Play, Loader2, Upload, FileText,
   CheckCircle2, X, Lock, Database,
@@ -167,8 +168,8 @@ const Pipeline = () => {
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
 
-  const [pipelineStatus] = useState(MOCK_PIPELINE_STATUS)
-  const [history] = useState(MOCK_PIPELINE_HISTORY)
+  const [pipelineStatus, setPipelineStatus] = useState(MOCK_PIPELINE_STATUS)
+  const [history, setHistory] = useState(MOCK_PIPELINE_HISTORY)
   const [stats] = useState(MOCK_PIPELINE_STATS)
 
   const [uploadedFiles, setUploadedFiles] = useState([])
@@ -176,6 +177,25 @@ const Pipeline = () => {
   const [uploadSource, setUploadSource] = useState('windows_event')
   const [isUploading, setIsUploading] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState(false)
+
+  useEffect(() => {
+    api.getPipelineStatus().then((data) => {
+      if (data?.status) setPipelineStatus((prev) => ({ ...prev, ...data }))
+    }).catch(() => {});
+    api.getPipelineHistory().then((rows) => {
+      if (Array.isArray(rows)) {
+        setHistory(rows.map((r) => ({
+          id: r.run_ref || r.id,
+          date: r.started_at ? new Date(r.started_at).toLocaleDateString() : '-',
+          time: r.started_at ? new Date(r.started_at).toLocaleTimeString() : '-',
+          duration: r.duration_seconds ? `${r.duration_seconds}s` : '0s',
+          incidents: r.incidents_generated || 0,
+          events: r.events_processed || 0,
+          status: r.status || 'completed'
+        })))
+      }
+    }).catch(() => {});
+  }, [])
 
   // Pipeline run is now handled globally via context
   const handleRunPipeline = () => {
@@ -216,11 +236,19 @@ const Pipeline = () => {
   const handleUpload = async () => {
     if (uploadedFiles.length === 0) return
     setIsUploading(true)
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsUploading(false)
-    setUploadSuccess(true)
-    setUploadedFiles([])
-    setTimeout(() => setUploadSuccess(false), 3000)
+    try {
+      const formData = new FormData()
+      formData.append('file', uploadedFiles[0])
+      formData.append('sourceSystem', uploadSource)
+      await api.ingestLogs(formData)
+      setUploadSuccess(true)
+      setUploadedFiles([])
+      setTimeout(() => setUploadSuccess(false), 3000)
+    } catch (err) {
+      console.error('Upload failed', err)
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const sourceOptions = [

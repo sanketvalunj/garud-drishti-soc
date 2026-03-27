@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import api from '../services/api'
 import {
   Shield, Eye, EyeOff, ChevronRight,
   Lock, User, ShieldAlert,
@@ -70,12 +71,20 @@ const Login = () => {
     setError('')
     setIsLoading(true)
 
-    // Simulate auth delay
-    await new Promise(resolve => setTimeout(resolve, 1200))
-
-    login(selectedRole)
-    setIsLoading(false)
-    navigate('/dashboard')
+    try {
+      const data = await api.login(username, password, selectedRole)
+      if (data?.token) {
+        localStorage.setItem('cryptix_token', data.token)
+        login(data.user)
+        navigate('/dashboard')
+      } else {
+        setError('Invalid login response from server')
+      }
+    } catch (err) {
+      setError(err.message || 'Login failed')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleKeyDown = (e) => {
@@ -367,10 +376,7 @@ const Login = () => {
 
         <div style={{ marginTop: '24px', textAlign: 'center' }}>
           <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-            Demo mode · Select any role to explore
-          </p>
-          <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Any username and password accepted
+            Use seeded users like `testuser` for Tier 2
           </p>
         </div>
       </div>

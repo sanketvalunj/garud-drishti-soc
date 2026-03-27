@@ -21,6 +21,7 @@ networkx
 
 # Storage
 elasticsearch>=8.0.0
+psycopg[binary]
 
 # Utilities
 python-dotenv

@@ -4,9 +4,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
     Search, ExternalLink,
     ShieldOff, CheckCircle2, Sparkles,
-    GitBranch, Clock, ArrowRight, ChevronDown, ChevronUp, Check, Brain
+    GitBranch, Clock, ArrowRight, ChevronDown, ChevronUp, Check, Brain, AlertTriangle
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import api from '../services/api';
 
 // API to integrate
 export const mockIncidents = [
@@ -655,6 +656,9 @@ const KillChainStepper = ({ stage }) => {
 
 // ─── MAIN COMPONENT ─────────────────────────────────────────
 const Incidents = () => {
+    const [incidents, setIncidents] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { resolvedTheme } = useTheme();
@@ -677,7 +681,52 @@ const Incidents = () => {
         }
     }, []);
 
-    const filteredIncidents = mockIncidents
+    useEffect(() => {
+        const fetchIncidents = async () => {
+            setLoading(true);
+            setError('');
+            try {
+                const data = await api.getIncidents({
+                    severity: severityFilter,
+                    status: statusFilter,
+                    search: searchQuery,
+                    sort: sortBy
+                });
+                setIncidents(Array.isArray(data) ? data.map((item) => ({
+                    id: item.incident_ref || item.id,
+                    type: item.title,
+                    entity: item.entities?.users?.[0]?.name
+                        || item.entities?.servers?.[0]?.name
+                        || item.entities?.ips?.[0]?.name
+                        || '-',
+                    sourceIp: item.entities?.ips?.[0]?.name || '-',
+                    fidelityScore: item.fidelity_score || 0,
+                    severity: item.severity || 'low',
+                    status: item.status || 'open',
+                    mitreTactic: 'Unknown',
+                    mitreId: '-',
+                    detectedAt: item.detected_ago || '-',
+                    summary: item.narrative || item.title,
+                    killChainStage: item.kill_chain_stage || 1,
+                    entities: [
+                        ...(item.entities?.users || []).map((u) => u.name),
+                        ...(item.entities?.servers || []).map((s) => s.name),
+                        ...(item.entities?.ips || []).map((ip) => ip.name),
+                    ],
+                    playbookGenerated: true,
+                    fidelityFactors: []
+                })) : []);
+            } catch (err) {
+                console.error('Failed to fetch incidents:', err);
+                setError('Failed to load incidents. Please refresh.');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchIncidents();
+    }, [severityFilter, statusFilter, searchQuery, sortBy]);
+
+    const filteredIncidents = incidents
         .filter(inc => {
             const matchSearch =
                 inc.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -705,9 +754,9 @@ const Incidents = () => {
     ].filter(Boolean).length;
 
     const counts = {
-        investigating: mockIncidents.filter(i => i.status === 'investigating').length,
-        contained: mockIncidents.filter(i => i.status === 'contained').length,
-        escalated: mockIncidents.filter(i => i.status === 'escalated').length,
+        investigating: incidents.filter(i => i.status === 'investigating').length,
+        contained: incidents.filter(i => i.status === 'contained').length,
+        escalated: incidents.filter(i => i.status === 'escalated').length,
     };
 
     const handleRowClick = (id) => {
@@ -724,6 +773,28 @@ const Incidents = () => {
 
     const gridCols = '120px 1fr 1fr 120px 110px 140px 120px 40px';
 
+    if (loading) return (
+        <div style={{ padding: 24 }}>
+            {[1, 2, 3].map(i => (
+                <div key={i} style={{
+                    height: 80,
+                    borderRadius: 12,
+                    background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+                    marginBottom: 12,
+                    animation: 'pulse 1.5s infinite'
+                }} />
+            ))}
+        </div>
+    );
+
+    if (error) return (
+        <div style={{ textAlign: 'center', padding: 60 }}>
+            <AlertTriangle size={32} color="#B91C1C" />
+            <p>{error}</p>
+            <button onClick={() => window.location.reload()}>Retry</button>
+        </div>
+    );
+
     return (
         <div className="space-y-2">
 
@@ -737,7 +808,7 @@ const Incidents = () => {
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                     {[
-                        { value: mockIncidents.length, label: 'Total' },
+                        { value: incidents.length, label: 'Total' },
                         { value: counts.investigating, label: 'Investigating' },
                         { value: counts.contained, label: 'Contained' },
                         { value: counts.escalated, label: 'Escalated' },

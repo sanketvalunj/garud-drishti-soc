@@ -5,8 +5,9 @@ import { useTheme } from '../context/ThemeContext'
 import {
   Search, ChevronDown, Check, ArrowRight,
   BookOpen, Sparkles, Clock, User,
-  CheckCircle2, Circle
+  CheckCircle2, Circle, AlertTriangle
 } from 'lucide-react'
+import api from '../services/api'
 
 // ─────────────────────────────────────
 // API INTEGRATION — Replace mock data:
@@ -283,10 +284,45 @@ const Playbooks = () => {
   const isDark = resolvedTheme === 'dark'
 
   // State
-  const [playbooks] = useState(mockPlaybooks)
+  const [playbooks, setPlaybooks] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortBy, setSortBy] = useState('latest')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    const fetchPlaybooks = async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const data = await api.getPlaybooks({ status: statusFilter, type: 'all' })
+        const normalized = (Array.isArray(data) ? data : []).map((pb) => ({
+          id: pb.playbook_ref || pb.id,
+          incidentId: pb.incident_id,
+          type: pb.title,
+          generatedAt: pb.generated_at,
+          date: pb.generated_date,
+          fidelityScore: pb.fidelity_score || 0,
+          agentDecision: pb.final_decision || 'LOW',
+          status: pb.status,
+          totalSteps: pb.total_steps,
+          completedSteps: pb.completed_steps,
+          mitreTactic: pb.mitre_tactic,
+          mitreName: pb.mitre_name,
+          affectedEntity: pb.affected_entity,
+          steps: pb.steps || []
+        }))
+        setPlaybooks(normalized)
+      } catch (err) {
+        console.error('Failed to fetch playbooks:', err)
+        setError('Failed to load playbooks. Please refresh.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchPlaybooks()
+  }, [statusFilter])
 
   // Helper styles
   const glassStyle = {
@@ -364,6 +400,28 @@ const Playbooks = () => {
   const pendingCount = playbooks.filter(p => p.status === 'pending').length
   const reviewedCount = playbooks.filter(p => p.status === 'reviewed').length
 
+
+  if (loading) return (
+    <div style={{ padding: 24 }}>
+      {[1, 2, 3].map(i => (
+        <div key={i} style={{
+          height: 80,
+          borderRadius: 12,
+          background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+          marginBottom: 12,
+          animation: 'pulse 1.5s infinite'
+        }} />
+      ))}
+    </div>
+  )
+
+  if (error) return (
+    <div style={{ textAlign: 'center', padding: 60 }}>
+      <AlertTriangle size={32} color="#B91C1C" />
+      <p>{error}</p>
+      <button onClick={() => window.location.reload()}>Retry</button>
+    </div>
+  )
 
   return (
     <motion.div

@@ -31,13 +31,13 @@ import Layout from './layout/Layout';
 
 const AuthOnlyRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 };
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 };
 

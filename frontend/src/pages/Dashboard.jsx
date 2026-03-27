@@ -215,12 +215,12 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
         try {
             const [resIncidents, resPlaybooks] = await Promise.all([
-                api.getIncidents().catch(() => ({ incidents: [] })),
-                api.getPlaybooks().catch(() => ({ playbooks: [] }))
+                api.getIncidents().catch(() => []),
+                api.getPlaybooks({ status: 'all', type: 'all' }).catch(() => [])
             ]);
 
-            const incidents = resIncidents.incidents || [];
-            const playbooks = resPlaybooks.playbooks || [];
+            const incidents = Array.isArray(resIncidents) ? resIncidents : [];
+            const playbooks = Array.isArray(resPlaybooks) ? resPlaybooks : [];
 
             // Calculate stats
             const totalIncidents = incidents.length;

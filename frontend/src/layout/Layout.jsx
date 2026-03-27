@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, User, Activity, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import clsx from 'clsx';
+import api from '../services/api';
 
 const Layout = () => {
     const { resolvedTheme } = useTheme();
@@ -19,8 +20,9 @@ const Layout = () => {
     const isDark = resolvedTheme === 'dark';
 
     const handleLogout = () => {
+        api.logout().catch(() => {});
         logout();
-        navigate('/');
+        navigate('/login');
     };
 
     return (

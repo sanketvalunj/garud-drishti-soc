@@ -7,6 +7,7 @@ import {
   Database, FileText, Hash, Cpu, Wifi,
   Search, Brain
 } from 'lucide-react'
+import api from '../services/api'
 
 // ─────────────────────────────────────
 // API INTEGRATION:
@@ -428,28 +429,39 @@ const LLMReasoning = () => {
   const [notFound, setNotFound] = useState(false)
   const [visibleLines, setVisibleLines] = useState({})
   const [expandedPrompts, setExpandedPrompts] = useState({})
+  const [loading, setLoading] = useState(false)
 
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!searchQuery.trim()) return
 
     setHasSearched(true)
     setVisibleLines({})
     setExpandedPrompts({})
+    setLoading(true)
 
     const query = searchQuery.trim().toUpperCase()
     const id = query.startsWith('INC-') ? query : `INC-${query}`
-
-    const found = ALL_MOCK_REASONING[id]
-
-    if (found) {
+    try {
+      const data = await api.getReasoning(id)
+      const found = {
+        incidentId: id,
+        attackType: data.attack_type,
+        model: data.model_name,
+        mode: data.model_mode,
+        vectorDb: data.vector_db,
+        eventsProcessed: data.events_processed,
+        incidentObjectTokens: data.incident_object_tokens,
+        status: data.status,
+        orchestratorTrace: data.orchestrator_trace || [],
+        agents: data.agents || [],
+      }
       setReasoning(found)
       setNotFound(false)
-      // Trigger line animation
       found.orchestratorTrace.forEach((phase, phaseIndex) => {
-        phase.lines.forEach((line, lineIndex) => {
+        ;(phase.lines || []).forEach((line, lineIndex) => {
           setTimeout(() => {
             setVisibleLines(prev => ({
               ...prev,
@@ -458,9 +470,17 @@ const LLMReasoning = () => {
           }, (phaseIndex * 500) + (lineIndex * 60))
         })
       })
-    } else {
-      setReasoning(null)
-      setNotFound(true)
+    } catch {
+      const fallback = ALL_MOCK_REASONING[id]
+      if (fallback) {
+        setReasoning(fallback)
+        setNotFound(false)
+      } else {
+        setReasoning(null)
+        setNotFound(true)
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -680,8 +700,9 @@ const LLMReasoning = () => {
 
           <button
             onClick={handleSearch}
+            disabled={loading}
             style={{
-              background: '#00AEEF',
+              background: loading ? 'rgba(0,174,239,0.5)' : '#00AEEF',
               color: 'white',
               border: 'none',
               borderRadius: '20px',
@@ -689,11 +710,11 @@ const LLMReasoning = () => {
               padding: '0 24px',
               fontSize: '14px',
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: loading ? 'not-allowed' : 'pointer',
               transition: 'background 0.2s ease'
             }}
           >
-            Analyze Incident
+            {loading ? 'Analyzing...' : 'Analyze Incident'}
           </button>
         </div>
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', paddingLeft: '14px' }}>

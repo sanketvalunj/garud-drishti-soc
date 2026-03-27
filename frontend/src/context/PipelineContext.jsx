@@ -13,20 +13,16 @@ export const PipelineProvider = ({ children }) => {
     const runPipeline = async () => {
         if (isRunning) return;
         setIsRunning(true);
-        setCurrentStage(0);
-
         try {
-            // API to integrate — Simulate stage progression
-            for (let i = 1; i <= 6; i++) {
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                setCurrentStage(i);
-            }
-
-            // Finalize
+            setCurrentStage(1);
+            const data = await api.runPipeline();
+            setCurrentStage(6);
             setLastRun(new Date());
-            api.runPipeline().catch(err => console.error("Background API run failed", err));
+            return data;
         } catch (error) {
-            console.error("Pipeline simulation failed", error);
+            console.error("Pipeline run failed", error);
+            setCurrentStage(0);
+            throw error;
         } finally {
             setIsRunning(false);
         }

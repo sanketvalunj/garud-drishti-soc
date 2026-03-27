@@ -19,6 +19,7 @@ import {
   BookOpen, CheckCircle2, Check, User, Zap, Share2, Download, X, ArrowRight,
   Lock, ChevronDown, Loader2
 } from 'lucide-react'
+import api from '../services/api'
 
 const MAX_ENTITIES_VISIBLE = 2
 
@@ -438,9 +439,10 @@ const IncidentDetail = () => {
     { id: 'lead', label: 'Security Lead' },
     { id: 'compliance', label: 'Compliance Officer' }
   ]
-  const [incident] = useState(MOCK_INCIDENT)
+  const [incident, setIncident] = useState(MOCK_INCIDENT)
   const [activeStep, setActiveStep] = useState(null)
-  const [loading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [showShareModal, setShowShareModal] = useState(false)
   const [showAllEntities, setShowAllEntities] = useState(false)
   const [showActivateModal, setShowActivateModal] = useState(false)
@@ -452,6 +454,53 @@ const IncidentDetail = () => {
     `High fidelity score (${incident.fidelityScore}) requires senior review`
   )
   const [showToast, setShowToast] = useState(false)
+  useEffect(() => {
+    const fetchIncident = async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const data = await api.getIncident(id)
+        const normalized = {
+          ...MOCK_INCIDENT,
+          ...data,
+          id: data.incident_ref || data.id,
+          type: data.title || MOCK_INCIDENT.type,
+          detectedAt: data.created_at || MOCK_INCIDENT.detectedAt,
+          detectedAgo: data.detected_ago || MOCK_INCIDENT.detectedAgo,
+          fidelityScore: data.fidelity_score || MOCK_INCIDENT.fidelityScore,
+          killChainStage: data.kill_chain_stage || MOCK_INCIDENT.killChainStage,
+          timeline: (data.timeline || []).map((t) => ({
+            ...t,
+            eventType: t.event_type || t.eventType,
+            timestamp: t.time_display || t.timestamp
+          })),
+          fidelityFactors: data.fidelity_factors || MOCK_INCIDENT.fidelityFactors,
+          mitreTechniques: data.mitre_techniques || MOCK_INCIDENT.mitreTechniques,
+          agentScores: data.agent_scores || MOCK_INCIDENT.agentScores,
+          playbook: data.playbook ? {
+            ...data.playbook,
+            generatedAt: data.playbook.generated_at,
+            generatedDate: data.playbook.generated_date,
+            steps: (data.playbook.steps || []).map((s) => ({
+              ...s,
+              estimatedTime: s.estimated_time || s.estimatedTime
+            }))
+          } : MOCK_INCIDENT.playbook,
+          graphNodes: data.graph_nodes || MOCK_INCIDENT.graphNodes,
+          graphEdges: data.graph_edges || MOCK_INCIDENT.graphEdges,
+          entities: data.entities || MOCK_INCIDENT.entities
+        }
+        setIncident(normalized)
+      } catch (err) {
+        console.error('Failed to fetch:', err)
+        setError('Failed to load incident. Please refresh.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchIncident()
+  }, [id])
+
   const [toastMessage, setToastMessage] = useState('')
 
   // Change 1 — Activation Terminal
@@ -574,6 +623,11 @@ const IncidentDetail = () => {
 
   const handleActivateResponse = async () => {
     setShowActivateModal(false)
+    try {
+      await api.activateResponse(id)
+    } catch (err) {
+      console.error('Activate response failed:', err)
+    }
     setShowActivationTerminal(true)
     setTerminalLines([])
     setIsActivating(true)
@@ -618,6 +672,9 @@ const IncidentDetail = () => {
 
   const handleEscalate = () => {
     setShowEscalateModal(false)
+    api.escalateIncident(id, { recipients: escalateRecipients, reason: escalateReason }).catch((err) => {
+      console.error('Escalation failed:', err)
+    })
     setIncidentStatus('escalated')
 
     const notifiedList = escalateRecipients
@@ -643,7 +700,26 @@ const IncidentDetail = () => {
     ongoing: { label: 'Ongoing', color: '#00AEEF', bg: 'rgba(0,174,239,0.08)', border: 'rgba(0,174,239,0.15)' }
   }
 
-  if (loading) return null
+  if (loading) return (
+    <div style={{ padding: 24 }}>
+      {[1, 2, 3].map(i => (
+        <div key={i} style={{
+          height: 80,
+          borderRadius: 12,
+          background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+          marginBottom: 12,
+          animation: 'pulse 1.5s infinite'
+        }} />
+      ))}
+    </div>
+  )
+  if (error) return (
+    <div style={{ textAlign: 'center', padding: 60 }}>
+      <AlertTriangle size={32} color="#B91C1C" />
+      <p>{error}</p>
+      <button onClick={() => window.location.reload()}>Retry</button>
+    </div>
+  )
 
   // Change 4 — Plain English explanation helper
   const getPlainEnglishExplanation = (score, factors) => {
@@ -1786,9 +1862,14 @@ const IncidentDetail = () => {
             </div>
 
             <button
-              onClick={() => {
+              onClick={async () => {
                 setShowShareModal(false)
-                alert('Report shared successfully. Logged in audit trail.')
+                try {
+                  await api.shareReport(id, { recipients: ['ciso'], note: 'Shared from incident detail' })
+                  alert('Report shared successfully. Logged in audit trail.')
+                } catch (err) {
+                  console.error('Share failed:', err)
+                }
               }}
               style={{
                 marginTop: '20px', width: '100%',
