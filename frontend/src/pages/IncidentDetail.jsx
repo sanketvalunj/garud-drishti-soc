@@ -13,6 +13,8 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
+import api from '../services/api'
+import { jsPDF } from 'jspdf'
 import {
   ArrowLeft, Clock, AlertTriangle, Sparkles, GitBranch, Play, Network,
   Users, Server, Wifi, Shield, ShieldAlert, Brain, Scale, TrendingUp,
@@ -21,266 +23,6 @@ import {
 } from 'lucide-react'
 
 const MAX_ENTITIES_VISIBLE = 2
-
-// ─────────────────────────────────────
-// API INTEGRATION — Replace mock data:
-//
-// const [incident, setIncident] = useState(null)
-// const [loading, setLoading] = useState(true)
-//
-// useEffect(() => {
-//   setLoading(true)
-//   api.getIncident(id)
-//     .then(data => setIncident(data))
-//     .catch(err => console.error(err))
-//     .finally(() => setLoading(false))
-// }, [id])
-//
-// API endpoint: GET /incidents/:id
-// Response shape matches MOCK_INCIDENT below
-// ─────────────────────────────────────
-
-// When API connected:
-// graphNodes and graphEdges will come from
-// GET /incidents/:id response
-// Backend correlation engine builds these
-// from the actual attack graph data
-// Structure must match exactly:
-// graphNodes: [{ id, type, label, compromised, suspected, position }]
-// graphEdges: [{ id, source, target, label }]
-
-// API to integrate
-const MOCK_INCIDENT = {
-  id: 'INC-2091',
-  type: 'Privilege Escalation',
-  severity: 'high',
-  status: 'investigating',
-  detectedAt: '2026-02-19T12:11:47Z',
-  detectedAgo: '2 min ago',
-  fidelityScore: 0.87,
-
-  narrative: 'User emp_104 initiated activity on auth-server from external IP 203.0.113.45. A PowerShell execution event was observed. Activity then moved from auth-server to loan-db, then to core-banking. A login failed event was observed on swift-terminal. This sequence indicates possible privilege escalation behaviour with lateral movement toward critical banking infrastructure.',
-
-  killChainStage: 4,
-  killChainStages: [
-    'Initial Access',
-    'Execution',
-    'Persistence',
-    'Privilege Escalation',
-    'Lateral Movement',
-    'Exfiltration'
-  ],
-
-  timeline: [
-    {
-      id: 't1',
-      timestamp: '12:11:47',
-      eventType: 'Login Attempt',
-      description: 'External login attempt detected from unusual IP address',
-      entity: '203.0.113.45',
-      severity: 'medium'
-    },
-    {
-      id: 't2',
-      timestamp: '12:11:52',
-      eventType: 'Auth Success',
-      description: 'Authentication successful on auth-server for emp_104',
-      entity: 'auth-server',
-      severity: 'high'
-    },
-    {
-      id: 't3',
-      timestamp: '12:12:15',
-      eventType: 'PowerShell Execution',
-      description: 'Encoded PowerShell command executed with elevated permissions',
-      entity: 'user_laptop_88',
-      severity: 'high'
-    },
-    {
-      id: 't4',
-      timestamp: '12:12:33',
-      eventType: 'Lateral Movement',
-      description: 'Remote service access detected from auth-server to loan-db',
-      entity: 'loan-db',
-      severity: 'high'
-    },
-    {
-      id: 't5',
-      timestamp: '12:13:01',
-      eventType: 'Access Attempt',
-      description: 'Unauthorized access attempt on core-banking system detected',
-      entity: 'core-banking',
-      severity: 'high'
-    },
-    {
-      id: 't6',
-      timestamp: '12:13:45',
-      eventType: 'Login Failed',
-      description: 'Failed login attempt on swift-terminal from internal IP',
-      entity: 'swift-terminal',
-      severity: 'medium'
-    }
-  ],
-
-  entities: {
-    users: ['emp_104', 'emp_101'],
-    servers: [
-      'auth-server',
-      'swift-terminal',
-      'loan-db',
-      'core-banking'
-    ],
-    ips: ['185.220.101.1', '203.0.113.45']
-  },
-
-  fidelityFactors: [
-    { label: 'Behavioral Deviation', score: 0.91 },
-    { label: 'Asset Criticality', score: 0.85 },
-    { label: 'Historical Similarity', score: 0.79 }
-  ],
-
-  mitreTechniques: [
-    {
-      id: 'T1078',
-      name: 'Valid Accounts',
-      tactic: 'Initial Access',
-      confidence: 87
-    },
-    {
-      id: 'T1059',
-      name: 'Command Scripting',
-      tactic: 'Execution',
-      confidence: 91
-    },
-    {
-      id: 'T1068',
-      name: 'Privilege Escalation',
-      tactic: 'Privilege Escalation',
-      confidence: 84
-    }
-  ],
-
-  agentScores: {
-    risk: 0.84,
-    compliance: 0.71,
-    businessImpact: 0.62,
-    finalDecision: 'HIGH'
-  },
-
-  playbook: {
-    title: 'Privilege Escalation Response',
-    generatedAt: '12:14:02',
-    steps: [
-      {
-        id: 1,
-        title: 'Isolate User Account',
-        description: 'Immediately suspend emp_104 account and revoke all active sessions across all systems',
-        priority: 'immediate',
-        type: 'automated',
-        owner: 'IAM Team',
-        estimatedTime: '5 min',
-        status: 'pending'
-      },
-      {
-        id: 2,
-        title: 'Block Source IP',
-        description: 'Add 203.0.113.45 to firewall blocklist at perimeter and internal gateway levels',
-        priority: 'immediate',
-        type: 'automated',
-        owner: 'Network Team',
-        estimatedTime: '2 min',
-        status: 'pending'
-      },
-      {
-        id: 3,
-        title: 'Revoke Auth Sessions',
-        description: 'Terminate all active sessions on auth-server and force re-authentication for all users',
-        priority: 'urgent',
-        type: 'automated',
-        owner: 'Server Admin',
-        estimatedTime: '5 min',
-        status: 'pending'
-      },
-      {
-        id: 4,
-        title: 'Audit Database Access',
-        description: 'Review loan-db access logs for data exfiltration indicators in the last 24 hours',
-        priority: 'within_1hr',
-        type: 'manual',
-        owner: 'Security Analyst',
-        estimatedTime: '30 min',
-        status: 'pending'
-      },
-      {
-        id: 5,
-        title: 'Reset Credentials',
-        description: 'Force password reset for all accounts that accessed affected systems in last 48 hours',
-        priority: 'within_4hr',
-        type: 'manual',
-        owner: 'IAM Team',
-        estimatedTime: '15 min',
-        status: 'pending'
-      },
-      {
-        id: 6,
-        title: 'Monitor Core Banking',
-        description: 'Enable enhanced logging on core-banking for 24 hours post-containment',
-        priority: 'ongoing',
-        type: 'manual',
-        owner: 'Security Analyst',
-        estimatedTime: '24 hrs',
-        status: 'pending'
-      }
-    ]
-  },
-
-  graphNodes: [
-    {
-      id: 'ip1', type: 'ip',
-      label: '203.0.113.45',
-      compromised: true,
-      position: { x: 280, y: 0 }
-    },
-    {
-      id: 'u1', type: 'user',
-      label: 'emp_104',
-      compromised: true,
-      position: { x: 280, y: 120 }
-    },
-    {
-      id: 's1', type: 'server',
-      label: 'auth-server',
-      compromised: true,
-      position: { x: 280, y: 240 }
-    },
-    {
-      id: 's2', type: 'server',
-      label: 'loan-db',
-      compromised: true,
-      position: { x: 100, y: 360 }
-    },
-    {
-      id: 's3', type: 'server',
-      label: 'core-banking',
-      compromised: true,
-      position: { x: 460, y: 360 }
-    },
-    {
-      id: 's4', type: 'server',
-      label: 'swift-terminal',
-      compromised: false,
-      suspected: true,
-      position: { x: 460, y: 480 }
-    }
-  ],
-  graphEdges: [
-    { id: 'e1', source: 'ip1', target: 'u1', label: 'Login' },
-    { id: 'e2', source: 'u1', target: 's1', label: 'Auth' },
-    { id: 'e3', source: 's1', target: 's2', label: 'Lateral' },
-    { id: 'e4', source: 's1', target: 's3', label: 'Access' },
-    { id: 'e5', source: 's3', target: 's4', label: 'Attempt' }
-  ]
-}
 
 // ─────────────────────────────────────
 // HELPER FUNCTIONS & COMPONENTS
@@ -438,19 +180,17 @@ const IncidentDetail = () => {
     { id: 'lead', label: 'Security Lead' },
     { id: 'compliance', label: 'Compliance Officer' }
   ]
-  const [incident] = useState(MOCK_INCIDENT)
+  const [incident, setIncident] = useState(null)
   const [activeStep, setActiveStep] = useState(null)
-  const [loading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showAllEntities, setShowAllEntities] = useState(false)
   const [showActivateModal, setShowActivateModal] = useState(false)
   const [showEscalateModal, setShowEscalateModal] = useState(false)
   const [isActivating, setIsActivating] = useState(false)
-  const [incidentStatus, setIncidentStatus] = useState(incident.status)
+  const [incidentStatus, setIncidentStatus] = useState('investigating')
   const [escalateRecipients, setEscalateRecipients] = useState(['ciso'])
-  const [escalateReason, setEscalateReason] = useState(
-    `High fidelity score (${incident.fidelityScore}) requires senior review`
-  )
+  const [escalateReason, setEscalateReason] = useState('')
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
@@ -461,9 +201,93 @@ const IncidentDetail = () => {
 
   // Change 2 — Narrative typing animation
   const [displayedNarrative, setDisplayedNarrative] = useState('')
-  const fullNarrative = incident.narrative
+  const fullNarrative = incident?.narrative || ''
+  const [llmModel, setLlmModel] = useState('mistral')
 
   const playbookRef = useRef(null)
+  const playbookStepLine = (() => {
+    const steps = (incident?.playbook?.steps || []).slice(0, 6)
+    const titles = steps
+      .map(s => (s?.title || s?.action || '').toString().trim())
+      .filter(Boolean)
+    if (titles.length) return titles.join('  •  ')
+    return ''
+  })()
+
+  const buildPdfText = () => {
+    const title = incident?.playbook?.title || `SOC Incident Response Playbook: ${incident?.id || id}`
+    const report = (incident?.playbook?.report || '').trim()
+    if (report) return report
+
+    // Dynamic fallback assembled from live incident/playbook fields only.
+    const steps = (incident?.playbook?.steps || [])
+      .slice(0, 6)
+      .map((s, idx) => `${idx + 1}. ${(s?.title || s?.description || s?.action || '').toString().trim()}`)
+      .filter(Boolean)
+    const chronology = (incident?.timeline || [])
+      .slice(0, 6)
+      .map((e, idx) => `${idx + 1}. [${e?.timestamp || ''}] ${(e?.eventType || '').toString()}: ${(e?.description || '').toString()}`.trim())
+      .filter(Boolean)
+    const mitre = (incident?.mitreTechniques || [])
+      .slice(0, 5)
+      .map(t => `${t.id} ${t.name || ''}`.trim())
+    const entities = [
+      ...(incident?.entities?.users || []).map(u => `User: ${u}`),
+      ...(incident?.entities?.servers || []).map(s => `Asset: ${s}`),
+      ...(incident?.entities?.ips || []).map(ip => `IP: ${ip}`)
+    ]
+    const lines = [
+      title,
+      '',
+      'INCIDENT OVERVIEW',
+      (incident?.narrative || '').toString(),
+      '',
+      'RISK CONTEXT',
+      `Severity: ${(incident?.agentScores?.finalDecision || incident?.severity || '').toString().toUpperCase()}`,
+      `Fidelity: ${(incident?.fidelityScore ?? 0).toFixed(2)}`,
+      '',
+      'AFFECTED ENTITIES',
+      ...(entities.length ? entities.map(x => `- ${x}`) : ['- unavailable']),
+      '',
+      'MITRE CONTEXT',
+      ...(mitre.length ? mitre.map(x => `- ${x}`) : ['- unavailable']),
+      '',
+      'INCIDENT CHRONOLOGY',
+      ...(chronology.length ? chronology : ['- unavailable']),
+      '',
+      'RESPONSE PLAYBOOK (TOP 6)',
+      ...(steps.length ? steps : ['- unavailable']),
+    ]
+    return lines.join('\n')
+  }
+
+  const downloadPlaybookPdf = () => {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+    const margin = 48
+    const pageW = doc.internal.pageSize.getWidth()
+    const pageH = doc.internal.pageSize.getHeight()
+    const maxW = pageW - margin * 2
+
+    const text = buildPdfText()
+    const lines = doc.splitTextToSize(text, maxW)
+
+    doc.setFont('times', 'normal')
+    doc.setFontSize(11)
+
+    let y = margin
+    const lineH = 14
+    for (const line of lines) {
+      if (y + lineH > pageH - margin) {
+        doc.addPage()
+        y = margin
+      }
+      doc.text(String(line), margin, y)
+      y += lineH
+    }
+
+    const safeId = (incident?.id || id || 'incident').replace(/[^a-zA-Z0-9_-]/g, '_')
+    doc.save(`playbook_${safeId}.pdf`)
+  }
 
   // DYNAMIC GRAPH MAPPING
   const graphNodes = useMemo(() => {
@@ -534,6 +358,40 @@ const IncidentDetail = () => {
     setEdges(graphEdges)
   }, [graphNodes, graphEdges, setNodes, setEdges])
 
+  // Load real correlated incident + short narrative (mistral via backend).
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    api.getCorrelatedIncidentDetail(id)
+      .then((data) => {
+        if (cancelled) return
+        setIncident(data)
+        setIncidentStatus(data?.status || 'investigating')
+        setEscalateReason(`High fidelity score (${(data?.fidelityScore ?? 0).toFixed(2)}) requires senior review`)
+      })
+      .catch(() => {
+        if (cancelled) return
+      })
+      .finally(() => {
+        if (cancelled) return
+        setLoading(false)
+      })
+
+    api.getCorrelatedIncidentNarrative(id)
+      .then((res) => {
+        if (cancelled) return
+        if (res?.narrative) {
+          setIncident((prev) => ({ ...prev, narrative: res.narrative }))
+        }
+        if (res?.model) {
+          setLlmModel(String(res.model))
+        }
+      })
+      .catch(() => { })
+
+    return () => { cancelled = true }
+  }, [id])
+
   // Typing animation for narrative (Change 2)
   useEffect(() => {
     let i = 0
@@ -555,9 +413,11 @@ const IncidentDetail = () => {
     }
   }, [terminalLines])
 
-  const [stepStatuses, setStepStatuses] = useState(
-    Object.fromEntries(incident.playbook.steps.map(s => [s.id, 'pending']))
-  )
+  const [stepStatuses, setStepStatuses] = useState({})
+
+  useEffect(() => {
+    setStepStatuses(Object.fromEntries((incident?.playbook?.steps || []).map(s => [s.id, 'pending'])))
+  }, [incident?.id])
 
   const toggleStepStatus = (stepId) => {
     setStepStatuses(prev => ({
@@ -578,10 +438,10 @@ const IncidentDetail = () => {
     setTerminalLines([])
     setIsActivating(true)
 
-    addTerminalLine('$ cryptix-response --incident INC-2091', 100)
+    addTerminalLine(`$ cryptix-response --incident ${incident?.id || id}`, 100)
     addTerminalLine('> Initializing response engine...', 200)
     addTerminalLine('> Connecting to IAM API...', 600)
-    addTerminalLine('> [STEP 1] Isolating emp_104...', 1000)
+    addTerminalLine(`> [STEP 1] Isolating ${(incident?.entities?.users || [])[0] || 'primary user'}...`, 1000)
 
     setStepStatuses(prev => ({ ...prev, [1]: 'running' }))
     await new Promise(r => setTimeout(r, 1500))
@@ -643,7 +503,7 @@ const IncidentDetail = () => {
     ongoing: { label: 'Ongoing', color: '#00AEEF', bg: 'rgba(0,174,239,0.08)', border: 'rgba(0,174,239,0.15)' }
   }
 
-  if (loading) return null
+  if (loading || !incident) return null
 
   // Change 4 — Plain English explanation helper
   const getPlainEnglishExplanation = (score, factors) => {
@@ -901,7 +761,7 @@ const IncidentDetail = () => {
                 <Brain size={12} color="#00AEEF" />
                 <span style={{ fontSize: 10, color: '#00AEEF', fontWeight: 600 }}>Generated by Ollama</span>
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>·</span>
-                <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)' }}>Llama 3.1 8B</span>
+                <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)' }}>{String(llmModel || 'mistral').toUpperCase()}</span>
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>·</span>
                 <span style={{ fontSize: 10, color: '#15803D', fontWeight: 600 }}>Offline</span>
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>·</span>
@@ -1499,7 +1359,7 @@ const IncidentDetail = () => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {completedStepsCount} of 6 steps completed
+                    {completedStepsCount} of {(incident?.playbook?.steps || []).length || 0} steps completed
                   </div>
                   <div style={{
                     width: '120px',
@@ -1509,7 +1369,7 @@ const IncidentDetail = () => {
                     overflow: 'hidden'
                   }}>
                     <div style={{
-                      width: `${(completedStepsCount / 6) * 100}%`,
+                      width: `${(completedStepsCount / Math.max(1, (incident?.playbook?.steps || []).length || 1)) * 100}%`,
                       height: '100%',
                       background: '#15803D',
                       transition: 'width 0.3s ease'
@@ -1521,7 +1381,7 @@ const IncidentDetail = () => {
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <button
-                onClick={() => alert('Download starting...')}
+              onClick={downloadPlaybookPdf}
                 style={{
                   background: 'transparent',
                   color: '#00AEEF',
@@ -1579,151 +1439,63 @@ const IncidentDetail = () => {
           </div>
 
           <div style={{ position: 'relative' }}>
-            {/* Vertical connector line */}
             <div style={{
-              position: 'absolute',
-              left: '36px',
-              top: '32px',
-              bottom: '32px',
-              width: '1px',
-              background: isDark
-                ? 'rgba(255,255,255,0.06)'
-                : 'rgba(0,0,0,0.06)',
-              zIndex: 0
-            }} />
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', zIndex: 1 }}>
-              {incident.playbook.steps.map((step) => {
-                const stepStatus = stepStatuses[step.id]
-                const isCompleted = stepStatus === 'completed'
-                const isRunning = stepStatus === 'running'
-                const prio = priorityConfig[step.priority]
-
-                return (
-                  <div
-                    key={step.id}
-                    onClick={() => toggleStepStatus(step.id)}
-                    style={{
-                      background: isCompleted
-                        ? (isDark ? 'rgba(21,128,61,0.05)' : 'rgba(21,128,61,0.03)')
-                        : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'),
-                      border: isCompleted
-                        ? '1px solid rgba(21,128,61,0.3)'
-                        : '1px solid var(--glass-border)',
-                      borderRadius: '10px', padding: '16px 20px',
-                      cursor: 'pointer', transition: 'all 0.15s',
-                      position: 'relative',
-                      opacity: isRunning ? 0.9 : 1
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0,174,239,0.2)' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = isCompleted ? 'rgba(21,128,61,0.3)' : 'var(--glass-border)' }}
-                  >
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                      {/* Step Node (Circle) */}
-                      <div style={{
-                        width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-                        background: isCompleted
-                          ? '#15803D'
-                          : isRunning
-                            ? 'rgba(0,174,239,0.15)'
-                            : (isDark ? '#1E293B' : '#EFF6FF'),
-                        border: isCompleted ? 'none' : isRunning ? '2px solid #00AEEF' : '1px solid rgba(0,174,239,0.2)',
-                        color: isCompleted ? 'white' : '#00AEEF', fontWeight: 700, fontSize: '13px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        position: 'relative', zIndex: 2
-                      }}>
-                        {isCompleted ? (
-                          <Check size={14} />
-                        ) : isRunning ? (
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                            style={{ display: 'flex' }}
-                          >
-                            <Loader2 size={14} color="#00AEEF" />
-                          </motion.div>
-                        ) : (
-                          step.id
-                        )}
-                      </div>
-
-                      {/* Content Container */}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                          <div style={{
-                            fontSize: '13px', fontWeight: 600, marginTop: '7px',
-                            color: isCompleted ? 'var(--text-muted)' : 'var(--text-color)',
-                            textDecoration: isCompleted ? 'line-through' : 'none'
-                          }}>
-                            {step.title}
-                          </div>
-
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
-                            {/* Type Badge */}
-                            <div style={{
-                              background: step.type === 'automated' ? 'rgba(0,174,239,0.08)' : 'rgba(255,255,255,0.06)',
-                              border: `1px solid ${step.type === 'automated' ? 'rgba(0,174,239,0.15)' : 'var(--glass-border)'}`,
-                              color: step.type === 'automated' ? '#00AEEF' : 'var(--text-muted)',
-                              borderRadius: '20px', padding: '3px 10px', fontSize: '10px', fontWeight: 600,
-                              display: 'flex', gap: '3px', alignItems: 'center'
-                            }}>
-                              {step.type === 'automated' ? <Zap size={10} /> : <User size={10} />}
-                              {step.type === 'automated' ? 'Auto' : 'Manual'}
-                            </div>
-
-                            {/* Priority Badge */}
-                            <div style={{
-                              background: prio.bg,
-                              border: `1px solid ${prio.border}`,
-                              color: prio.color,
-                              borderRadius: '20px', padding: '3px 10px', fontSize: '10px', fontWeight: 600
-                            }}>
-                              {prio.label}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '12px' }}>
-                          {step.description}
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ display: 'flex', gap: '12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                              <User size={11} /> {step.owner}
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                              <Clock size={11} /> {step.estimatedTime}
-                            </div>
-                          </div>
-
-                          <div>
-                            {isCompleted ? (
-                              <div style={{ color: '#15803D', fontSize: '11px', fontWeight: 500, display: 'flex', gap: '3px', alignItems: 'center' }}>
-                                <CheckCircle2 size={12} /> Completed
-                              </div>
-                            ) : (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  toggleStepStatus(step.id)
-                                }}
-                                style={{
-                                  color: '#00AEEF', background: 'transparent', border: 'none',
-                                  fontSize: '11px', fontWeight: 500, cursor: 'pointer'
-                                }}
-                              >
-                                Mark Done
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+              background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '10px',
+              padding: '14px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px'
+            }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+                  {`${(incident?.playbook?.steps || []).length || 0}-step response outline`}
+                </div>
+                <div style={{
+                  marginTop: 6,
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {playbookStepLine}
+                </div>
+              </div>
+              <div style={{
+                fontSize: 11,
+                color: 'var(--text-muted)',
+                whiteSpace: 'nowrap',
+                fontFamily: "'JetBrains Mono', monospace"
+              }}>
+                Details in PDF
+              </div>
             </div>
+            {Array.isArray(incident?.playbook?.steps) && incident.playbook.steps.length > 0 && (
+              <div style={{
+                marginTop: 12,
+                background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '10px',
+                padding: '12px 14px'
+              }}>
+                {(incident.playbook.steps || []).slice(0, 6).map((step, idx) => (
+                  <div
+                    key={`pb-step-${step?.id || idx}`}
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-secondary)',
+                      lineHeight: 1.6,
+                      marginBottom: idx < Math.min(5, (incident.playbook.steps || []).length - 1) ? 6 : 0
+                    }}
+                  >
+                    {idx + 1}. {(step?.title || step?.description || step?.action || '').toString()}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </motion.div>

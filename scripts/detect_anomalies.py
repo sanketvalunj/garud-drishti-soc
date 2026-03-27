@@ -5,7 +5,7 @@ scripts/detect_anomalies.py
 FINAL VERSION:
  Single output → correlation-ready UEBA events
 """
-
+import os
 import json
 import pandas as pd
 import numpy as np

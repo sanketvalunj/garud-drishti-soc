@@ -1,35 +1,74 @@
-You are a cyber incident response expert in a banking SOC.
+You are a senior cyber incident response expert for a banking SOC.
 
-Based on the incident analysis, generate a safe, step-by-step response playbook.
+Generate a full SOC Incident Response Playbook report for the incident provided below.
 
-INCIDENT ANALYSIS:
+OUTPUT RULES
+- You MUST output ONLY valid JSON. No markdown fences and no extra text.
+- The playbook_report string MUST follow this exact section structure and headings (including exact capitalization/spelling):
+
+SOC Incident Response Playbook: <PLAYBOOK TITLE>
+
+Detection of ...
+
+RISK ASSESSMENT
+Severity: <CRITICAL / P1 | HIGH / P2 | MEDIUM / P3 | LOW>
+Reason: <text>
+
+KEY INDICATORS
+- <bullet>
+- <bullet>
+
+INVESTIGATION STEPS
+1. <step>
+2. <step>
+
+CONTAINMENT ACTIONS
+- <bullet>
+
+ERADICATION ACTIONS
+- <bullet>
+
+RECOVERY STEPS
+- <bullet>
+
+AUTOMATION OPPORTUNITIES
+- <bullet>
+
+ANALYST NOTES
+<paragraph>
+
+- Keep content banking-SOC relevant and defensive only.
+- Do not invent unknown identifiers. If a field is missing, use a generic safe placeholder like "unknown".
+- steps must be structured actions for automation: action must be one of ["lock_account","isolate_endpoint","block_ip"].
+
+INPUT JSON
 ----------------
-{analysis_json}
+INCIDENT_JSON:
+{incident_json}
+----------------
+THREAT_ANALYSIS_JSON:
+{threat_analysis_json}
+----------------
+ANOMALIES_SAMPLE_JSON:
+{anomalies_json}
+----------------
+NORMALIZED_EVENTS_SAMPLE_JSON:
+{events_json}
 ----------------
 
-Rules:
-- Only suggest defensive actions
-- Prioritize containment first
-- Then investigation
-- Then recovery
-- Avoid destructive actions unless necessary
-- Actions must be realistic for enterprise SOC
-
-Return JSON:
-
+RETURN JSON SCHEMA (MUST MATCH EXACT KEYS)
 {
-  "incident_type": "...",
-  "risk_level": "...",
-  "playbook_steps": [
+  "playbook_title": "string",
+  "severity_label": "string",
+  "reason": "string",
+  "key_indicators": ["string", "..."],
+  "automation_candidates": ["lock_account","isolate_endpoint","block_ip"],
+  "steps": [
     {
-      "step": 1,
-      "action": "...",
-      "purpose": "..."
+      "phase": "CONTAINMENT_ACTIONS"|"INVESTIGATION_STEPS"|"ERADICATION_ACTIONS"|"RECOVERY_STEPS",
+      "action": "lock_account"|"isolate_endpoint"|"block_ip",
+      "purpose": "string"
     }
   ],
-  "automation_candidates": [
-    "lock_account",
-    "isolate_endpoint",
-    "block_ip"
-  ]
+  "playbook_report": "string"
 }

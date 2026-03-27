@@ -117,14 +117,14 @@ const LiveEventStream = () => {
         return () => clearInterval(t);
     }, [isRunning]);
 
-    // API to integrate — Fetch real-time incidents from backend
+    // Fetch correlated incidents (source of truth for incidents UI)
     const fetchIncidents = async () => {
         try {
-            const res = await api.getIncidents();
+            const res = await api.getCorrelatedIncidents({ limit: 50, offset: 0 });
             const cur = res.incidents || [];
             if (prevIncidentsRef.current.length > 0) {
-                const prevIds = new Set(prevIncidentsRef.current.map(i => i.incident_id));
-                const newIds = new Set(cur.filter(i => !prevIds.has(i.incident_id)).map(i => i.incident_id));
+                const prevIds = new Set(prevIncidentsRef.current.map(i => i.id));
+                const newIds = new Set(cur.filter(i => !prevIds.has(i.id)).map(i => i.id));
                 if (newIds.size > 0) {
                     setNewIncidentIds(newIds);
                     setTimeout(() => setNewIncidentIds(new Set()), 10000);
@@ -303,10 +303,10 @@ const LiveEventStream = () => {
                 <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">
                     <AnimatePresence>
                         {incidents.slice(0, 5).map(inc => {
-                            const isNew = newIncidentIds.has(inc.incident_id);
+                            const isNew = newIncidentIds.has(inc.id);
                             return (
                                 <motion.div
-                                    key={inc.incident_id}
+                                    key={inc.id}
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1, borderColor: isNew ? '#B91C1C' : 'var(--glass-border)' }}
                                     layout
@@ -322,7 +322,7 @@ const LiveEventStream = () => {
                                         </div>
                                     )}
                                     <div className="flex justify-between items-start mb-1">
-                                        <span className="text-xs text-slate-400">{inc.incident_id?.substring(0, 8)}</span>
+                                        <span className="text-xs text-slate-400">{inc.id?.substring(0, 8)}</span>
                                         <span className={clsx(
                                             'text-[10px] px-1.5 py-0.5 rounded font-bold uppercase',
                                             inc.severity === 'Critical' ? 'bg-[rgba(185,28,28,0.1)] text-[#B91C1C]' :

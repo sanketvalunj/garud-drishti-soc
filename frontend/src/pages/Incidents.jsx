@@ -7,262 +7,7 @@ import {
     GitBranch, Clock, ArrowRight, ChevronDown, ChevronUp, Check, Brain
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-
-// API to integrate
-export const mockIncidents = [
-    {
-        id: 'INC-2091',
-        type: 'Privilege Escalation',
-        entity: 'emp_104',
-        sourceIp: '203.0.113.45',
-        fidelityScore: 0.87,
-        severity: 'high',
-        status: 'investigating',
-        mitreTactic: 'Privilege Escalation',
-        mitreId: 'T1068',
-        detectedAt: '2 min ago',
-        summary: 'User emp_104 initiated suspicious activity from external IP, moved laterally to core-banking via auth-server.',
-        killChainStage: 3,
-        entities: ['emp_104', 'auth-server', 'core-banking', '203.0.113.45'],
-        playbookGenerated: true,
-        fidelityFactors: [
-            { label: 'Behavioral', score: 0.91 },
-            { label: 'Criticality', score: 0.85 },
-            { label: 'Similarity', score: 0.79 }
-        ]
-    },
-    {
-        id: 'INC-2090',
-        type: 'Lateral Movement',
-        entity: 'auth-server',
-        sourceIp: '185.220.101.1',
-        fidelityScore: 0.65,
-        severity: 'medium',
-        status: 'investigating',
-        mitreTactic: 'Lateral Movement',
-        mitreId: 'T1021',
-        detectedAt: '5 min ago',
-        summary: 'Unusual remote service usage detected between auth-server and loan-db-01.',
-        killChainStage: 2,
-        entities: ['auth-server', 'loan-db-01'],
-        playbookGenerated: true,
-        fidelityFactors: [
-            { label: 'Behavioral', score: 0.68 },
-            { label: 'Criticality', score: 0.72 },
-            { label: 'Similarity', score: 0.55 }
-        ]
-    },
-    {
-        id: 'INC-2089',
-        type: 'Data Exfiltration',
-        entity: 'db_admin',
-        sourceIp: '198.51.100.22',
-        fidelityScore: 0.92,
-        severity: 'high',
-        status: 'escalated',
-        mitreTactic: 'Exfiltration',
-        mitreId: 'T1041',
-        detectedAt: '12 min ago',
-        summary: 'Large data transfer detected from db_admin to external IP outside business hours.',
-        killChainStage: 5,
-        entities: ['db_admin', '198.51.100.22'],
-        playbookGenerated: true,
-        fidelityFactors: [
-            { label: 'Behavioral', score: 0.94 },
-            { label: 'Criticality', score: 0.90 },
-            { label: 'Similarity', score: 0.88 }
-        ]
-    },
-    {
-        id: 'INC-2088',
-        type: 'Brute Force',
-        entity: 'vpn_gateway',
-        sourceIp: '203.0.113.99',
-        fidelityScore: 0.45,
-        severity: 'low',
-        status: 'contained',
-        mitreTactic: 'Credential Access',
-        mitreId: 'T1110',
-        detectedAt: '1 hr ago',
-        summary: 'Multiple failed login attempts detected on VPN gateway from single IP.',
-        killChainStage: 1,
-        entities: ['vpn_gateway', '203.0.113.99'],
-        playbookGenerated: false,
-        fidelityFactors: [
-            { label: 'Behavioral', score: 0.42 },
-            { label: 'Criticality', score: 0.48 },
-            { label: 'Similarity', score: 0.40 }
-        ]
-    },
-    {
-        id: 'INC-2087',
-        type: 'Anomalous Login',
-        entity: 'emp_221',
-        sourceIp: '10.0.0.45',
-        fidelityScore: 0.38,
-        severity: 'low',
-        status: 'contained',
-        mitreTactic: 'Initial Access',
-        mitreId: 'T1078',
-        detectedAt: '3 hrs ago',
-        summary: 'Login from unusual location detected for emp_221 outside working hours.',
-        killChainStage: 1,
-        entities: ['emp_221', '10.0.0.45'],
-        playbookGenerated: false,
-        fidelityFactors: [
-            { label: 'Behavioral', score: 0.35 },
-            { label: 'Criticality', score: 0.40 },
-            { label: 'Similarity', score: 0.32 }
-        ]
-    },
-    {
-        id: 'INC-2086',
-        type: 'Privilege Escalation',
-        entity: 'svc_account_01',
-        sourceIp: '172.16.0.12',
-        fidelityScore: 0.78,
-        severity: 'medium',
-        status: 'investigating',
-        mitreTactic: 'Privilege Escalation',
-        mitreId: 'T1068',
-        detectedAt: '4 hrs ago',
-        summary: 'Service account used to escalate privileges on file server.',
-        killChainStage: 3,
-        entities: ['svc_account_01', 'file-server-02'],
-        playbookGenerated: true,
-        fidelityFactors: [
-            { label: 'Behavioral', score: 0.80 },
-            { label: 'Criticality', score: 0.75 },
-            { label: 'Similarity', score: 0.72 }
-        ]
-    },
-    {
-        id: 'INC-2085',
-        type: 'Malware Detected',
-        entity: 'user_laptop_88',
-        sourceIp: '10.0.1.88',
-        fidelityScore: 0.91,
-        severity: 'high',
-        status: 'escalated',
-        mitreTactic: 'Execution',
-        mitreId: 'T1059',
-        detectedAt: '5 hrs ago',
-        summary: 'Powershell execution detected with encoded command on user endpoint.',
-        killChainStage: 2,
-        entities: ['user_laptop_88', '10.0.1.88'],
-        playbookGenerated: true,
-        fidelityFactors: [
-            { label: 'Behavioral', score: 0.93 },
-            { label: 'Criticality', score: 0.89 },
-            { label: 'Similarity', score: 0.85 }
-        ]
-    },
-    {
-        id: 'INC-2084',
-        type: 'Suspicious Execution',
-        entity: 'web_server_prod',
-        sourceIp: '203.0.113.77',
-        fidelityScore: 0.41,
-        severity: 'low',
-        status: 'contained',
-        mitreTactic: 'Execution',
-        mitreId: 'T1059',
-        detectedAt: '6 hrs ago',
-        summary: 'Unusual script execution on production web server.',
-        killChainStage: 2,
-        entities: ['web_server_prod'],
-        playbookGenerated: false,
-        fidelityFactors: [
-            { label: 'Behavioral', score: 0.44 },
-            { label: 'Criticality', score: 0.38 },
-            { label: 'Similarity', score: 0.40 }
-        ]
-    },
-    {
-        id: 'INC-2083',
-        type: 'Data Exfiltration',
-        entity: 'finance_user_03',
-        sourceIp: '185.220.101.45',
-        fidelityScore: 0.88,
-        severity: 'high',
-        status: 'investigating',
-        mitreTactic: 'Exfiltration',
-        mitreId: 'T1041',
-        detectedAt: '8 hrs ago',
-        summary: 'Sensitive financial records accessed and transferred externally.',
-        killChainStage: 5,
-        entities: ['finance_user_03', '185.220.101.45', 'finance-db'],
-        playbookGenerated: true,
-        fidelityFactors: [
-            { label: 'Behavioral', score: 0.90 },
-            { label: 'Criticality', score: 0.86 },
-            { label: 'Similarity', score: 0.82 }
-        ]
-    },
-    {
-        id: 'INC-2082',
-        type: 'Lateral Movement',
-        entity: 'swift-terminal',
-        sourceIp: '10.0.2.15',
-        fidelityScore: 0.72,
-        severity: 'medium',
-        status: 'investigating',
-        mitreTactic: 'Lateral Movement',
-        mitreId: 'T1021',
-        detectedAt: '10 hrs ago',
-        summary: 'Unauthorized access attempt on SWIFT terminal from internal IP.',
-        killChainStage: 3,
-        entities: ['swift-terminal', '10.0.2.15'],
-        playbookGenerated: true,
-        fidelityFactors: [
-            { label: 'Behavioral', score: 0.75 },
-            { label: 'Criticality', score: 0.70 },
-            { label: 'Similarity', score: 0.68 }
-        ]
-    },
-    {
-        id: 'INC-2081',
-        type: 'Brute Force',
-        entity: 'admin_portal',
-        sourceIp: '198.51.100.55',
-        fidelityScore: 0.55,
-        severity: 'medium',
-        status: 'contained',
-        mitreTactic: 'Credential Access',
-        mitreId: 'T1110',
-        detectedAt: '12 hrs ago',
-        summary: 'Automated brute force attack on admin portal detected and blocked.',
-        killChainStage: 1,
-        entities: ['admin_portal', '198.51.100.55'],
-        playbookGenerated: false,
-        fidelityFactors: [
-            { label: 'Behavioral', score: 0.58 },
-            { label: 'Criticality', score: 0.52 },
-            { label: 'Similarity', score: 0.54 }
-        ]
-    },
-    {
-        id: 'INC-2080',
-        type: 'Anomalous Login',
-        entity: 'emp_089',
-        sourceIp: '10.0.0.89',
-        fidelityScore: 0.33,
-        severity: 'low',
-        status: 'contained',
-        mitreTactic: 'Initial Access',
-        mitreId: 'T1078',
-        detectedAt: '1 day ago',
-        summary: 'Login from new device detected for emp_089.',
-        killChainStage: 1,
-        entities: ['emp_089'],
-        playbookGenerated: false,
-        fidelityFactors: [
-            { label: 'Behavioral', score: 0.36 },
-            { label: 'Criticality', score: 0.30 },
-            { label: 'Similarity', score: 0.32 }
-        ]
-    }
-];
+import api from '../services/api';
 
 const killChainStages = [
     'Initial Access',
@@ -660,6 +405,9 @@ const Incidents = () => {
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === 'dark';
 
+    const [incidents, setIncidents] = useState([]);
+    const [loadingIncidents, setLoadingIncidents] = useState(true);
+
     const [searchQuery, setSearchQuery] = useState('');
     const [severityFilter, setSeverityFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -667,6 +415,25 @@ const Incidents = () => {
     const [sortBy, setSortBy] = useState('fidelity');
     const [expandedRow, setExpandedRow] = useState(null);
     const [highlightedId, setHighlightedId] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        setLoadingIncidents(true);
+        api.getCorrelatedIncidents({ limit: 200, offset: 0 })
+            .then((res) => {
+                if (cancelled) return;
+                setIncidents(res.incidents || []);
+            })
+            .catch(() => {
+                if (cancelled) return;
+                setIncidents([]);
+            })
+            .finally(() => {
+                if (cancelled) return;
+                setLoadingIncidents(false);
+            });
+        return () => { cancelled = true; };
+    }, []);
 
     useEffect(() => {
         const incidentId = searchParams.get('highlight');
@@ -677,7 +444,7 @@ const Incidents = () => {
         }
     }, []);
 
-    const filteredIncidents = mockIncidents
+    const filteredIncidents = incidents
         .filter(inc => {
             const matchSearch =
                 inc.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -705,13 +472,25 @@ const Incidents = () => {
     ].filter(Boolean).length;
 
     const counts = {
-        investigating: mockIncidents.filter(i => i.status === 'investigating').length,
-        contained: mockIncidents.filter(i => i.status === 'contained').length,
-        escalated: mockIncidents.filter(i => i.status === 'escalated').length,
+        investigating: incidents.filter(i => i.status === 'investigating').length,
+        contained: incidents.filter(i => i.status === 'contained').length,
+        escalated: incidents.filter(i => i.status === 'escalated').length,
     };
 
     const handleRowClick = (id) => {
         setExpandedRow(prev => (prev === id ? null : id));
+        api.getCorrelatedIncidentDetail(id)
+            .then((detail) => {
+                const brief = (detail?.playbook?.steps || [])
+                    .slice(0, 6)
+                    .map((s) => (s?.title || s?.description || s?.action || '').toString().trim())
+                    .filter(Boolean);
+                if (!brief.length) return;
+                setIncidents((prev) =>
+                    prev.map((row) => (row.id === id ? { ...row, playbookBrief: brief } : row))
+                );
+            })
+            .catch(() => { });
     };
 
     const clearFilters = () => {
@@ -737,7 +516,7 @@ const Incidents = () => {
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                     {[
-                        { value: mockIncidents.length, label: 'Total' },
+                        { value: incidents.length, label: 'Total' },
                         { value: counts.investigating, label: 'Investigating' },
                         { value: counts.contained, label: 'Contained' },
                         { value: counts.escalated, label: 'Escalated' },
@@ -930,18 +709,19 @@ const Incidents = () => {
                 </div>
 
                 {/* Rows */}
-                {filteredIncidents.length === 0 ? (
+                {(loadingIncidents || filteredIncidents.length === 0) ? (
                     /* ── SECTION 4: Empty State ── */
                     <div style={{ padding: '60px 20px', textAlign: 'center' }}>
                         <ShieldOff size={40} style={{ color: 'var(--text-muted)', marginBottom: 12, margin: '0 auto 12px' }} />
                         <p style={{ fontSize: 15, color: 'var(--text-secondary)', fontWeight: 500, marginBottom: 4 }}>
-                            No incidents match your filters
+                            {loadingIncidents ? 'Loading incidents…' : 'No incidents match your filters'}
                         </p>
                         <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-                            Try adjusting your search or filter criteria
+                            {loadingIncidents ? 'Fetching correlated incidents from backend' : 'Try adjusting your search or filter criteria'}
                         </p>
                         <button
                             onClick={clearFilters}
+                            disabled={loadingIncidents}
                             style={{
                                 marginTop: 16,
                                 background: 'rgba(0,174,239,0.1)',
@@ -950,7 +730,8 @@ const Incidents = () => {
                                 padding: '8px 20px',
                                 borderRadius: 8,
                                 fontSize: 13,
-                                cursor: 'pointer',
+                                cursor: loadingIncidents ? 'not-allowed' : 'pointer',
+                                opacity: loadingIncidents ? 0.7 : 1,
                             }}
                         >
                             Clear Filters
@@ -1159,7 +940,7 @@ const Incidents = () => {
                                                         }}>
                                                             <Brain size={11} color="#00AEEF" />
                                                             <span style={{ fontSize: '10px', fontWeight: 600, color: '#00AEEF', fontFamily: 'monospace' }}>
-                                                                Ollama · Llama 3.1 8B
+                                                                Ollama · Mistral
                                                             </span>
                                                             <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>·</span>
                                                             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Offline inference</span>
@@ -1208,7 +989,34 @@ const Incidents = () => {
                                                         </div>
                                                     </div>
 
-                                                    {/* Block 3: Entities */}
+                                                    {/* Block 3: Response Playbook (6 brief points) */}
+                                                    {Array.isArray(incident.playbookBrief) && incident.playbookBrief.length > 0 && (
+                                                        <div style={{ marginTop: 14 }}>
+                                                            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                                <Sparkles size={11} color="#00AEEF" />
+                                                                Response Playbook
+                                                            </div>
+                                                            <div style={{
+                                                                background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                                                                border: '1px solid var(--glass-border)',
+                                                                borderRadius: '8px',
+                                                                padding: '10px 12px'
+                                                            }}>
+                                                                {(incident.playbookBrief || []).slice(0, 6).map((point, idx) => (
+                                                                    <div key={`${incident.id}-pb-${idx}`} style={{
+                                                                        fontSize: '12px',
+                                                                        color: 'var(--text-secondary)',
+                                                                        lineHeight: 1.6,
+                                                                        marginBottom: idx < Math.min(5, (incident.playbookBrief || []).length - 1) ? 6 : 0
+                                                                    }}>
+                                                                        {idx + 1}. {point}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Block 4: Entities */}
                                                     <div style={{ marginTop: 14 }}>
                                                         <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6 }}>
                                                             Affected Entities
@@ -1237,7 +1045,7 @@ const Incidents = () => {
                                                         </div>
                                                     </div>
 
-                                                    {/* Block 4: Status Row */}
+                                                    {/* Block 5: Status Row */}
                                                     <div style={{ marginTop: 12, display: 'flex', gap: 16, alignItems: 'center' }}>
                                                         {incident.playbookGenerated ? (
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#15803D', fontSize: 12 }}>

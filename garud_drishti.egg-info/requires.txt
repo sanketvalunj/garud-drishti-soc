@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic[email]
+python-jose[cryptography]
+bcrypt
+passlib[bcrypt]
+pandas
+numpy
+networkx
+elasticsearch>=8.0.0
+python-dotenv
+tqdm
+apscheduler
+tzlocal
+scikit-learn

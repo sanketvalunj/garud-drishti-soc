@@ -26,39 +26,14 @@ import MitreMapping from '../components/MitreMapping';
 import PlaybookViewer from '../components/incidents/PlaybookViewer';
 import AutomationPanel from '../components/AutomationPanel';
 
-// ─── LIVE STREAM CONSTANTS ──────────────────────────────────
-// API to integrate
-const INITIAL_LIVE_EVENTS = [
-    { id: 'evt-001', time: '12:13:45', type: 'Login Failed', entity: 'swift-terminal', severity: 'medium', source: 'IAM', isNew: false, incidentId: 'INC-2091' },
-    { id: 'evt-002', time: '12:13:01', type: 'Access Attempt', entity: 'core-banking', severity: 'high', source: 'EDR', isNew: false, incidentId: 'INC-2090' },
-    { id: 'evt-003', time: '12:12:33', type: 'Lateral Movement', entity: 'loan-db', severity: 'high', source: 'SIEM', isNew: false, incidentId: 'INC-2089' }
-];
-
-// API to integrate
-const NEW_EVENTS_POOL = [
-    { type: 'Anomalous Login', entity: 'emp_201', severity: 'medium', source: 'IAM', incidentId: 'INC-2091' },
-    { type: 'Port Scan Detected', entity: 'vpn-gateway', severity: 'low', source: 'SIEM', incidentId: 'INC-2088' },
-    { type: 'Privilege Escalation', entity: 'emp_088', severity: 'high', source: 'EDR', incidentId: 'INC-2091' },
-    { type: 'Data Transfer', entity: 'file-server', severity: 'medium', source: 'DLP', incidentId: 'INC-2089' },
-    { type: 'Failed Auth', entity: 'api-gateway', severity: 'low', source: 'WAF', incidentId: 'INC-2087' }
-];
+// ─── LIVE STREAM SETTINGS ───────────────────────────────────
+const STREAM_URL = 'http://127.0.0.1:8000/stream-events';
 
 const generateSparkline = (points, min, max) => {
     return Array.from({ length: points }, () => Math.floor(Math.random() * (max - min) + min));
 };
 
-// ─── MOCK DATA ──────────────────────────────────────────────
-// API to integrate
-const mockIncidents = [
-    { id: 'INC-2091', type: 'Privilege Escalation', entity: 'emp_104', score: 0.87, severity: 'HIGH', status: 'Investigating', time: '2 min ago' },
-    { id: 'INC-2090', type: 'Lateral Movement', entity: 'auth-server', score: 0.65, severity: 'HIGH', status: 'Investigating', time: '5 min ago' },
-    { id: 'INC-2089', type: 'Data Exfiltration', entity: 'db_admin', score: 0.92, severity: 'HIGH', status: 'Investigating', time: '12 min ago' },
-    { id: 'INC-2088', type: 'Brute Force Attempt', entity: 'vpn_gateway', score: 0.45, severity: 'MEDIUM', status: 'Contained', time: '1 hr ago' },
-    { id: 'INC-2087', type: 'Anomalous Login', entity: 'emp_221', score: 0.38, severity: 'LOW', status: 'Contained', time: '3 hrs ago' },
-    { id: 'INC-2086', type: 'Excessive File Access', entity: 'file_server_01', score: 0.55, severity: 'HIGH', status: 'Investigating', time: '4 hrs ago' },
-    { id: 'INC-2085', type: 'Malware Detected', entity: 'user_laptop_88', score: 0.98, severity: 'HIGH', status: 'Escalated', time: '5 hrs ago' },
-    { id: 'INC-2084', type: 'Suspicious Execution', entity: 'web_server_prod', score: 0.41, severity: 'MEDIUM', status: 'Contained', time: '6 hrs ago' },
-];
+// ─── DEFAULTS (replaced at runtime via backend) ─────────────
 
 // API to integrate
 const mockSeverityData = [
@@ -142,13 +117,19 @@ const Dashboard = () => {
         aiDecisions: 0
     });
 
+    const [recentIncidents, setRecentIncidents] = useState([]);
+    const [categoryData, setCategoryData] = useState(mockCategoryData);
+    const [severityData, setSeverityData] = useState(mockSeverityData);
+
     // CHANGE 1 — LIVE INCIDENT FEED STATE
-    const [liveEvents, setLiveEvents] = useState(INITIAL_LIVE_EVENTS);
+    const [liveEvents, setLiveEvents] = useState([]);
     const [isStreamActive, setIsStreamActive] = useState(true);
     const [newEventIds, setNewEventIds] = useState(new Set());
     const [showPipelineToast, setShowPipelineToast] = useState(false);
     const [borderAngle, setBorderAngle] = useState(0);
     const liveRef = React.useRef(null);
+
+    const esRef = React.useRef(null);
 
     useEffect(() => {
         if (!isRunning) {
@@ -171,70 +152,144 @@ const Dashboard = () => {
         pipelineLoad: generateSparkline(12, 20, 80)
     });
 
-    // API to integrate — Real-time simulation
+    // Live stream from backend SSE (demo_logs.json)
     useEffect(() => {
-        if (!isStreamActive) return;
+        if (!isStreamActive) {
+            if (esRef.current) {
+                esRef.current.close();
+                esRef.current = null;
+            }
+            return;
+        }
 
-        const interval = setInterval(() => {
-            const template = NEW_EVENTS_POOL[
-                Math.floor(Math.random() * NEW_EVENTS_POOL.length)
-            ];
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('en-GB', {
-                hour: '2-digit', minute: '2-digit', second: '2-digit'
-            });
+        const connect = () => {
+            if (esRef.current) return;
 
-            const newEvent = {
-                ...template,
-                id: `evt-${Date.now()}`,
-                time: timeStr,
-                isNew: true
+            const es = new EventSource(STREAM_URL);
+            esRef.current = es;
+
+            es.onopen = () => {
+                console.log('[Dashboard SSE] Connected');
             };
 
-            setLiveEvents(prev => {
-                const updated = [newEvent, ...prev];
-                return updated.slice(0, 8); // keep last 8
-            });
+            es.onmessage = (msg) => {
+                try {
+                    const data = JSON.parse(msg.data);
 
-            setNewEventIds(prev => new Set([...prev, newEvent.id]));
+                    const ts = new Date(data.timestamp || Date.now());
+                    const timeStr = ts.toLocaleTimeString('en-GB', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
 
-            // Remove "new" highlight after 3s
-            setTimeout(() => {
-                setNewEventIds(prev => {
-                    const next = new Set(prev);
-                    next.delete(newEvent.id);
-                    return next;
-                });
-            }, 3000);
+                    const rawSev = (data.severity || 'info').toString().toLowerCase();
+                    const uiSev = (rawSev === 'critical' || rawSev === 'high')
+                        ? 'high'
+                        : (rawSev === 'warning')
+                            ? 'medium'
+                            : 'low';
 
-        }, 4000); // new event every 4 seconds
+                    const id = data.event_id || `evt-${Date.now()}-${Math.random()}`;
 
-        return () => clearInterval(interval);
+                    const newEvent = {
+                        id,
+                        time: timeStr,
+                        type: data.event_type || data.event_category || 'EVENT',
+                        entity: data.user || data.entity_id || '—',
+                        severity: uiSev,
+                        source: data.source || data.source_ip || '—',
+                        isNew: true,
+                        incidentId: data.incident_id || ''
+                    };
+
+                    setLiveEvents(prev => {
+                        const updated = [newEvent, ...prev];
+                        return updated.slice(0, 8);
+                    });
+
+                    setNewEventIds(prev => {
+                        const next = new Set(prev);
+                        next.add(id);
+                        return next;
+                    });
+
+                    setTimeout(() => {
+                        setNewEventIds(prev => {
+                            const next = new Set(prev);
+                            next.delete(id);
+                            return next;
+                        });
+                    }, 3000);
+                } catch (e) {
+                    console.error('[Dashboard SSE] parse error', e);
+                }
+            };
+
+            es.onerror = () => {
+                console.error('[Dashboard SSE] error');
+                try {
+                    es.close();
+                } catch {}
+                esRef.current = null;
+                // reconnect after pause
+                setTimeout(connect, 3000);
+            };
+        };
+
+        connect();
+
+        return () => {
+            if (esRef.current) {
+                esRef.current.close();
+                esRef.current = null;
+            }
+        };
     }, [isStreamActive]);
 
     const fetchDashboardData = async () => {
         try {
-            const [resIncidents, resPlaybooks] = await Promise.all([
-                api.getIncidents().catch(() => ({ incidents: [] })),
-                api.getPlaybooks().catch(() => ({ playbooks: [] }))
+            const [demoLogsCount, resPlaybooks, resRecent, resCategories] = await Promise.all([
+                api.getDemoLogsCount().catch(() => ({ count: 0, by_severity: {} })),
+                api.getPlaybooks().catch(() => ({ playbooks: [] })),
+                api.getCorrelatedIncidents({ recentOnly: true, limit: 5 }).catch(() => ({ incidents: [] })),
+                api.getAttackCategoryBreakdown().catch(() => ({ breakdown: [] }))
             ]);
 
-            const incidents = resIncidents.incidents || [];
-            const playbooks = resPlaybooks.playbooks || [];
+            const playbooks = resPlaybooks?.playbooks || [];
+            const recent = resRecent?.incidents || [];
+            const breakdown = resCategories?.breakdown || [];
 
-            // Calculate stats
-            const totalIncidents = incidents.length;
-            const highRiskCount = incidents.filter(i => (i.risk_score || 0) > 0.7).length;
-            const activeThreats = incidents.length;
-
-            setStats({
-                incidents: totalIncidents,
-                activeThreats: activeThreats,
-                highRisk: highRiskCount,
-                blockedIps: incidents.reduce((acc, curr) => acc + (curr.entities?.ips?.length || 0), 0),
+            setStats(prev => ({
+                ...prev,
+                incidents: demoLogsCount?.count || 0,
                 playbooks: playbooks.length,
                 aiDecisions: playbooks.length
-            });
+            }));
+
+            setRecentIncidents(recent);
+
+            // Attack category breakdown (real, from correlated incidents)
+            const palette = ['#00395D', '#0067A5', '#00AEEF', '#3ABEF9', '#7DD3FC', '#94A3B8'];
+            const cat = breakdown.slice(0, 6).map((b, idx) => ({
+                name: b.category,
+                value: b.count,
+                color: palette[idx % palette.length],
+            }));
+            if (cat.length > 0) setCategoryData(cat);
+
+            // Severity distribution derived from recent incidents (keeps UI stable + real)
+            const sevCounts = recent.reduce((acc, inc) => {
+                const sev = (inc.severity || '').toLowerCase();
+                const key = sev === 'high' ? 'High' : sev === 'medium' ? 'Medium' : 'Low';
+                acc[key] = (acc[key] || 0) + 1;
+                return acc;
+            }, {});
+            setSeverityData([
+                { name: 'High', value: sevCounts.High || 0, color: '#B91C1C' },
+                { name: 'Medium', value: sevCounts.Medium || 0, color: '#D97706' },
+                { name: 'Low', value: sevCounts.Low || 0, color: '#00AEEF' }
+            ]);
 
         } catch (error) {
             console.error("Dashboard data fetch failed", error);
@@ -255,7 +310,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 <StatCard
                     title="Total Incidents"
-                    value={stats.incidents || "47"}
+                    value={stats.incidents || 0}
                     icon={AlertTriangle}
                     iconStyle={{
                         padding: '10px',
@@ -555,7 +610,6 @@ const Dashboard = () => {
                                                 fontFamily: "'JetBrains Mono', monospace",
                                                 fontSize: '11px',
                                                 color: 'var(--text-muted)',
-                                                minWidth: ' map', // wait, users says 56px
                                                 minWidth: '56px'
                                             }}>
                                                 {event.time}
@@ -680,7 +734,7 @@ const Dashboard = () => {
                     </div>
                     <div className="h-[220px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={mockSeverityData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }} barCategoryGap="7.5%" barGap={2}>
+                            <BarChart data={severityData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }} barCategoryGap="7.5%" barGap={2}>
                                 <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
                                 <Tooltip
                                     cursor={{ fill: 'rgba(255,255,255,0.05)' }}
@@ -705,7 +759,7 @@ const Dashboard = () => {
                                     animationEasing="ease-out"
                                 >
                                     <LabelList dataKey="value" position="top" style={{ fontSize: '12px', fill: 'var(--text-muted)', fontWeight: 600 }} />
-                                    {mockSeverityData.map((entry, index) => (
+                                    {severityData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                 </Bar>
@@ -732,7 +786,7 @@ const Dashboard = () => {
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
-                                        data={mockCategoryData}
+                                        data={categoryData}
                                         cx="50%"
                                         cy="50%"
                                         innerRadius={60}
@@ -741,7 +795,7 @@ const Dashboard = () => {
                                         dataKey="value"
                                         stroke="none"
                                     >
-                                        {mockCategoryData.map((entry, index) => (
+                                        {categoryData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
@@ -769,13 +823,15 @@ const Dashboard = () => {
                                 pointerEvents: 'none',
                                 zIndex: 5
                             }}>
-                                <div style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: 1 }}>47</div>
+                                <div style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: 1 }}>
+                                    {stats.incidents || 0}
+                                </div>
                                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Total</div>
                             </div>
                         </div>
                         {/* Custom Legend */}
                         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-2">
-                            {mockCategoryData.map((cat, i) => (
+                            {categoryData.map((cat, i) => (
                                 <div key={i} className="flex items-center gap-1.5 text-[11px] tracking-wide font-medium" style={{ color: 'var(--text-secondary)' }}>
                                     <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: cat.color }} />
                                     {cat.name} ({cat.value}%)
@@ -812,7 +868,7 @@ const Dashboard = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y" style={{ borderColor: 'var(--glass-border)', color: 'var(--text-secondary)' }}>
-                            {mockIncidents.slice(0, 5).map((inc) => (
+                            {recentIncidents.slice(0, 5).map((inc) => (
                                 <tr
                                     key={inc.id}
                                     onClick={() => navigate(`/incidents?highlight=${inc.id}`)}
@@ -826,9 +882,9 @@ const Dashboard = () => {
                                     </td>
                                     <td className="px-6 py-4 font-medium" style={{ color: 'var(--text-primary)' }}>{inc.type}</td>
                                     <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>{inc.entity}</td>
-                                    <td className="px-6 py-4"><FidelityBadge score={inc.score} /></td>
-                                    <td className="px-6 py-4"><StatusBadge status={inc.status} /></td>
-                                    <td className="px-6 py-4 font-medium text-xs text-center" style={{ color: 'var(--text-muted)' }}>{inc.time}</td>
+                                    <td className="px-6 py-4"><FidelityBadge score={inc.fidelityScore} /></td>
+                                    <td className="px-6 py-4"><StatusBadge status={(inc.status || 'investigating').charAt(0).toUpperCase() + (inc.status || 'investigating').slice(1)} /></td>
+                                    <td className="px-6 py-4 font-medium text-xs text-center" style={{ color: 'var(--text-muted)' }}>{inc.detectedAt}</td>
                                     <td className="px-6 py-4 text-right">
                                         <button
                                             onClick={(e) => {

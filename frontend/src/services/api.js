@@ -21,6 +21,49 @@ export default {
         }
     },
 
+    // --- Correlated incidents (real correlation-engine output) ---
+    getCorrelatedIncidents: async ({ limit = 50, offset = 0, recentOnly = false } = {}) => {
+        try {
+            const response = await apiClient.get('/correlated-incidents', {
+                params: { limit, offset, recent_only: recentOnly },
+            });
+            return response.data;
+        } catch (error) {
+            console.error('API Error: getCorrelatedIncidents', error);
+            return { total: 0, incidents: [] };
+        }
+    },
+
+    getCorrelatedIncidentDetail: async (id) => {
+        try {
+            const response = await apiClient.get(`/correlated-incidents/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error('API Error: getCorrelatedIncidentDetail', error);
+            throw error;
+        }
+    },
+
+    getCorrelatedIncidentNarrative: async (id) => {
+        try {
+            const response = await apiClient.get(`/correlated-incidents/${id}/narrative`);
+            return response.data;
+        } catch (error) {
+            console.error('API Error: getCorrelatedIncidentNarrative', error);
+            return { incident_id: id, model: 'mistral', narrative: '' };
+        }
+    },
+
+    getAttackCategoryBreakdown: async () => {
+        try {
+            const response = await apiClient.get('/attack-category-breakdown');
+            return response.data;
+        } catch (error) {
+            console.error('API Error: getAttackCategoryBreakdown', error);
+            return { total: 0, breakdown: [] };
+        }
+    },
+
     // Get reasoning for a specific incident
     getIncidentReasoning: async (id) => {
         try {
@@ -61,6 +104,17 @@ export default {
             return response.data;
         } catch (error) {
             return { status: 'offline', error: error.message };
+        }
+    },
+
+    // Demo logs stats (used for dashboard live stream + totals)
+    getDemoLogsCount: async () => {
+        try {
+            const response = await apiClient.get('/demo-logs-count');
+            return response.data;
+        } catch (error) {
+            console.error('API Error: getDemoLogsCount', error);
+            return { count: 0, by_severity: {} };
         }
     },
 

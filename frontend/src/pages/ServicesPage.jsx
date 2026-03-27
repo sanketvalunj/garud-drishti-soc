@@ -16,7 +16,7 @@ const PILLARS = [
   {
     abbr: 'SAIA', title: 'Sovereign Air-Gapped Intelligence Architecture', color: '#00AEEF', icon: Shield,
     desc: 'All AI reasoning runs entirely within your infrastructure via Ollama-hosted LLMs. Zero cloud APIs. Zero data exfiltration risk.',
-    howItWorks: ['Deploy Ollama with Mistral/Llama models on-premise', 'Route all LLM calls through local inference server', 'Encrypt model artifacts at rest', 'Generate audit trail for every AI decision']
+    howItWorks: ['Deploy Ollama with Mistral/Mistral models on-premise', 'Route all LLM calls through local inference server', 'Encrypt model artifacts at rest', 'Generate audit trail for every AI decision']
   },
   {
     abbr: 'GCAR', title: 'Governance-Calibrated Autonomous Response', color: '#00AEEF', icon: Lock,

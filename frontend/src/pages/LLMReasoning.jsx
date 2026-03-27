@@ -36,7 +36,7 @@ const ALL_MOCK_REASONING = {
   'INC-2091': {
     incidentId: 'INC-2091',
     attackType: 'Privilege Escalation',
-    model: 'Llama 3.1 8B',
+    model: 'Mistral',
     mode: 'offline',
     vectorDb: 'FAISS offline index',
     eventsProcessed: 847,
@@ -245,7 +245,7 @@ Return: { "score": float, "reasoning": string }`
   'INC-2089': {
     incidentId: 'INC-2089',
     attackType: 'Data Exfiltration',
-    model: 'Llama 3.1 8B',
+    model: 'Mistral',
     mode: 'offline',
     vectorDb: 'FAISS offline index',
     eventsProcessed: 623,
@@ -632,7 +632,7 @@ const LLMReasoning = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {['Llama 3.1 8B', 'Offline', 'Air-gapped', 'FAISS index'].map((item, i, arr) => (
+          {['Mistral', 'Offline', 'Air-gapped', 'FAISS index'].map((item, i, arr) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item}</span>
               {i < arr.length - 1 && <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>·</span>}

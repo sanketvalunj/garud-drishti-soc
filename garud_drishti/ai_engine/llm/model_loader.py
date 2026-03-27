@@ -1,4 +1,3 @@
-import shutil
 from typing import Optional
 
 from .ollama_client import OllamaClient
@@ -15,7 +14,7 @@ class ModelLoader:
     def __init__(
         self,
         provider: str = "ollama",
-        model_name: str = "llama3"
+        model_name: str = "mistral"
     ):
         if provider != "ollama":
             raise ValueError("Only Ollama is supported in this offline SOC pipeline.")
@@ -24,23 +23,12 @@ class ModelLoader:
         self.client: Optional[OllamaClient] = None
 
     # --------------------------------------------------
-    # CHECK OLLAMA INSTALLED
-    # --------------------------------------------------
-    def _ollama_available(self) -> bool:
-        return shutil.which("ollama") is not None
-
-    # --------------------------------------------------
     # LOAD MODEL
     # --------------------------------------------------
     def load(self):
         """
         Initialize model client.
         """
-        if not self._ollama_available():
-            raise RuntimeError(
-                "Ollama not found. Install it to run local offline LLM."
-            )
-
         self.client = OllamaClient(model=self.model_name)
         return self.client
 

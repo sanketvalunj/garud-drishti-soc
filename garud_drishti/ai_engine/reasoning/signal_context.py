@@ -29,8 +29,8 @@ def load_anomalies():
     return anomalies
 
 def load_incidents():
-    """Loads correlation engine incidents from garud_drishti/data/processed/incidents.json"""
-    incidents_path = _get_project_root() / "garud_drishti" / "data" / "processed" / "incidents.json"
+    """Loads correlation engine incidents from garud_drishti/data/incidents/correlated_incidents.json"""
+    incidents_path = _get_project_root() / "garud_drishti" / "data" / "incidents" / "correlated_incidents.json"
     if incidents_path.exists():
         try:
             with open(incidents_path, "r", encoding="utf-8") as f:

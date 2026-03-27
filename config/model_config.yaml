@@ -1,6 +1,6 @@
 llm:
   provider: "ollama"
-  model_name: "llama3"
+  model_name: "mistral"
   temperature: 0.2
   timeout: 120
   retries: 2

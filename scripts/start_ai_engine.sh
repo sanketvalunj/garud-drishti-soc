@@ -23,11 +23,24 @@ sleep 1
 echo "⚙️ Loading playbook generator..."
 sleep 1
 
-# Optional Ollama check (safe even if not installed)
+# Ollama startup guidance
 if command -v ollama >/dev/null 2>&1; then
-    echo "🤖 Ollama detected"
+    if curl -s "http://127.0.0.1:11434/api/tags" >/dev/null 2>&1; then
+        echo "🤖 Ollama detected and running"
+    else
+        echo "⚠️ Ollama is installed but not running."
+        echo "👉 First run in another terminal: ollama serve"
+        echo "👉 Then start/restart this AI engine script."
+        exit 1
+    fi
 else
-    echo "ℹ️ Ollama not running (using fallback logic)"
+    echo "❌ Ollama CLI not found. Install Ollama and run: ollama serve"
+    exit 1
 fi
 
 echo "🧠 AI Engine ready"
+
+echo ""
+echo "⚙️ Running SOC AI pipeline (offline) ..."
+python3 scripts/run_soc_pipeline.py || exit 1
+echo "✅ AI pipeline completed"

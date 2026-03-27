@@ -12,7 +12,7 @@ GOAL:
  Convert normalized SOC events → ML-ready UEBA features
  + TARGET AWARENESS + CORRELATION CONTEXT
 """
-
+import os
 import json
 import pandas as pd
 from pathlib import Path

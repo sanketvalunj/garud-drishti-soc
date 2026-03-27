@@ -8,10 +8,8 @@ class BusinessImpactAgent:
         }
 
     def assess(self, incident: dict) -> dict:
-        asset = str(incident.get("asset", "")).lower()
-        if not asset and incident.get("signals"):
-            asset = str(incident["signals"][0].get("asset", "")).lower()
-            
+        entity = incident.get("entity", {}) if isinstance(incident.get("entity", {}), dict) else {}
+        asset = str(entity.get("asset_id", "") or entity.get("asset", "")).lower()
         incident_context = str(incident).lower()
         
         # Determine rule match intelligently

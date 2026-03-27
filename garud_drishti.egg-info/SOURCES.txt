@@ -1,72 +1,317 @@
+.dockerignore
+.env
+.gitignore
+Dockerfile
 README.md
-setup.py
-garud_drishti/__init__.py
+TODO.md
+config/log_schema.json
+config/model_config.yaml
+config/response_rules.yaml
+config/system_config.yaml
+data/ai_decisions/decision_log.json
+data/model_features/features.csv
+data/normalized_events/events.json
+data/raw_logs/all_raw_logs.txt
+data/raw_logs/demo_logs.json
+data/raw_logs/logs_20260315_181205.csv
+data/raw_logs/logs_20260315_181205.json
+data/raw_logs/logs_20260315_181205.kv
+data/raw_logs/logs_20260315_181205.txt
+data/raw_logs/logs_20260317_200541.csv
+data/raw_logs/logs_20260317_200541.json
+data/raw_logs/logs_20260317_200541.kv
+data/raw_logs/logs_20260317_200541.txt
+data/raw_logs/logs_20260317_200929.csv
+data/raw_logs/logs_20260317_200929.json
+data/raw_logs/logs_20260317_200929.kv
+data/raw_logs/logs_20260317_200929.txt
+data/raw_logs/logs_csv.csv
+data/raw_logs/logs_json.json
+data/raw_logs/logs_kv.txt
+data/raw_logs/logs_raw.txt
+docker-compose.yml
+frontend/.env
+frontend/.gitignore
+frontend/README.md
+frontend/components.json
+frontend/eslint-output.json
+frontend/eslint.config.js
+frontend/index.html
+frontend/package-lock.json
+frontend/package.json
+frontend/postcss.config.js
+frontend/public/vite.svg
+frontend/src/App.css
+frontend/src/App.jsx
+frontend/src/assets/react.svg
+frontend/src/components/AIPipeline.jsx
+frontend/src/components/AIReasoningPanel.jsx
+frontend/src/components/AnimatedGradientBg.jsx
+frontend/src/components/AttackTimeline.jsx
+frontend/src/components/AutomationPanel.jsx
+frontend/src/components/LLMReasoningViewer.jsx
+frontend/src/components/MitreMapping.jsx
+frontend/src/components/Prism.jsx
+frontend/src/components/RiskChart.jsx
+frontend/src/components/Sidebar.jsx
+frontend/src/components/ThemeToggle.jsx
+frontend/src/components/alerts/AlertCard.jsx
+frontend/src/components/alerts/AlertDetailsDrawer.jsx
+frontend/src/components/alerts/AlertFilters.jsx
+frontend/src/components/alerts/AlertsTable.jsx
+frontend/src/components/background/DashboardBackground.jsx
+frontend/src/components/common/Sidebar.jsx
+frontend/src/components/incidents/AttackGraph.jsx
+frontend/src/components/incidents/AttackReplayTimeline.jsx
+frontend/src/components/incidents/LiveEventStream.jsx
+frontend/src/components/incidents/MitreAttackOverlay.jsx
+frontend/src/components/incidents/PlaybookViewer.jsx
+frontend/src/components/profile/ProfilePanel.jsx
+frontend/src/components/profile/Tier1Stats.jsx
+frontend/src/components/profile/Tier2Stats.jsx
+frontend/src/components/profile/Tier3Stats.jsx
+frontend/src/components/ui/StatCard.jsx
+frontend/src/components/ui/TerminalStream.jsx
+frontend/src/components/ui/ThemeToggle.jsx
+frontend/src/context/AuthContext.jsx
+frontend/src/context/PipelineContext.jsx
+frontend/src/context/RoleContext.jsx
+frontend/src/context/ThemeContext.jsx
+frontend/src/index.css
+frontend/src/layout/Layout.jsx
+frontend/src/main.jsx
+frontend/src/pages/AboutPage.jsx
+frontend/src/pages/Admin.jsx
+frontend/src/pages/Alerts.jsx
+frontend/src/pages/Dashboard.jsx
+frontend/src/pages/IncidentDetail.jsx
+frontend/src/pages/Incidents.jsx
+frontend/src/pages/LLMReasoning.jsx
+frontend/src/pages/Landing.jsx
+frontend/src/pages/Login.jsx
+frontend/src/pages/MitreMapping.jsx
+frontend/src/pages/MyActivity.jsx
+frontend/src/pages/Onboarding.jsx
+frontend/src/pages/Pipeline.jsx
+frontend/src/pages/Playbooks.jsx
+frontend/src/pages/Reasoning.jsx
+frontend/src/pages/Response.jsx
+frontend/src/pages/ServicesPage.jsx
+frontend/src/pages/ThreatGraph.jsx
+frontend/src/search_results.txt
+frontend/src/services/alertsService.js
+frontend/src/services/api.js
+frontend/src/services/stream.js
+frontend/src/utils/mitreMapper.js
+frontend/src/utils/riskMapper.js
+frontend/tailwind.config.js
+frontend/vite.config.js
 garud_drishti.egg-info/PKG-INFO
 garud_drishti.egg-info/SOURCES.txt
 garud_drishti.egg-info/dependency_links.txt
+garud_drishti.egg-info/requires.txt
 garud_drishti.egg-info/top_level.txt
+garud_drishti/__init__.py
 garud_drishti/agents/__init__.py
+garud_drishti/agents/automation_agent.py
 garud_drishti/agents/correlation_agent.py
 garud_drishti/agents/investigation_agent.py
 garud_drishti/agents/response_agent.py
 garud_drishti/agents/soc_master_agent.py
 garud_drishti/ai_engine/__init__.py
+garud_drishti/ai_engine/agents/business_impact_agent.py
+garud_drishti/ai_engine/agents/compliance_agent.py
+garud_drishti/ai_engine/agents/risk_agent.py
+garud_drishti/ai_engine/llm/model_loader.py
+garud_drishti/ai_engine/llm/ollama_client.py
+garud_drishti/ai_engine/llm/prompt_templates/incident_analysis.txt
+garud_drishti/ai_engine/llm/prompt_templates/playbook_template.txt
+garud_drishti/ai_engine/orchestration/agent_memory.py
+garud_drishti/ai_engine/orchestration/agent_orchestrator.py
+garud_drishti/ai_engine/orchestration/automation_engine.py
+garud_drishti/ai_engine/orchestration/decision_logger.py
+garud_drishti/ai_engine/orchestration/policy_guard.py
+garud_drishti/ai_engine/orchestration/voting_engine.py
 garud_drishti/ai_engine/playbook/__init__.py
-garud_drishti/ai_engine/playbook/generator.py
+garud_drishti/ai_engine/playbook/playbook_generator.py
+garud_drishti/ai_engine/playbook/playbook_selector.py
 garud_drishti/ai_engine/playbook/response_selector.py
 garud_drishti/ai_engine/playbook/workflow_builder.py
 garud_drishti/ai_engine/reasoning/__init__.py
+garud_drishti/ai_engine/reasoning/attack_analyzer.py
+garud_drishti/ai_engine/reasoning/confidence_calibrator.py
+garud_drishti/ai_engine/reasoning/decision_explainer.py
 garud_drishti/ai_engine/reasoning/incident_interpreter.py
+garud_drishti/ai_engine/reasoning/learning_agent.py
 garud_drishti/ai_engine/reasoning/mitre_mapper.py
 garud_drishti/ai_engine/reasoning/risk_explainer.py
+garud_drishti/ai_engine/reasoning/signal_context.py
+garud_drishti/ai_engine/reasoning/threat_reasoner.py
 garud_drishti/automation/__init__.py
 garud_drishti/automation/account_lock.py
 garud_drishti/automation/automation_executor.py
 garud_drishti/automation/endpoint_isolation.py
 garud_drishti/automation/ip_blocker.py
+garud_drishti/backend/.gitignore
 garud_drishti/backend/__init__.py
-garud_drishti/backend/main.py
 garud_drishti/backend/api/__init__.py
+garud_drishti/backend/api/admin_api.py
 garud_drishti/backend/api/detection_api.py
+garud_drishti/backend/api/events_api.py
 garud_drishti/backend/api/incident_api.py
 garud_drishti/backend/api/ingest_api.py
+garud_drishti/backend/api/ingestion_api.py
+garud_drishti/backend/api/mitre_api.py
 garud_drishti/backend/api/playbook_api.py
+garud_drishti/backend/api/reasoning_api.py
+garud_drishti/backend/api/simulate_api.py
+garud_drishti/backend/api/stream_api.py
+garud_drishti/backend/enrichment/security_context.py
+garud_drishti/backend/main.py
 garud_drishti/backend/services/__init__.py
 garud_drishti/backend/services/correlation_service.py
 garud_drishti/backend/services/detection_service.py
+garud_drishti/backend/services/elastic_client.py
+garud_drishti/backend/services/index_events.py
 garud_drishti/backend/services/ingestion_service.py
 garud_drishti/backend/services/response_service.py
+garud_drishti/backend/threat_intel/mitre_mapping.py
 garud_drishti/backend/utils/__init__.py
 garud_drishti/backend/utils/config_loader.py
 garud_drishti/backend/utils/json_helpers.py
 garud_drishti/backend/utils/logger.py
 garud_drishti/backend/utils/security_utils.py
-garud_drishti/correlation/__init__.py
-garud_drishti/correlation/correlation_service.py
-garud_drishti/correlation/fidelity_scoring.py
-garud_drishti/correlation/graph_constructor.py
-garud_drishti/correlation/incident_builder.py
-garud_drishti/correlation/timeline_generator.py
-garud_drishti/detection/__init__.py
-garud_drishti/detection/behavior_profiles.py
-garud_drishti/detection/detection_service.py
-garud_drishti/detection/feature_engineering.py
-garud_drishti/detection/anomaly_models/__init__.py
-garud_drishti/detection/anomaly_models/model_loader.py
-garud_drishti/detection/anomaly_models/pyod_model.py
-garud_drishti/detection/temporal_analysis/__init__.py
-garud_drishti/detection/temporal_analysis/feature_selector.py
-garud_drishti/detection/temporal_analysis/tsfresh_features.py
+garud_drishti/correlation_engine/IMPLEMENTATION_FLOW.md
+garud_drishti/correlation_engine/config/correlation_config.json
+garud_drishti/correlation_engine/config/detection_rules.json
+garud_drishti/correlation_engine/config/entity_linking_rules.json
+garud_drishti/correlation_engine/config/entity_weights.json
+garud_drishti/correlation_engine/config/mitre_event_mapping.json
+garud_drishti/correlation_engine/config/mitre_pattern_mapping.json
+garud_drishti/correlation_engine/config/normalized_event_catalog.json
+garud_drishti/correlation_engine/config/risk_config.json
+garud_drishti/correlation_engine/correlation_pipeline.py
+garud_drishti/correlation_engine/correlation_service.py
+garud_drishti/correlation_engine/detection/mitre_mapper.py
+garud_drishti/correlation_engine/detection/pattern_detector.py
+garud_drishti/correlation_engine/entity_resolution/entity_config.json
+garud_drishti/correlation_engine/graph_engine/attack_graph_builder.py
+garud_drishti/correlation_engine/graph_engine/attack_path_extractor.py
+garud_drishti/correlation_engine/loaders/anomaly_loader.py
+garud_drishti/correlation_engine/loaders/features.csv
+garud_drishti/correlation_engine/loaders/normalized_log_loader.py
+garud_drishti/correlation_engine/outputs/incident_builder.py
+garud_drishti/correlation_engine/preprocessing/event_normalizer.py
+garud_drishti/correlation_engine/preprocessing/event_sequence_builder.py
+garud_drishti/correlation_engine/scoring/risk_scoring_engine.py
+garud_drishti/data/mitre/mitre_analytics_sheet.json
+garud_drishti/data/mitre/mitre_campaigns_sheet.json
+garud_drishti/data/mitre/mitre_citations_sheet.json
+garud_drishti/data/mitre/mitre_datacomponents_sheet.json
+garud_drishti/data/mitre/mitre_detectionstrategies_sheet.json
+garud_drishti/data/mitre/mitre_enterprise_attack_matrix_sheet.json
+garud_drishti/data/mitre/mitre_groups_sheet.json
+garud_drishti/data/mitre/mitre_mitigations_sheet.json
+garud_drishti/data/mitre/mitre_relationships_sheet.json
+garud_drishti/data/mitre/mitre_software_sheet.json
+garud_drishti/data/mitre/mitre_tactics_index.json
+garud_drishti/data/mitre/mitre_tactics_sheet.json
+garud_drishti/data/mitre/mitre_techniques_index.json
+garud_drishti/data/mitre/mitre_techniques_sheet.json
+garud_drishti/data/mitre/mitre_workbook_manifest.json
+garud_drishti/data/normalized_events/ingestion_health_report.json
+garud_drishti/data/normalized_events/normalized_events.json
+garud_drishti/data/processed/anomaly_events.json
+garud_drishti/data/processed/features.csv
+garud_drishti/data/raw_logs/banking_logs.json
+garud_drishti/data/raw_logs/demo_logs.json
+garud_drishti/data/raw_logs/edr_logs.json
+garud_drishti/data/raw_logs/entity_master.json
+garud_drishti/data/raw_logs/firewall_logs.json
+garud_drishti/data/raw_logs/iam_logs.json
+garud_drishti/data/raw_logs/siem_logs.json
+garud_drishti/detectiontemp/__init__.py
+garud_drishti/detectiontemp/anomaly_models/__init__.py
+garud_drishti/detectiontemp/anomaly_models/model_loader.py
+garud_drishti/detectiontemp/anomaly_models/pyod_model.py
+garud_drishti/detectiontemp/behavior_profiles.py
+garud_drishti/detectiontemp/detection_service.py
+garud_drishti/detectiontemp/feature_engineering.py
+garud_drishti/detectiontemp/temporal_analysis/__init__.py
+garud_drishti/detectiontemp/temporal_analysis/feature_selector.py
+garud_drishti/detectiontemp/temporal_analysis/tsfresh_features.py
 garud_drishti/ingestion/__init__.py
+garud_drishti/ingestion/event_enricher.py
 garud_drishti/ingestion/ingestion_api.py
 garud_drishti/ingestion/log_parser.py
+garud_drishti/ingestion/normalize_logs.py
+garud_drishti/ingestion/safe_mapper.py
 garud_drishti/ingestion/schema_mapper.py
+garud_drishti/ingestion/schema_validator.py
+garud_drishti/scripts/generate_fake_logs.py
 garud_drishti/storage/__init__.py
 garud_drishti/storage/elastic_client.py
+garud_drishti/storage/elasticsearch_client.py
 garud_drishti/storage/incident_repository.py
 garud_drishti/storage/index_setup.py
 garud_drishti/storage/log_repository.py
+garud_drishti/validate_pipeline.py
+old_backenddont use/__init__.py
+old_backenddont use/api/__init__.py
+old_backenddont use/api/admin.py
+old_backenddont use/api/anomaly_api.py
+old_backenddont use/api/auth.py
+old_backenddont use/api/events_api.py
+old_backenddont use/api/feedback_api.py
+old_backenddont use/api/incidents_api.py
+old_backenddont use/api/simulate_api.py
+old_backenddont use/api/ueba_api.py
+old_backenddont use/core/__init__.py
+old_backenddont use/core/config.py
+old_backenddont use/core/security.py
+old_backenddont use/enrichment/__init__.py
+old_backenddont use/enrichment/security_context.py
+old_backenddont use/ingestion/__init__.py
+old_backenddont use/ingestion/log_parser.py
+old_backenddont use/ingestion/normalize_logs.py
+old_backenddont use/ingestion/schema_mapper.py
+old_backenddont use/main.py
+old_backenddont use/models/__init__.py
+old_backenddont use/models/schemas.py
+old_backenddont use/services/__init__.py
+old_backenddont use/services/auth_service.py
+old_backenddont use/services/elastic_client.py
+old_backenddont use/services/incident_service.py
+old_backenddont use/services/index_events.py
+old_backenddont use/services/scheduler.py
+old_backenddont use/services/ueba_runner.py
+old_backenddont use/threat_intel/__init__.py
+old_backenddont use/threat_intel/mitre_mapping.py
+old_backenddont use/utils/__init__.py
+old_backenddont use/utils/file_loader.py
+package-lock.json
+requirements.txt
+run.sh
+run_ingestion.py
+run_ingestion.sh
+scripts/detect_anomalies.py
+scripts/extract_features.py
+scripts/generate_incidents.py
+scripts/generate_playbooks.py
+scripts/maintenance_task.py
+scripts/run_pipeline.sh
+scripts/run_soc_pipeline.py
+scripts/start_ai_engine.sh
+scripts/start_backend.sh
+scripts/test_correlation.py
+setup.py
+simulator/__init__.py
+simulator/attack_scenarios.py
+simulator/enterprise_simulator.py
+simulator/log_generator.py
+tests/test_components.py
 tests/test_correlation.py
 tests/test_detection.py
 tests/test_ingestion.py
 tests/test_playbook.py
+update_sources.py

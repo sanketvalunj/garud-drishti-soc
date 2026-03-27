@@ -31,3 +31,6 @@ apscheduler
 tzlocal
 
 scikit-learn
+requests
+pyod
+tsfresh

@@ -19,7 +19,8 @@ class DecisionExplainer:
             entities = [f"{k}: {v}" for k, v in entity_context.items()]
             summary_lines.append(f"Entity Context: {', '.join(entities)}")
             
-        summary_lines.append(f"Calculated Risk Score: {risk_score}/10")
+        score_denominator = 100 if int(risk_score) > 10 else 10
+        summary_lines.append(f"Calculated Risk Score: {risk_score}/{score_denominator}")
 
         explanation["summary_lines"] = summary_lines
         return explanation
