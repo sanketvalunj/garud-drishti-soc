@@ -50,6 +50,10 @@ class RiskAgent:
             "risk_score": score_0_10,
             "severity": severity,
             "confidence": confidence,
+            "primary_signal": (
+                f"ITMM risk_score={score_0_10}/10, severity={severity}"
+                + (f", threat_type={threat_type}" if threat_type else "")
+            ),
         }
         if threat_type:
             result["threat_type"] = threat_type

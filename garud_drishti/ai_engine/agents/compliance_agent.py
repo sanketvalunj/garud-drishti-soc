@@ -49,5 +49,10 @@ class ComplianceAgent:
 
         return {
             "compliance_score": 7 if violations else 2,
-            "violations": violations
+            "violations": violations,
+            "primary_signal": (
+                "Mapped violations: " + "; ".join(violations)
+                if violations
+                else "No DORA/GDPR policy rule hits from MITRE tactics or technique IDs"
+            ),
         }

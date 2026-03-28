@@ -9,6 +9,7 @@ from garud_drishti.ai_engine.reasoning.threat_reasoner import ThreatReasoner
 from garud_drishti.ai_engine.reasoning.attack_analyzer import AttackAnalyzer
 from garud_drishti.ai_engine.orchestration.agent_orchestrator import AgentOrchestrator
 from garud_drishti.ai_engine.orchestration.policy_guard import PolicyGuard
+from garud_drishti.ai_engine.orchestration.gcar_playbook import build_playbook_object
 from garud_drishti.ai_engine.reasoning.decision_explainer import DecisionExplainer
 from garud_drishti.ai_engine.reasoning.confidence_calibrator import ConfidenceCalibrator
 from garud_drishti.ai_engine.playbook.playbook_generator import PlaybookGenerator
@@ -310,8 +311,9 @@ class SOCMasterAgent:
         # ── Stage 4: Policy Guard ─────────────────────────────────────
         try:
             logger.info(f"[{trace_id}] [{incident_id}] [POLICY_GUARD] Validating")
-            decision = self.policy_guard.validate(decision)
+            decision = self.policy_guard.validate(decision, incident)
             validate(decision, {"decision": str}, "PolicyGuard")
+            orchestration_result["playbook_object"] = build_playbook_object(decision, incident, memory)
         except Exception as e:
             logger.error(f"[{trace_id}] [{incident_id}] PolicyGuard failed: {e}")
             return {"status": "error", "incident_id": incident_id, "stage": "policy_guard", "detail": str(e)}

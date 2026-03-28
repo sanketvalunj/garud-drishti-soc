@@ -40,9 +40,16 @@ class AgentOrchestrator:
         impact = self.impact.assess(incident)
         self.memory.store("impact", impact)
 
-        decision = self.voting.decide(risk, compliance, impact)
+        memory_snapshot = self.memory.dump()
+        decision = self.voting.decide(
+            risk,
+            compliance,
+            impact,
+            incident=incident,
+            agent_memory=memory_snapshot,
+        )
 
         return {
             "decision": decision,
-            "agent_memory": self.memory.dump()
+            "agent_memory": memory_snapshot,
         }

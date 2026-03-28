@@ -21,5 +21,6 @@ class BusinessImpactAgent:
 
         return {
             "business_impact": matched_rule["impact"],
-            "impact_score": matched_rule["score"]
+            "impact_score": matched_rule["score"],
+            "primary_signal": f"Asset mapping → {matched_rule['impact']} (score {matched_rule['score']}/10)",
         }
