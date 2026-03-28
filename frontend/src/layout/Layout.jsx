@@ -39,7 +39,8 @@ const Layout = () => {
                 minHeight: '100vh',
                 backgroundColor: 'transparent',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                overflow: 'hidden'
             }}>
                 {/* Top Header Bar - Glassmorphism */}
                 <header className="h-16 flex items-center justify-between px-6 shrink-0 z-10 relative mx-6 mt-4 rounded-xl"
@@ -115,7 +116,7 @@ const Layout = () => {
                 </header>
 
                 {/* Main page content */}
-                <main className="flex-1 overflow-y-auto w-full relative z-0 custom-scrollbar">
+                <main className="flex-1 overflow-y-auto w-full relative z-0 custom-scrollbar" style={{ overflowX: 'hidden', minWidth: 0 }}>
                     <div className="p-6">
                         <Outlet />
                     </div>

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from pathlib import Path
 import json
-import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -10,6 +9,7 @@ from garud_drishti.ingestion.ingestion_api import IngestionService
 from garud_drishti.detectiontemp import DetectionService
 from garud_drishti.correlation_engine.correlation_service import CorrelationService
 from garud_drishti.ai_engine.llm.model_loader import ModelLoader
+from garud_drishti.ai_engine.playbook.playbook_generator import PlaybookGenerator
 
 router = APIRouter()
 
@@ -36,6 +36,9 @@ _SOC_RESULTS_CACHE: Dict[str, Any] = {
     "mtime": None,
     "by_incident_id": {},
 }
+
+_ANOMALY_EVENTS_PATH = _PROJECT_ROOT / "garud_drishti" / "data" / "processed" / "anomaly_events.json"
+_NORMALIZED_EVENTS_PATH = _PROJECT_ROOT / "garud_drishti" / "data" / "normalized_events" / "normalized_events.json"
 
 
 def _parse_dt(value: Optional[str]) -> Optional[datetime]:
@@ -250,12 +253,28 @@ def _stage_oneliner(stage: str) -> str:
     )
 
 
+def _step_dict_to_title(step: Dict[str, Any]) -> str:
+    title = str(step.get("title") or "").strip()
+    if title:
+        return title
+    purpose = str(step.get("purpose") or "").strip()
+    action = str(step.get("action") or "").strip()
+    phase = str(step.get("phase") or "").strip()
+    parts = [p for p in (phase, action, purpose) if p]
+    return " — ".join(parts) if parts else ""
+
+
 def _normalize_playbook_steps(raw_steps: Any) -> List[Dict[str, Any]]:
     if not isinstance(raw_steps, list):
         return []
     out: List[Dict[str, Any]] = []
     for idx, step in enumerate(raw_steps, start=1):
-        title = str(step).strip() if isinstance(step, str) else str((step or {}).get("title") or "").strip()
+        if isinstance(step, str):
+            title = str(step).strip()
+        elif isinstance(step, dict):
+            title = _step_dict_to_title(step)
+        else:
+            title = ""
         if not title:
             continue
         out.append(
@@ -273,134 +292,137 @@ def _normalize_playbook_steps(raw_steps: Any) -> List[Dict[str, Any]]:
     return out
 
 
-def _extract_first_json_object(text: str) -> str:
-    cleaned = (text or "").strip()
-    cleaned = re.sub(r"^```json\\s*", "", cleaned, flags=re.IGNORECASE)
-    cleaned = re.sub(r"^```\\s*", "", cleaned)
-    cleaned = re.sub(r"```\\s*$", "", cleaned)
-    start = cleaned.find("{")
-    end = cleaned.rfind("}")
-    if start >= 0 and end > start:
-        return cleaned[start : end + 1]
-    raise ValueError("No JSON object found in LLM output.")
-
-
-def _build_playbook_prompt(incident: Dict[str, Any], soc_item: Dict[str, Any], attack_chain: List[Dict[str, Any]]) -> str:
-    ent = incident.get("entity") or {}
-    risk = incident.get("risk_assessment") or {}
-    chain = [_stage_to_title(str((s or {}).get("stage") or "")) for s in (attack_chain or []) if isinstance(s, dict)]
-    if not chain:
-        chain = ["Suspicious Activity"]
-    payload = {
-        "incident_id": incident.get("incident_id"),
-        "entity": {
-            "user_id": ent.get("user_id"),
-            "asset_id": ent.get("asset_id"),
-            "device_id": ent.get("device_id"),
-            "src_ip": ent.get("src_ip"),
-        },
-        "risk": {
-            "risk_score": risk.get("risk_score"),
-            "risk_level": risk.get("risk_level"),
-        },
-        "attack_chain": chain,
-        "threat_analysis": soc_item.get("threat_analysis") if isinstance(soc_item, dict) else {},
+def _threat_analysis_for_playbook(incident: Dict[str, Any], soc_item: Dict[str, Any]) -> Dict[str, Any]:
+    ta = soc_item.get("threat_analysis") if isinstance(soc_item, dict) else None
+    if isinstance(ta, dict) and ta:
+        return ta
+    graph = incident.get("attack_graph") if isinstance(incident.get("attack_graph"), dict) else {}
+    return {
+        "severity": (incident.get("risk_assessment") or {}).get("risk_level"),
+        "risk_score": (incident.get("risk_assessment") or {}).get("risk_score"),
+        "attack_summary": incident.get("attack_summary"),
+        "attack_story": graph.get("attack_story"),
     }
-    return (
-        "You are a SOC playbook generator. Return ONLY valid JSON with keys: "
-        "`playbook_title` (string), `steps` (array of exactly 6 short imperative strings), "
-        "`playbook_report` (concise multi-section SOC report, plain text), "
-        "`automation_candidates` (array of strings).\n"
-        "Do not include markdown fences.\n\n"
-        f"INCIDENT_CONTEXT:\n{json.dumps(payload, indent=2)}"
-    )
 
 
-def _generate_playbook_with_mistral(
+def _load_events_array(path: Path) -> List[Dict[str, Any]]:
+    if not path.exists():
+        return []
+    payload = load_json(str(path))
+    return payload if isinstance(payload, list) else []
+
+
+def _entity_matches_row(entity: Dict[str, Any], row: Dict[str, Any]) -> bool:
+    if not isinstance(row, dict):
+        return False
+    sip = str(entity.get("src_ip") or "").strip()
+    if sip and str(row.get("src_ip") or "").strip() == sip:
+        return True
+    sid = str(entity.get("session_id") or "").strip()
+    if sid and str(row.get("session_id") or "").strip() == sid:
+        return True
+    uid = str(entity.get("user_id") or "").strip()
+    if uid:
+        ru = str(row.get("resolved_user") or row.get("user") or "").strip()
+        if ru and ru == uid:
+            return True
+    return False
+
+
+def _playbook_context_from_files(incident: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    entity = incident.get("entity") if isinstance(incident.get("entity"), dict) else {}
+    anomalies = [r for r in _load_events_array(_ANOMALY_EVENTS_PATH) if _entity_matches_row(entity, r)]
+    events = [r for r in _load_events_array(_NORMALIZED_EVENTS_PATH) if _entity_matches_row(entity, r)]
+    return anomalies, events
+
+
+def _playbook_context_from_attack_graph(incident: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """When bulk JSON files have no rows for this entity, use correlated attack_graph.events."""
+    ent = incident.get("entity") if isinstance(incident.get("entity"), dict) else {}
+    raw = ((incident.get("attack_graph") or {}).get("events") or []) if isinstance(incident.get("attack_graph"), dict) else []
+    if not isinstance(raw, list):
+        return [], []
+    anomalies: List[Dict[str, Any]] = []
+    events: List[Dict[str, Any]] = []
+    for e in raw:
+        if not isinstance(e, dict):
+            continue
+        ts = e.get("timestamp")
+        code = e.get("event_code") or e.get("raw_event_type")
+        anomalies.append(
+            {
+                "timestamp": ts,
+                "event_type": code,
+                "event_category": "unknown",
+                "severity": e.get("severity"),
+                "risk_score": e.get("anomaly_score"),
+                "analysis": e.get("risk_flag"),
+                "src_ip": ent.get("src_ip"),
+            }
+        )
+        events.append(
+            {
+                "timestamp": ts,
+                "event_type": code,
+                "event_category": "unknown",
+                "severity": e.get("severity"),
+                "session_id": ent.get("session_id"),
+                "user": ent.get("user_id"),
+                "src_ip": ent.get("src_ip"),
+                "details": {
+                    "source_system": e.get("source_system"),
+                    "event_outcome": e.get("event_outcome"),
+                    "anomaly_score": e.get("anomaly_score"),
+                },
+            }
+        )
+    return anomalies, events
+
+
+def _generate_playbook_with_playbook_generator(
     incident: Dict[str, Any],
     soc_item: Dict[str, Any],
-    attack_chain: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
-    loader = ModelLoader(model_name="mistral")
-    prompt = _build_playbook_prompt(incident, soc_item, attack_chain)
-    try:
-        llm_raw = loader.generate(prompt)
-        payload = json.loads(_extract_first_json_object(llm_raw))
-        if not isinstance(payload, dict):
-            raise ValueError("Invalid playbook payload from LLM.")
-        payload.setdefault("playbook_title", f"SOC Incident Response Playbook: {incident.get('incident_id', 'INC')}")
-        payload.setdefault("steps", [])
-        payload.setdefault("playbook_report", "")
-        payload.setdefault("automation_candidates", [])
-        return payload
-    except Exception:
-        # Relaxed fallback: still generated by Mistral, but tolerant to non-JSON outputs.
-        incident_id = str(incident.get("incident_id") or "INC")
-        plain_prompt = (
-            "Generate exactly 6 concise SOC response steps for this incident. "
-            "Return plain text with one step per line and no numbering.\n\n"
-            f"{json.dumps({'incident_id': incident_id, 'threat_analysis': soc_item.get('threat_analysis', {}), 'attack_chain': attack_chain}, indent=2)}"
-        )
-        plain_steps_raw = loader.generate(plain_prompt)
-        raw_lines = [
-            x.strip("- ").strip()
-            for x in (plain_steps_raw or "").splitlines()
-            if "llm unavailable" not in x.lower()
-        ]
-        steps = [x for x in raw_lines if x][:6]
-        if len(steps) < 6:
-            soc_steps = ((soc_item.get("response") if isinstance(soc_item, dict) else {}) or {}).get("steps") or []
-            for s in soc_steps:
-                if len(steps) >= 6:
-                    break
-                text = str(s).strip()
-                if text and text not in steps:
-                    steps.append(text)
-        if len(steps) < 6:
-            enrich_prompt = (
-                "Expand these SOC playbook steps to exactly 6 distinct steps. "
-                "Return one step per line only.\n"
-                f"Current steps: {json.dumps(steps, ensure_ascii=True)}\n"
-                f"Incident context: {json.dumps({'incident_id': incident_id, 'attack_chain': attack_chain}, ensure_ascii=True)}"
-            )
-            enriched_raw = loader.generate(enrich_prompt)
-            enriched_lines = [
-                x.strip("- ").strip()
-                for x in (enriched_raw or "").splitlines()
-                if "llm unavailable" not in x.lower()
-            ]
-            enriched = [x for x in enriched_lines if x]
-            if len(enriched) >= len(steps):
-                steps = enriched[:6]
-        if len(steps) < 6:
-            stage_titles = [
-                _stage_to_title(str((s or {}).get("stage") or "Activity"))
-                for s in (attack_chain or [])
-                if isinstance(s, dict)
-            ]
-            for st in stage_titles:
-                if len(steps) >= 6:
-                    break
-                text = f"Contain and validate controls for stage {st} in {incident_id}"
-                if text not in steps:
-                    steps.append(text)
-        if len(steps) < 6:
-            existing = list(steps)
-            while len(steps) < 6 and existing:
-                steps.append(existing[len(steps) % len(existing)])
+    """
+    Single-incident LLM path using PlaybookGenerator (template + Ollama via ModelLoader).
+    Called only from POST /correlated-incidents/{id}/generate-playbook (user-triggered).
+    """
+    anomalies, events = _playbook_context_from_files(incident)
+    if len(anomalies) < 2 or len(events) < 2:
+        ag_a, ag_e = _playbook_context_from_attack_graph(incident)
+        if len(anomalies) < 2:
+            anomalies = ag_a
+        if len(events) < 2:
+            events = ag_e
 
-        report_prompt = (
-            "Write a concise SOC incident response report in plain text using these steps.\n"
-            f"Incident: {incident_id}\n"
-            f"Steps: {json.dumps(steps, ensure_ascii=True)}"
-        )
-        report_text = (loader.generate(report_prompt) or "").strip()
-        return {
-            "playbook_title": f"SOC Incident Response Playbook: {incident_id}",
-            "steps": steps,
-            "playbook_report": report_text,
-            "automation_candidates": [],
-        }
+    threat = _threat_analysis_for_playbook(incident, soc_item if isinstance(soc_item, dict) else {})
+    generator = PlaybookGenerator()
+    raw = generator.generate_for_incident(incident, threat, anomalies, events)
+
+    flat_steps: List[str] = []
+    if isinstance(raw.get("steps_flat"), list) and raw.get("steps_flat"):
+        flat_steps = [str(s).strip() for s in raw["steps_flat"] if str(s).strip()]
+    else:
+        steps_raw = raw.get("steps") if isinstance(raw.get("steps"), list) else []
+        for s in steps_raw:
+            if isinstance(s, str) and s.strip():
+                flat_steps.append(s.strip())
+            elif isinstance(s, dict):
+                t = _step_dict_to_title(s)
+                if t:
+                    flat_steps.append(t)
+
+    return {
+        "playbook_title": str(raw.get("playbook_title") or f"SOC Incident Response Playbook: {incident.get('incident_id', 'INC')}"),
+        "steps": flat_steps,
+        "playbook_report": str(raw.get("playbook_report") or ""),
+        "automation_candidates": raw.get("automation_candidates") if isinstance(raw.get("automation_candidates"), list) else [],
+        "pdf_path": str(raw.get("pdf_path") or ""),
+        "incident_overview": str(raw.get("incident_overview") or ""),
+        "severity_label": str(raw.get("severity_label") or ""),
+        "reason": str(raw.get("reason") or ""),
+        "key_indicators": raw.get("key_indicators") if isinstance(raw.get("key_indicators"), list) else [],
+    }
 
 
 def _persist_playbook_record(incident_id: str, payload: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
@@ -412,7 +434,12 @@ def _persist_playbook_record(incident_id: str, payload: Dict[str, Any]) -> Dict[
         "steps": payload.get("steps") if isinstance(payload.get("steps"), list) else [],
         "playbook_report": str(payload.get("playbook_report") or ""),
         "automation_candidates": payload.get("automation_candidates") if isinstance(payload.get("automation_candidates"), list) else [],
-        "generated_by": "mistral",
+        "pdf_path": str(payload.get("pdf_path") or ""),
+        "incident_overview": str(payload.get("incident_overview") or ""),
+        "severity_label": str(payload.get("severity_label") or ""),
+        "reason": str(payload.get("reason") or ""),
+        "key_indicators": payload.get("key_indicators") if isinstance(payload.get("key_indicators"), list) else [],
+        "generated_by": "playbook_generator",
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -432,7 +459,9 @@ def _persist_playbook_record(incident_id: str, payload: Dict[str, Any]) -> Dict[
 
 def _short_narrative_fallback(incident: Dict[str, Any]) -> str:
     # Keep it “short format” for the UI — 1–2 sentences.
-    story = str((incident.get("attack_graph") or {}).get("attack_story") or "").strip()
+    story = str(incident.get("attack_story") or "").strip()
+    if not story:
+        story = str((incident.get("attack_graph") or {}).get("attack_story") or "").strip()
     if story:
         return story if len(story) <= 260 else story[:257].rstrip() + "..."
     # If missing, construct a minimal narrative.
@@ -703,6 +732,10 @@ def get_correlated_incident_detail(incident_id: str):
             "steps": pb_steps,
             "report": pb_report,
             "generated": pb_generated,
+            "incident_overview": str(pb.get("incident_overview") or ""),
+            "key_indicators": pb.get("key_indicators") if isinstance(pb.get("key_indicators"), list) else [],
+            "reason": str(pb.get("reason") or ""),
+            "severity_label": str(pb.get("severity_label") or ""),
         },
         "graphNodes": graph_nodes,
         "graphEdges": graph_edges,
@@ -718,13 +751,10 @@ def generate_correlated_incident_playbook(incident_id: str):
 
     soc_by_id = _load_soc_results_by_incident_id()
     soc_item = soc_by_id.get(incident_id) or {}
-    soc_attack = soc_item.get("attack_analysis") if isinstance(soc_item, dict) else {}
-    attack_chain = soc_attack.get("attack_chain") if isinstance(soc_attack, dict) else []
 
-    generated = _generate_playbook_with_mistral(
+    generated = _generate_playbook_with_playbook_generator(
         inc,
         soc_item if isinstance(soc_item, dict) else {},
-        attack_chain if isinstance(attack_chain, list) else [],
     )
     playbooks_by_id = _persist_playbook_record(incident_id, generated)
     pb = playbooks_by_id.get(incident_id) or generated
@@ -734,12 +764,20 @@ def generate_correlated_incident_playbook(incident_id: str):
     return {
         "incident_id": incident_id,
         "generated": True,
+        "pdf_path": str(pb.get("pdf_path") or generated.get("pdf_path") or ""),
+        "incident_overview": str(pb.get("incident_overview") or generated.get("incident_overview") or ""),
         "playbook": {
             "title": str(pb.get("playbook_title") or "SOC Incident Response Playbook"),
             "generatedAt": datetime.now(timezone.utc).strftime("%H:%M:%S"),
             "steps": pb_steps,
             "report": pb_report,
             "generated": bool(pb_steps or pb_report),
+            "incident_overview": str(pb.get("incident_overview") or generated.get("incident_overview") or ""),
+            "key_indicators": pb.get("key_indicators")
+            if isinstance(pb.get("key_indicators"), list)
+            else (generated.get("key_indicators") if isinstance(generated.get("key_indicators"), list) else []),
+            "reason": str(pb.get("reason") or generated.get("reason") or ""),
+            "severity_label": str(pb.get("severity_label") or generated.get("severity_label") or ""),
         },
     }
 

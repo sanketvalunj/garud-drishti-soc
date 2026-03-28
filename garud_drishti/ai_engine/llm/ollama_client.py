@@ -1,3 +1,4 @@
+import os
 import requests
 import time
 import socket
@@ -5,12 +6,12 @@ from typing import Optional, Dict, Any
 
 
 # ---------------- CONFIG ----------------
-OLLAMA_URL = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "mistral"
-# Fail fast when Ollama isn't reachable.
-CONNECT_TIMEOUT_S = 0.5
-READ_TIMEOUT_S = 8
-MAX_RETRIES = 0
+OLLAMA_URL = os.getenv("OLLAMA_GENERATE_URL", "http://localhost:11434/api/generate")
+DEFAULT_MODEL = os.getenv("OLLAMA_MODEL", "mistral")
+# Fail fast when Ollama isn't reachable; allow long enough read for large JSON playbooks on CPU.
+CONNECT_TIMEOUT_S = float(os.getenv("OLLAMA_CONNECT_TIMEOUT", "2"))
+READ_TIMEOUT_S = float(os.getenv("OLLAMA_READ_TIMEOUT", "180"))
+MAX_RETRIES = int(os.getenv("OLLAMA_RETRIES", "0"))
 
 
 # ---------------- INTERNAL CALL ----------------

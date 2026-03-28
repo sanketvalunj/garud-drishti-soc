@@ -1,10 +1,8 @@
 You are a senior cyber incident response expert for a banking SOC.
 
-Generate a full SOC Incident Response Playbook report for the incident provided below.
+You are given ONE correlated incident with real telemetry samples. Every field you output must be grounded in that input. Do not invent user IDs, IPs, hostnames, or URLs that are not present in the JSON. If something is unknown, write "unknown" or describe the gap generically.
 
-OUTPUT RULES
-- You MUST output ONLY valid JSON. No markdown fences and no extra text.
-- The playbook_report string MUST follow this exact section structure and headings (including exact capitalization/spelling):
+Generate a full SOC Incident Response Playbook as JSON. The playbook_report string MUST still follow this section structure and headings (for human readers):
 
 SOC Incident Response Playbook: <PLAYBOOK TITLE>
 
@@ -37,9 +35,15 @@ AUTOMATION OPPORTUNITIES
 ANALYST NOTES
 <paragraph>
 
-- Keep content banking-SOC relevant and defensive only.
-- Do not invent unknown identifiers. If a field is missing, use a generic safe placeholder like "unknown".
-- steps must be structured actions for automation: action must be one of ["lock_account","isolate_endpoint","block_ip"].
+RULES
+- Output ONLY valid JSON. No markdown fences. No text before or after the JSON object.
+- steps: each item MUST have "phase", "action", and "purpose".
+- phase MUST be one of: INVESTIGATION_STEPS, CONTAINMENT_ACTIONS, ERADICATION_ACTIONS, RECOVERY_STEPS.
+- action MUST be one of: lock_account, isolate_endpoint, block_ip (pick the best fit per step).
+- Include at least 3 INVESTIGATION_STEPS, at least 2 CONTAINMENT_ACTIONS, at least 2 ERADICATION_ACTIONS, at least 2 RECOVERY_STEPS, each purpose tied to facts from the incident or samples.
+- key_indicators: short bullets citing observable facts (IPs, users, session ids, event types, severities, MITRE ids) from the input only.
+- analyst_notes: operational guidance for this specific incident (MTTC, escalation, evidence preservation) using the provided risk and window.
+- automation_candidates: concrete strings (e.g. SOAR rules) suggested by the observed patterns, not generic filler.
 
 INPUT JSON
 ----------------
@@ -56,19 +60,20 @@ NORMALIZED_EVENTS_SAMPLE_JSON:
 {events_json}
 ----------------
 
-RETURN JSON SCHEMA (MUST MATCH EXACT KEYS)
+RETURN JSON (EXACT KEYS)
 {
   "playbook_title": "string",
   "severity_label": "string",
   "reason": "string",
-  "key_indicators": ["string", "..."],
-  "automation_candidates": ["lock_account","isolate_endpoint","block_ip"],
+  "key_indicators": ["string"],
+  "automation_candidates": ["string"],
   "steps": [
     {
-      "phase": "CONTAINMENT_ACTIONS"|"INVESTIGATION_STEPS"|"ERADICATION_ACTIONS"|"RECOVERY_STEPS",
-      "action": "lock_account"|"isolate_endpoint"|"block_ip",
+      "phase": "INVESTIGATION_STEPS",
+      "action": "lock_account",
       "purpose": "string"
     }
   ],
-  "playbook_report": "string"
+  "playbook_report": "string",
+  "analyst_notes": "string"
 }

@@ -259,61 +259,106 @@ const IncidentDetail = () => {
     return ''
   })()
 
-  const buildPdfText = () => {
-    const title = incident?.playbook?.title || `SOC Incident Response Playbook: ${incident?.id || id}`
-    const report = (incident?.playbook?.report || '').trim()
+  const buildPdfText = (inc) => {
+    if (!inc) return ''
+    const title = inc?.playbook?.title || `SOC Incident Response Playbook: ${inc?.id || id}`
+    const report = String(inc?.playbook?.report || inc?.playbook?.playbook_report || '').trim()
     if (report) return report
 
-    // Dynamic fallback assembled from live incident/playbook fields only.
-    const steps = (incident?.playbook?.steps || [])
-      .slice(0, 6)
+    const overview = String(
+      inc?.narrative ||
+        inc?.summary ||
+        inc?.playbook?.incident_overview ||
+        ''
+    ).trim()
+
+    let stepLines = (inc?.playbook?.steps || [])
+      .slice(0, 8)
       .map((s, idx) => `${idx + 1}. ${(s?.title || s?.description || s?.action || '').toString().trim()}`)
       .filter(Boolean)
-    const chronology = (incident?.timeline || [])
-      .slice(0, 6)
-      .map((e, idx) => `${idx + 1}. [${e?.timestamp || ''}] ${(e?.eventType || '').toString()}: ${(e?.description || '').toString()}`.trim())
+    if (!stepLines.length && Array.isArray(inc?.playbookBrief)) {
+      stepLines = inc.playbookBrief
+        .slice(0, 8)
+        .map((s, idx) => `${idx + 1}. ${String(s || '').trim()}`)
+        .filter(Boolean)
+    }
+
+    let chronology = (inc?.timeline || [])
+      .slice(0, 8)
+      .map((e, idx) => `${idx + 1}. [${e?.timestamp || ''}] ${(e?.eventType || e?.event_type || '').toString()}: ${(e?.description || '').toString()}`.trim())
       .filter(Boolean)
-    const mitre = (incident?.mitreTechniques || [])
-      .slice(0, 5)
+    if (!chronology.length && Array.isArray(inc?.playbook?.key_indicators)) {
+      chronology = inc.playbook.key_indicators
+        .slice(0, 8)
+        .map((k, idx) => `${idx + 1}. [indicator] ${String(k || '').trim()}`)
+        .filter(Boolean)
+    }
+
+    let mitreLines = (inc?.mitreTechniques || [])
+      .slice(0, 6)
       .map(t => `${t.id} ${t.name || ''}`.trim())
-    const entities = [
-      ...(incident?.entities?.users || []).map(u => `User: ${u}`),
-      ...(incident?.entities?.servers || []).map(s => `Asset: ${s}`),
-      ...(incident?.entities?.ips || []).map(ip => `IP: ${ip}`)
-    ]
+      .filter(Boolean)
+    if (!mitreLines.length && (inc?.mitreId || inc?.mitreTactic)) {
+      mitreLines = [`${inc.mitreId || ''} ${inc.mitreTactic || ''}`.trim()].filter(Boolean)
+    }
+
+    let entityLines = []
+    const ent = inc?.entities
+    if (ent && typeof ent === 'object' && !Array.isArray(ent)) {
+      entityLines = [
+        ...(ent.users || []).map(u => `User: ${u}`),
+        ...(ent.servers || []).map(s => `Asset: ${s}`),
+        ...(ent.ips || []).map(ip => `IP: ${ip}`),
+      ].filter(Boolean)
+    } else if (Array.isArray(ent)) {
+      entityLines = ent.map(e => `- ${e}`)
+    }
+
+    const severityLabel = String(
+      inc?.playbook?.severity_label ||
+        inc?.agentScores?.finalDecision ||
+        inc?.severity ||
+        ''
+    ).trim()
+
     const lines = [
       title,
       '',
       'INCIDENT OVERVIEW',
-      (incident?.narrative || '').toString(),
+      overview || '(No overview — open incident detail or regenerate playbook.)',
       '',
       'RISK CONTEXT',
-      `Severity: ${(incident?.agentScores?.finalDecision || incident?.severity || '').toString().toUpperCase()}`,
-      `Fidelity: ${(incident?.fidelityScore ?? 0).toFixed(2)}`,
+      `Severity: ${severityLabel ? severityLabel.toUpperCase() : '(unknown)'}`,
+      `Fidelity: ${Number.isFinite(inc?.fidelityScore) ? inc.fidelityScore.toFixed(2) : '0.00'}`,
       '',
       'AFFECTED ENTITIES',
-      ...(entities.length ? entities.map(x => `- ${x}`) : ['- unavailable']),
+      ...(entityLines.length ? entityLines.map(x => (x.startsWith('-') ? x : `- ${x}`)) : ['- (see incident record)']),
       '',
       'MITRE CONTEXT',
-      ...(mitre.length ? mitre.map(x => `- ${x}`) : ['- unavailable']),
+      ...(mitreLines.length ? mitreLines.map(x => `- ${x}`) : ['- (none in current view)']),
       '',
       'INCIDENT CHRONOLOGY',
-      ...(chronology.length ? chronology : ['- unavailable']),
+      ...(chronology.length ? chronology : ['- (no timeline in current view)']),
       '',
-      'RESPONSE PLAYBOOK (TOP 6)',
-      ...(steps.length ? steps : ['- unavailable']),
+      'RESPONSE PLAYBOOK (TOP STEPS)',
+      ...(stepLines.length ? stepLines : ['- (generate playbook first)']),
     ]
+    if (inc?.playbook?.reason) {
+      lines.push('', 'RISK REASON (from playbook)', String(inc.playbook.reason))
+    }
     return lines.join('\n')
   }
 
-  const downloadPlaybookPdf = () => {
+  const downloadPlaybookPdf = (inc) => {
+    const row = inc ?? incident
+    if (!row) return
     const doc = new jsPDF({ unit: 'pt', format: 'a4' })
     const margin = 48
     const pageW = doc.internal.pageSize.getWidth()
     const pageH = doc.internal.pageSize.getHeight()
     const maxW = pageW - margin * 2
 
-    const text = buildPdfText()
+    const text = buildPdfText(row)
     const lines = doc.splitTextToSize(text, maxW)
 
     doc.setFont('times', 'normal')
@@ -330,7 +375,7 @@ const IncidentDetail = () => {
       y += lineH
     }
 
-    const safeId = (incident?.id || id || 'incident').replace(/[^a-zA-Z0-9_-]/g, '_')
+    const safeId = (row?.id || id || 'incident').replace(/[^a-zA-Z0-9_-]/g, '_')
     doc.save(`playbook_${safeId}.pdf`)
   }
 
@@ -507,18 +552,6 @@ const IncidentDetail = () => {
         setLoading(false)
       })
 
-    api.getCorrelatedIncidentNarrative(id)
-      .then((res) => {
-        if (cancelled) return
-        if (res?.narrative) {
-          setIncident((prev) => ({ ...prev, narrative: res.narrative }))
-        }
-        if (res?.model) {
-          setLlmModel(String(res.model))
-        }
-      })
-      .catch(() => { })
-
     return () => { cancelled = true }
   }, [id])
 
@@ -577,7 +610,7 @@ const IncidentDetail = () => {
 
       setIncident((prev) => {
         if (!prev) return prev
-        return {
+        const merged = {
           ...prev,
           playbook: {
             ...(prev.playbook || {}),
@@ -585,10 +618,12 @@ const IncidentDetail = () => {
             generated: true,
           },
         }
+        queueMicrotask(() => downloadPlaybookPdf(merged))
+        return merged
       })
       setStepStatuses(Object.fromEntries(generatedSteps.map((s, idx) => [s?.id || idx + 1, 'pending'])))
 
-      setToastMessage('Playbook generated successfully. PDF download is now available.')
+      setToastMessage('Playbook generated and PDF download started.')
       setShowToast(true)
       setTimeout(() => setShowToast(false), 3500)
     } catch (err) {
@@ -704,7 +739,11 @@ const IncidentDetail = () => {
     boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
     borderRadius: '12px',
     padding: '24px',
-    marginBottom: '16px'
+    marginBottom: '16px',
+    width: '100%',
+    boxSizing: 'border-box',
+    minWidth: 0,
+    overflow: 'hidden'
   }
 
   const completedCount = incident.killChainStage - 1
@@ -719,12 +758,19 @@ const IncidentDetail = () => {
   const mitreTechniques = Array.isArray(incident?.mitreTechniques) ? incident.mitreTechniques : []
   const visibleMitreTechniques = showAllMitreTechniques ? mitreTechniques : mitreTechniques.slice(0, 4)
   const hasMoreMitre = mitreTechniques.length > 4
+  const displayId = incident.incident_ref 
+    || incident.id?.substring(0, 12).toUpperCase()
+    || 'INC-2091'
 
   return (
     <div style={{
       padding: '0px',
       minHeight: '100vh',
-      backgroundColor: 'transparent'
+      backgroundColor: 'transparent',
+      width: '100%',
+      minWidth: 0,
+      boxSizing: 'border-box',
+      overflowX: 'hidden'
     }}>
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -734,10 +780,13 @@ const IncidentDetail = () => {
           background: 'var(--surface-color)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.1)',
+          border: '1px solid var(--glass-border)',
           boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
           borderRadius: '12px',
-          padding: '24px'
+          padding: '24px',
+          width: '100%',
+          minWidth: 0,
+          boxSizing: 'border-box'
         }}
       >
         {/* TOP BAR */}
@@ -749,9 +798,12 @@ const IncidentDetail = () => {
           gap: '12px',
           borderBottom: '1px solid var(--glass-border)',
           paddingBottom: '16px',
-          marginBottom: '20px'
+          marginBottom: '20px',
+          width: '100%',
+          boxSizing: 'border-box',
+          minWidth: 0
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', minWidth: 0, flex: 1 }}>
             <button
               onClick={handleBack}
               style={{
@@ -771,10 +823,10 @@ const IncidentDetail = () => {
               <ArrowLeft size={16} />
             </button>
 
-            <div style={{ width: '1px', height: '20px', background: 'var(--glass-border)' }} />
+            <div style={{ width: '1px', height: '20px', background: 'var(--glass-border)', flexShrink: 0 }} />
 
-            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-color)' }}>
-              {incident.id}
+            <div style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 700, color: '#00AEEF', whiteSpace: 'nowrap' }}>
+              {displayId}
             </div>
 
             <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-color)' }}>
@@ -812,7 +864,7 @@ const IncidentDetail = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0 }}>
             {/* Role-based escalation: Tier 1 → Tier 2, Tier 2 → Tier 3, Tier 3 → hidden */}
             {user?.role !== 'tier3' && (
               incidentStatus === 'escalated' ? (
@@ -909,8 +961,8 @@ const IncidentDetail = () => {
           </div>
         </div>
 
-        {/* TWO COLUMN GRID */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '20px', alignItems: 'start' }}>
+        {/* TWO COLUMN LAYOUT */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 360px', gap: '24px', width: '100%', boxSizing: 'border-box', minWidth: 0, overflow: 'hidden' }}>
           {/* LEFT COLUMN */}
           <motion.div
             initial={{ opacity: 0, x: -16 }}
@@ -919,7 +971,11 @@ const IncidentDetail = () => {
             style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '16px'
+              gap: '16px',
+              width: '100%',
+              minWidth: 0,
+              boxSizing: 'border-box',
+              overflow: 'hidden'
             }}
           >
             {/* AI Narrative */}
@@ -953,7 +1009,7 @@ const IncidentDetail = () => {
                 <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)' }}>2,847 tokens</span>
               </div>
 
-              <div style={{ fontSize: '14px', lineHeight: 1.8, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+              <div style={{ fontSize: '14px', lineHeight: 1.8, color: 'var(--text-secondary)', fontStyle: 'italic', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
                 {displayedNarrative}
                 {displayedNarrative.length < fullNarrative.length && (
                   <span style={{
@@ -973,12 +1029,12 @@ const IncidentDetail = () => {
                 <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Kill Chain Progression</div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', overflowX: 'auto', paddingBottom: '4px', width: '100%' }}>
                 {incident.killChainStages.map((stage, idx) => {
                   const state = idx < completedCount ? 'completed' : idx === completedCount ? 'current' : 'future'
 
                   return (
-                    <div key={stage} style={{ display: 'flex', alignItems: 'flex-start', flex: idx < incident.killChainStages.length - 1 ? 1 : 'none' }}>
+                    <div key={stage} style={{ display: 'flex', alignItems: 'flex-start', flexShrink: 1, minWidth: 0, flex: idx < incident.killChainStages.length - 1 ? 1 : 'none' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         {state === 'completed' ? (
                           <div style={{
@@ -1006,7 +1062,7 @@ const IncidentDetail = () => {
                         )}
                         <div style={{
                           fontSize: '10px', textAlign: 'center', marginTop: '8px',
-                          maxWidth: '64px', lineHeight: 1.3,
+                          maxWidth: '60px', wordBreak: 'break-word', lineHeight: 1.3,
                           color: state === 'future' ? 'var(--text-muted)' : 'var(--text-secondary)'
                         }}>
                           {stage}
@@ -1076,7 +1132,7 @@ const IncidentDetail = () => {
                         </div>
                         <div style={{ fontSize: '11px', color: '#00AEEF' }}>{event.entity}</div>
                       </div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
                         {event.description}
                       </div>
                     </div>
@@ -1086,24 +1142,30 @@ const IncidentDetail = () => {
             </div>
 
             {/* Attack Correlation Graph */}
-            <div style={{
-              background: 'var(--surface-color)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: '12px',
-              padding: '20px',
-              marginBottom: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              flex: 1
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+              style={{
+                background: 'var(--surface-color)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '12px',
+                padding: '24px',
+                marginBottom: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                boxSizing: 'border-box'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <Network size={15} color="#00AEEF" />
                   <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Attack Graph Reconstruction</div>
                 </div>
-                <div style={{ display: 'flex', gap: '16px' }}>
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#B91C1C' }} /> Compromised
                   </div>
@@ -1119,7 +1181,7 @@ const IncidentDetail = () => {
                 </div>
               </div>
 
-              <div style={{ flex: 1, minHeight: 420, width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--glass-border)', background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)', position: 'relative' }}>
+              <div style={{ flex: 1, height: '300px', width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--glass-border)', background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)', position: 'relative', boxSizing: 'border-box' }}>
                 {/* Entry Point label */}
                 <div style={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: 'var(--text-muted)', zIndex: 10, pointerEvents: 'none', letterSpacing: '0.05em' }}>Entry Point ↓</div>
                 {/* Target Systems label */}
@@ -1147,7 +1209,7 @@ const IncidentDetail = () => {
                   <Controls showInteractive={false} />
                 </ReactFlow>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* RIGHT COLUMN */}
@@ -1155,6 +1217,7 @@ const IncidentDetail = () => {
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.15 }}
+            style={{ width: '360px', minWidth: '360px', maxWidth: '360px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box' }}
           >
             {/* Fidelity Score */}
             <div style={{
@@ -1367,11 +1430,11 @@ const IncidentDetail = () => {
                   background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                   border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '12px 14px', marginBottom: '8px'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', wordBreak: 'break-word' }}>
+                    <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: '13px', fontWeight: 700, color: '#00AEEF' }}>{tech.id}</div>
-                      <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-color)' }}>{tech.name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{tech.tactic}</div>
+                      <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-color)', wordBreak: 'break-word', overflowWrap: 'break-word' }}>{tech.name}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', wordBreak: 'break-word', overflowWrap: 'break-word' }}>{tech.tactic}</div>
                     </div>
                     <div style={{
                       background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.15)',
@@ -1473,7 +1536,7 @@ const IncidentDetail = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              style={{ marginBottom: 20, overflow: 'hidden' }}
+              style={{ marginBottom: 20, overflow: 'hidden', width: '100%', minWidth: 0 }}
             >
               <div style={{
                 background: '#0A0F1A', border: '1px solid rgba(0,174,239,0.2)',
@@ -1552,8 +1615,8 @@ const IncidentDetail = () => {
         </AnimatePresence>
 
         {/* PLAYBOOK PANEL - Full Width */}
-        <div ref={playbookRef} style={{ ...glassStyle, borderLeft: '3px solid rgba(0,174,239,0.3)', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div ref={playbookRef} style={{ ...glassStyle, borderLeft: '3px solid rgba(0,174,239,0.3)', marginBottom: '20px', boxSizing: 'border-box', width: '100%', marginTop: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <BookOpen size={15} color="#00AEEF" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -1591,7 +1654,7 @@ const IncidentDetail = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setShowEscalateModal(true)}
                 style={{
@@ -1641,7 +1704,7 @@ const IncidentDetail = () => {
                 }}
               >
                 {isGeneratingPlaybook ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                {isGeneratingPlaybook ? 'Generating...' : hasGeneratedPlaybook ? 'Regenerate' : 'Generate Playbook'}
+                {isGeneratingPlaybook ? 'Generating...' : hasGeneratedPlaybook ? 'Regenerate & download' : 'Generate & download PDF'}
               </button>
 
               <button
@@ -1747,7 +1810,10 @@ const IncidentDetail = () => {
                 background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)',
                 border: '1px solid var(--glass-border)',
                 borderRadius: '10px',
-                padding: '12px 14px'
+                padding: '12px 14px',
+                width: '100%',
+                boxSizing: 'border-box',
+                minWidth: 0
               }}>
                 {displayPlaybookSteps.slice(0, 6).map((step, idx) => (
                   <div
@@ -1756,7 +1822,12 @@ const IncidentDetail = () => {
                       fontSize: 12,
                       color: 'var(--text-secondary)',
                       lineHeight: 1.6,
-                      marginBottom: idx < Math.min(5, displayPlaybookSteps.length - 1) ? 6 : 0
+                      marginBottom: idx < Math.min(5, displayPlaybookSteps.length - 1) ? 6 : 0,
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      minWidth: 0,
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word'
                     }}
                   >
                     {idx + 1}. {(step?.title || step?.description || step?.action || '').toString()}
@@ -1775,7 +1846,7 @@ const IncidentDetail = () => {
                 fontSize: 12,
                 lineHeight: 1.5,
               }}>
-                Showing default response steps. Generate Playbook to create an AI-tailored plan and enable PDF export.
+                Showing default response steps. Use Generate & download PDF to run the LLM once for this incident.
               </div>
             )}
           </div>
@@ -2112,7 +2183,7 @@ const IncidentDetail = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <AlertTriangle size={16} color="#D97706" />
                   <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-color)' }}>
-                    Escalate Incident
+                    Escalate to TIER {user?.role === 'tier1' ? '2' : '3'}
                   </div>
                 </div>
                 <button onClick={() => setShowEscalateModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
@@ -2123,41 +2194,6 @@ const IncidentDetail = () => {
               <div style={{ padding: '24px' }}>
                 <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
                   Escalating <span style={{ color: 'var(--text-color)', fontWeight: 600 }}>{incident.id}</span> · {incident.type} · Fidelity: {incident.fidelityScore}
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px' }}>Escalate to</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {SOC_ESCALATION_TIERS.map((tier) => {
-                      const isSelected = selectedSocTier === tier.id
-                      return (
-                        <button
-                          key={tier.id}
-                          onClick={() => setSelectedSocTier(tier.id)}
-                          style={{
-                            width: '100%',
-                            textAlign: 'left',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '12px',
-                            padding: '10px 14px',
-                            borderRadius: '8px',
-                            border: '1px solid',
-                            borderColor: isSelected ? 'rgba(217,119,6,0.3)' : 'var(--glass-border)',
-                            background: isSelected ? 'rgba(217,119,6,0.05)' : 'transparent',
-                            cursor: 'pointer',
-                            color: 'var(--text-color)',
-                            fontSize: '13px',
-                            fontWeight: isSelected ? 600 : 500,
-                          }}
-                        >
-                          <span>{tier.label}</span>
-                          {isSelected ? <Check size={14} color="#D97706" /> : <ArrowRight size={14} color="var(--text-muted)" />}
-                        </button>
-                      )
-                    })}
-                  </div>
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>

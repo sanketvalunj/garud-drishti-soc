@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from datetime import datetime
+from datetime import datetime, timezone
 
 from garud_drishti.backend.utils.json_helpers import load_json
 
@@ -102,15 +102,41 @@ def generate_live():
 
     for inc, risk in enriched:
         try:
-            pb = generator.generate(inc, risk)
-        except Exception:
+            ent = inc.get("entity") if isinstance(inc.get("entity"), dict) else {}
+            ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            sip = str(ent.get("src_ip") or "").strip()
+            uid = str(ent.get("user_id") or ent.get("entity_key") or "").strip()
+            row_a = {
+                "timestamp": ts,
+                "event_type": "ingest.correlation",
+                "event_category": "detection",
+                "severity": str(inc.get("severity") or "medium"),
+                "src_ip": sip or None,
+                "resolved_user": uid or None,
+                "session_id": ent.get("session_id"),
+                "analysis": f"Ingest pipeline batch; context score={risk.get('score')}.",
+            }
+            row_b = {
+                **row_a,
+                "event_type": "ingest.summary",
+                "analysis": "Secondary sample row for minimum playbook context.",
+            }
+            threat_ctx = {"risk_score": risk.get("score"), "batch_pipeline": True}
+            pb_full = generator.generate_for_incident(
+                inc, threat_ctx, [row_a, row_b], [row_a, row_b], write_pdf=False
+            )
             pb = {
-                "steps": [
-                    "Review authentication logs",
-                    "Check endpoint activity",
-                    "Isolate suspicious asset",
-                    "Escalate to SOC lead"
-                ]
+                **pb_full,
+                "playbook_steps": [{"action": x} for x in (pb_full.get("steps_flat") or [])],
+                "risk_level": pb_full.get("severity_label") or "Unknown",
+            }
+        except Exception:
+            iid = str(inc.get("incident_id") or "unknown")
+            pb = {
+                "playbook_title": f"SOC playbook placeholder: {iid}",
+                "playbook_steps": [{"action": f"Review correlated telemetry for {iid} in the ingest pipeline output."}],
+                "risk_level": str(inc.get("severity") or "Unknown"),
+                "automation_candidates": [],
             }
 
         wf = workflow_builder.build(pb)

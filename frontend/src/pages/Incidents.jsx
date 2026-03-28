@@ -148,21 +148,39 @@ const getIncidentPlaybookSteps = (incident) => {
 
 const buildIncidentPlaybookPdfText = (incident) => {
     const title = incident?.playbook?.title || `SOC Incident Response Playbook: ${incident?.id || 'incident'}`;
-    const report = String(incident?.playbook?.report || '').trim();
+    const report = String(incident?.playbook?.report || incident?.playbook?.playbook_report || '').trim();
     if (report) return report;
 
-    const narrative = String(incident?.expandedNarrative || incident?.summary || '').trim();
+    const overview = String(
+        incident?.playbook?.incident_overview ||
+            incident?.expandedNarrative ||
+            incident?.summary ||
+            ''
+    ).trim();
     const steps = getIncidentPlaybookSteps(incident);
+    const indicators = Array.isArray(incident?.playbook?.key_indicators)
+        ? incident.playbook.key_indicators.filter(Boolean)
+        : [];
+    const reason = String(incident?.playbook?.reason || '').trim();
+    const sev = String(incident?.playbook?.severity_label || incident?.severity || '').trim();
 
-    return [
+    const parts = [
         title,
         '',
-        'INCIDENT NARRATIVE',
-        narrative || 'Unavailable',
+        'INCIDENT OVERVIEW',
+        overview || 'Unavailable',
+        '',
+        'RISK',
+        `Severity: ${sev || 'unknown'}`,
+        ...(reason ? [`Reason: ${reason}`] : []),
+        '',
+        'KEY INDICATORS',
+        ...(indicators.length ? indicators.map((k) => `- ${k}`) : ['- (none in bundle)']),
         '',
         'RESPONSE PLAYBOOK',
-        ...(steps.length ? steps.map((s, i) => `${i + 1}. ${s}`) : ['No playbook steps available']),
-    ].join('\n');
+        ...(steps.length ? steps.map((s, i) => `${i + 1}. ${s}`) : ['No playbook steps — use Generate & download PDF']),
+    ];
+    return parts.join('\n');
 };
 
 
@@ -577,11 +595,8 @@ const Incidents = () => {
             return;
         }
 
-        Promise.all([
-            api.getCorrelatedIncidentDetail(id).catch(() => null),
-            api.getCorrelatedIncidentNarrative(id).catch(() => null),
-        ])
-            .then(([detail, narrativeRes]) => {
+        api.getCorrelatedIncidentDetail(id)
+            .then((detail) => {
                 const brief = (detail?.playbook?.steps || [])
                     .slice(0, 6)
                     .map((s) => (s?.title || s?.description || s?.action || '').toString().trim())
@@ -589,7 +604,7 @@ const Incidents = () => {
 
                 const graphNodes = Array.isArray(detail?.graphNodes) ? detail.graphNodes : [];
                 const graphEdges = Array.isArray(detail?.graphEdges) ? detail.graphEdges : [];
-                const longNarrative = String(narrativeRes?.narrative || detail?.narrative || '').trim();
+                const narrative = String(detail?.narrative || '').trim();
 
                 setIncidents((prev) =>
                     prev.map((row) => {
@@ -601,7 +616,7 @@ const Incidents = () => {
                             graphData: graphNodes.length
                                 ? { graphNodes, graphEdges }
                                 : row.graphData,
-                            expandedNarrative: longNarrative || row.expandedNarrative,
+                            expandedNarrative: narrative || row.expandedNarrative,
                         };
                     })
                 );
@@ -623,7 +638,7 @@ const Incidents = () => {
         }));
     };
 
-    const handleGenerateLlmPlaybook = async (incidentId) => {
+    const handleGenerateAndDownloadPlaybook = async (incidentId) => {
         setGeneratingPlaybookByIncident((prev) => ({ ...prev, [incidentId]: true }));
         try {
             const res = await api.generateCorrelatedIncidentPlaybook(incidentId);
@@ -634,20 +649,27 @@ const Incidents = () => {
                 .filter(Boolean)
                 .slice(0, 6);
 
-            setIncidents((prev) =>
-                prev.map((row) => {
+            setIncidents((prev) => {
+                const next = prev.map((row) => {
                     if (row.id !== incidentId) return row;
                     return {
                         ...row,
                         playbook: {
                             ...(row.playbook || {}),
                             ...generatedPlaybook,
+                            incident_overview: res?.incident_overview || generatedPlaybook?.incident_overview,
                             generated: true,
                         },
                         playbookBrief: brief,
+                        playbookGenerated: true,
                     };
-                })
-            );
+                });
+                const updated = next.find((r) => r.id === incidentId);
+                if (updated) {
+                    queueMicrotask(() => downloadIncidentPlaybookPdf(updated));
+                }
+                return next;
+            });
         } catch (err) {
             console.error('Failed to generate playbook', err);
         } finally {
@@ -1211,7 +1233,7 @@ const Incidents = () => {
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            handleGenerateLlmPlaybook(incident.id);
+                                                                            handleGenerateAndDownloadPlaybook(incident.id);
                                                                         }}
                                                                         disabled={isGeneratingPlaybook}
                                                                         style={{
@@ -1224,33 +1246,34 @@ const Incidents = () => {
                                                                             fontWeight: 700,
                                                                             cursor: isGeneratingPlaybook ? 'not-allowed' : 'pointer',
                                                                             opacity: isGeneratingPlaybook ? 0.8 : 1,
-                                                                        }}
-                                                                    >
-                                                                        {isGeneratingPlaybook ? 'Generating…' : 'Generate LLM Playbook'}
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            downloadIncidentPlaybookPdf(incident);
-                                                                        }}
-                                                                        disabled={!hasGeneratedPlaybook}
-                                                                        style={{
-                                                                            border: '1px solid rgba(21,128,61,0.3)',
-                                                                            background: hasGeneratedPlaybook ? 'rgba(21,128,61,0.12)' : 'rgba(148,163,184,0.12)',
-                                                                            color: hasGeneratedPlaybook ? '#15803D' : 'var(--text-muted)',
-                                                                            borderRadius: 6,
-                                                                            padding: '5px 10px',
-                                                                            fontSize: 11,
-                                                                            fontWeight: 700,
-                                                                            cursor: hasGeneratedPlaybook ? 'pointer' : 'not-allowed',
                                                                             display: 'inline-flex',
                                                                             alignItems: 'center',
                                                                             gap: 6,
                                                                         }}
                                                                     >
                                                                         <Download size={12} />
-                                                                        Download PDF
+                                                                        {isGeneratingPlaybook ? 'Generating…' : 'Generate & download PDF'}
                                                                     </button>
+                                                                    {hasGeneratedPlaybook ? (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                downloadIncidentPlaybookPdf(incident);
+                                                                            }}
+                                                                            style={{
+                                                                                border: '1px solid rgba(21,128,61,0.3)',
+                                                                                background: 'rgba(21,128,61,0.12)',
+                                                                                color: '#15803D',
+                                                                                borderRadius: 6,
+                                                                                padding: '5px 10px',
+                                                                                fontSize: 11,
+                                                                                fontWeight: 700,
+                                                                                cursor: 'pointer',
+                                                                            }}
+                                                                        >
+                                                                            Download again
+                                                                        </button>
+                                                                    ) : null}
                                                                 </div>
                                                             </div>
                                                             <div style={{
@@ -1261,7 +1284,7 @@ const Incidents = () => {
                                                             }}>
                                                                 {playbookSteps.length === 0 && (
                                                                     <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                                                                        Generate LLM Playbook to populate steps and enable PDF export.
+                                                                        Use “Generate & download PDF” to run the LLM once for this incident and save the playbook.
                                                                     </div>
                                                                 )}
                                                                 {playbookSteps.map((point, idx) => {

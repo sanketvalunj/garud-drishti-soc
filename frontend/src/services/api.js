@@ -44,9 +44,14 @@ export default {
         }
     },
 
+    /** LLM playbook (Ollama/Mistral via backend); one incident per request, user-triggered only. */
     generateCorrelatedIncidentPlaybook: async (id) => {
         try {
-            const response = await apiClient.post(`/correlated-incidents/${id}/generate-playbook`);
+            const response = await apiClient.post(
+                `/correlated-incidents/${id}/generate-playbook`,
+                {},
+                { timeout: 180000 }
+            );
             return response.data;
         } catch (error) {
             console.error('API Error: generateCorrelatedIncidentPlaybook', error);
