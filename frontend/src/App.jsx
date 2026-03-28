@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext';
 import { PipelineProvider } from './context/PipelineContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { RoleProvider } from './context/RoleContext';
+import { LiveStreamProvider } from './context/LiveStreamContext';
 
 // Pages
 import Landing from './pages/Landing';
@@ -53,40 +54,42 @@ const App = () => {
   return (
     <ThemeProvider>
       <PipelineProvider>
-        <RoleProvider>
-          <Routes>
-            {/* Public Landing */}
-            <Route path="/" element={
-              <PublicOnlyRoute><Landing /></PublicOnlyRoute>
-            } />
+        <LiveStreamProvider>
+          <RoleProvider>
+            <Routes>
+              {/* Public Landing */}
+              <Route path="/" element={
+                <PublicOnlyRoute><Landing /></PublicOnlyRoute>
+              } />
 
-            {/* Public */}
-            <Route path="/login" element={
-              <PublicOnlyRoute><Login /></PublicOnlyRoute>
-            } />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/services" element={<ServicesPage />} />
+              {/* Public */}
+              <Route path="/login" element={
+                <PublicOnlyRoute><Login /></PublicOnlyRoute>
+              } />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/services" element={<ServicesPage />} />
 
-            {/* Protected app shell */}
-            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/incidents" element={<Incidents />} />
-              <Route path="/incidents/:id" element={<IncidentDetail />} />
-              <Route path="/playbooks" element={<Playbooks />} />
-              <Route path="/pipeline" element={<Pipeline />} />
-              <Route path="/threat-graph" element={<ThreatGraph />} />
-              <Route path="/mitre/:id" element={<MitreMapping />} />
-              <Route path="/reasoning" element={<Reasoning />} />
-              <Route path="/llm-reasoning" element={<LLMReasoning />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/activity" element={<MyActivity />} />
-              <Route path="/alerts" element={<Alerts />} />
-            </Route>
+              {/* Protected app shell */}
+              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/incidents" element={<Incidents />} />
+                <Route path="/incidents/:id" element={<IncidentDetail />} />
+                <Route path="/playbooks" element={<Playbooks />} />
+                <Route path="/pipeline" element={<Pipeline />} />
+                <Route path="/threat-graph" element={<ThreatGraph />} />
+                <Route path="/mitre/:id" element={<MitreMapping />} />
+                <Route path="/reasoning" element={<Reasoning />} />
+                <Route path="/llm-reasoning" element={<LLMReasoning />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/activity" element={<MyActivity />} />
+                <Route path="/alerts" element={<Alerts />} />
+              </Route>
 
-            {/* Catch-all */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </RoleProvider>
+              {/* Catch-all */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </RoleProvider>
+        </LiveStreamProvider>
       </PipelineProvider>
     </ThemeProvider>
   );

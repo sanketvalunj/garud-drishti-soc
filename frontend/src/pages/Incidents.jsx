@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion as Motion } from 'framer-motion';
 import {
     Search, ExternalLink,
     ShieldOff, CheckCircle2, Sparkles,
-    GitBranch, Clock, ArrowRight, ChevronDown, ChevronUp, Check, Brain
+    GitBranch, Clock, ArrowRight, ChevronDown, ChevronUp, Check, Brain, Download
 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
+import AttackGraph from '../components/incidents/AttackGraph';
 
 const killChainStages = [
     'Initial Access',
@@ -84,6 +86,83 @@ const getFidelityColor = (score) => {
     if (score >= 0.85) return '#B91C1C';
     if (score >= 0.5) return '#D97706';
     return 'var(--text-secondary)';
+};
+
+const inferGraphEntityType = (value) => {
+    const id = String(value || '').toLowerCase();
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(id)) return 'ip';
+    if (id.includes('emp') || id.includes('user') || id.includes('admin')) return 'user';
+    return 'asset';
+};
+
+const buildFallbackGraphData = (incident) => {
+    const rowEntities = Array.isArray(incident?.entities) ? incident.entities : [];
+    const baseEntities = [incident?.entity, ...rowEntities]
+        .map((entry) => String(entry || '').trim())
+        .filter(Boolean);
+
+    const uniqueEntities = Array.from(new Set(baseEntities));
+
+    const graphNodes = uniqueEntities.map((entity, idx) => ({
+        id: entity,
+        label: entity,
+        type: inferGraphEntityType(entity),
+        compromised: idx === uniqueEntities.length - 1,
+        suspected: idx > 0,
+    }));
+
+    const graphEdges = uniqueEntities.slice(0, -1).map((entity, idx) => ({
+        id: `fallback-${incident?.id || 'incident'}-${idx}`,
+        source: entity,
+        target: uniqueEntities[idx + 1],
+        relation: incident?.type || 'OBSERVED_ACTIVITY',
+        severity: incident?.severity || 'medium',
+    }));
+
+    return { graphNodes, graphEdges };
+};
+
+const getIncidentGraphData = (incident) => {
+    if (incident?.graphData?.graphNodes?.length) {
+        return incident.graphData;
+    }
+    return buildFallbackGraphData(incident);
+};
+
+const getIncidentPlaybookSteps = (incident) => {
+    const generatedSteps = Array.isArray(incident?.playbook?.steps)
+        ? incident.playbook.steps
+        : [];
+
+    const generatedTitles = generatedSteps
+        .map((s) => (s?.title || s?.description || s?.action || '').toString().trim())
+        .filter(Boolean);
+
+    if (generatedTitles.length > 0) {
+        return generatedTitles.slice(0, 6);
+    }
+
+    const brief = Array.isArray(incident?.playbookBrief) ? incident.playbookBrief : [];
+    return brief.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 6);
+};
+
+const buildIncidentPlaybookPdfText = (incident) => {
+    const title = incident?.playbook?.title || `SOC Incident Response Playbook: ${incident?.id || 'incident'}`;
+    const report = String(incident?.playbook?.report || '').trim();
+    if (report) return report;
+
+    const narrative = String(incident?.expandedNarrative || incident?.summary || '').trim();
+    const steps = getIncidentPlaybookSteps(incident);
+
+    return [
+        title,
+        '',
+        'INCIDENT NARRATIVE',
+        narrative || 'Unavailable',
+        '',
+        'RESPONSE PLAYBOOK',
+        ...(steps.length ? steps.map((s, i) => `${i + 1}. ${s}`) : ['No playbook steps available']),
+    ].join('\n');
 };
 
 
@@ -358,7 +437,7 @@ const KillChainStepper = ({ stage }) => {
                     return (
                         <div key={s} style={{ display: 'flex', alignItems: 'flex-start', flex: i < killChainStages.length - 1 ? 1 : 'none' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <motion.div
+                                <Motion.div
                                     style={dotStyle}
                                     animate={isCurrent ? {
                                         scale: [1, 1.08, 1],
@@ -375,7 +454,7 @@ const KillChainStepper = ({ stage }) => {
                                     }}
                                 >
                                     {i + 1}
-                                </motion.div>
+                                </Motion.div>
                                 <div style={{
                                     fontSize: 9,
                                     color: isFuture ? 'var(--text-muted)' : 'var(--text-secondary)',
@@ -415,10 +494,12 @@ const Incidents = () => {
     const [sortBy, setSortBy] = useState('fidelity');
     const [expandedRow, setExpandedRow] = useState(null);
     const [highlightedId, setHighlightedId] = useState(null);
+    const [graphFocusByIncident, setGraphFocusByIncident] = useState({});
+    const [playbookStepStateByIncident, setPlaybookStepStateByIncident] = useState({});
+    const [generatingPlaybookByIncident, setGeneratingPlaybookByIncident] = useState({});
 
     useEffect(() => {
         let cancelled = false;
-        setLoadingIncidents(true);
         api.getCorrelatedIncidents({ limit: 200, offset: 0 })
             .then((res) => {
                 if (cancelled) return;
@@ -437,12 +518,22 @@ const Incidents = () => {
 
     useEffect(() => {
         const incidentId = searchParams.get('highlight');
-        if (incidentId) {
+        if (!incidentId) return undefined;
+
+        const activateTimer = window.setTimeout(() => {
             setHighlightedId(incidentId);
             setExpandedRow(incidentId);
-            setTimeout(() => setHighlightedId(null), 4000);
-        }
-    }, []);
+        }, 0);
+
+        const clearTimer = window.setTimeout(() => {
+            setHighlightedId(null);
+        }, 4000);
+
+        return () => {
+            window.clearTimeout(activateTimer);
+            window.clearTimeout(clearTimer);
+        };
+    }, [searchParams]);
 
     const filteredIncidents = incidents
         .filter(inc => {
@@ -477,20 +568,119 @@ const Incidents = () => {
         escalated: incidents.filter(i => i.status === 'escalated').length,
     };
 
-    const handleRowClick = (id) => {
+    const handleRowClick = (incidentRow) => {
+        const id = incidentRow.id;
+        const isOpening = expandedRow !== id;
         setExpandedRow(prev => (prev === id ? null : id));
-        api.getCorrelatedIncidentDetail(id)
-            .then((detail) => {
+
+        if (!isOpening) {
+            return;
+        }
+
+        Promise.all([
+            api.getCorrelatedIncidentDetail(id).catch(() => null),
+            api.getCorrelatedIncidentNarrative(id).catch(() => null),
+        ])
+            .then(([detail, narrativeRes]) => {
                 const brief = (detail?.playbook?.steps || [])
                     .slice(0, 6)
                     .map((s) => (s?.title || s?.description || s?.action || '').toString().trim())
                     .filter(Boolean);
-                if (!brief.length) return;
+
+                const graphNodes = Array.isArray(detail?.graphNodes) ? detail.graphNodes : [];
+                const graphEdges = Array.isArray(detail?.graphEdges) ? detail.graphEdges : [];
+                const longNarrative = String(narrativeRes?.narrative || detail?.narrative || '').trim();
+
                 setIncidents((prev) =>
-                    prev.map((row) => (row.id === id ? { ...row, playbookBrief: brief } : row))
+                    prev.map((row) => {
+                        if (row.id !== id) return row;
+                        return {
+                            ...row,
+                            playbookBrief: brief.length ? brief : row.playbookBrief,
+                            playbook: detail?.playbook || row.playbook,
+                            graphData: graphNodes.length
+                                ? { graphNodes, graphEdges }
+                                : row.graphData,
+                            expandedNarrative: longNarrative || row.expandedNarrative,
+                        };
+                    })
                 );
             })
             .catch(() => { });
+    };
+
+    const getPlaybookStepDone = (incidentId, stepIndex) => {
+        return Boolean(playbookStepStateByIncident?.[incidentId]?.[stepIndex]);
+    };
+
+    const markPlaybookStepDone = (incidentId, stepIndex) => {
+        setPlaybookStepStateByIncident((prev) => ({
+            ...prev,
+            [incidentId]: {
+                ...(prev[incidentId] || {}),
+                [stepIndex]: true,
+            }
+        }));
+    };
+
+    const handleGenerateLlmPlaybook = async (incidentId) => {
+        setGeneratingPlaybookByIncident((prev) => ({ ...prev, [incidentId]: true }));
+        try {
+            const res = await api.generateCorrelatedIncidentPlaybook(incidentId);
+            const generatedPlaybook = res?.playbook || {};
+            const generatedSteps = Array.isArray(generatedPlaybook?.steps) ? generatedPlaybook.steps : [];
+            const brief = generatedSteps
+                .map((s) => (s?.title || s?.description || s?.action || '').toString().trim())
+                .filter(Boolean)
+                .slice(0, 6);
+
+            setIncidents((prev) =>
+                prev.map((row) => {
+                    if (row.id !== incidentId) return row;
+                    return {
+                        ...row,
+                        playbook: {
+                            ...(row.playbook || {}),
+                            ...generatedPlaybook,
+                            generated: true,
+                        },
+                        playbookBrief: brief,
+                    };
+                })
+            );
+        } catch (err) {
+            console.error('Failed to generate playbook', err);
+        } finally {
+            setGeneratingPlaybookByIncident((prev) => ({ ...prev, [incidentId]: false }));
+        }
+    };
+
+    const downloadIncidentPlaybookPdf = (incident) => {
+        const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+        const margin = 48;
+        const pageW = doc.internal.pageSize.getWidth();
+        const pageH = doc.internal.pageSize.getHeight();
+        const maxW = pageW - margin * 2;
+
+        const text = buildIncidentPlaybookPdfText(incident);
+        const lines = doc.splitTextToSize(text, maxW);
+
+        doc.setFont('times', 'normal');
+        doc.setFontSize(11);
+
+        let y = margin;
+        const lineH = 14;
+        for (const line of lines) {
+            if (y + lineH > pageH - margin) {
+                doc.addPage();
+                y = margin;
+            }
+            doc.text(String(line), margin, y);
+            y += lineH;
+        }
+
+        const safeId = String(incident?.id || 'incident').replace(/[^a-zA-Z0-9_-]/g, '_');
+        doc.save(`playbook_${safeId}.pdf`);
     };
 
     const clearFilters = () => {
@@ -742,6 +932,10 @@ const Incidents = () => {
                         const isHighlighted = highlightedId === incident.id;
                         const isExpanded = expandedRow === incident.id;
                         const sevStyle = severityBadgeStyle[incident.severity] || severityBadgeStyle.low;
+                        const narrativeText = String(incident.expandedNarrative || incident.summary || '').trim();
+                        const playbookSteps = getIncidentPlaybookSteps(incident);
+                        const hasGeneratedPlaybook = Boolean(incident?.playbook?.generated) || playbookSteps.length > 0;
+                        const isGeneratingPlaybook = Boolean(generatingPlaybookByIncident[incident.id]);
 
                         return (
                             <div
@@ -781,7 +975,7 @@ const Incidents = () => {
 
                                 {/* Main Row */}
                                 <div
-                                    onClick={() => handleRowClick(incident.id)}
+                                    onClick={() => handleRowClick(incident)}
                                     className={`${isHighlighted ? 'pulse-highlight-row' : ''} transition-all duration-300 group-hover:bg-white/5`}
                                     style={{
                                         display: 'grid',
@@ -896,7 +1090,7 @@ const Incidents = () => {
                                 {/* Expanded Row */}
                                 <AnimatePresence>
                                     {isExpanded && (
-                                        <motion.div
+                                        <Motion.div
                                             initial={{ height: 0, opacity: 0 }}
                                             animate={{ height: 'auto', opacity: 1 }}
                                             exit={{ height: 0, opacity: 0 }}
@@ -908,93 +1102,156 @@ const Incidents = () => {
                                                 style={{
                                                     padding: '0 24px 24px 24px',
                                                     display: 'flex',
-                                                    gap: 32,
+                                                    flexDirection: 'column',
+                                                    gap: 16,
                                                     marginBottom: '6px'
                                                 }}>
-                                                {/* Left: Triage Information */}
-                                                <div style={{ flex: 1 }}>
-                                                    {/* Block 1: Kill Chain */}
-                                                    <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                        <GitBranch size={11} color="#00AEEF" />
-                                                        Kill Chain Progress
-                                                    </div>
-                                                    <KillChainStepper stage={incident.killChainStage} />
-
-                                                    {/* Block 2: AI Summary */}
-                                                    <div style={{ marginTop: 16 }}>
-                                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                            <Sparkles size={11} color="#00AEEF" />
-                                                            AI Analysis
+                                                <div style={{ display: 'flex', gap: 32, alignItems: 'stretch', flexWrap: 'wrap' }}>
+                                                    {/* Left: Triage Information */}
+                                                    <div style={{ flex: 1, minWidth: 300 }}>
+                                                        {/* Block 1: Kill Chain */}
+                                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <GitBranch size={11} color="#00AEEF" />
+                                                            Kill Chain Progress
                                                         </div>
+                                                        <KillChainStepper stage={incident.killChainStage} />
 
-                                                        {/* Ollama Header */}
-                                                        <div style={{
-                                                            display: 'flex',
-                                                            gap: '8px',
-                                                            alignItems: 'center',
-                                                            marginBottom: '8px',
-                                                            padding: '6px 10px',
-                                                            borderRadius: '6px',
-                                                            background: isDark ? 'rgba(0,174,239,0.04)' : 'rgba(0,174,239,0.03)',
-                                                            border: '1px solid rgba(0,174,239,0.1)'
-                                                        }}>
-                                                            <Brain size={11} color="#00AEEF" />
-                                                            <span style={{ fontSize: '10px', fontWeight: 600, color: '#00AEEF', fontFamily: 'monospace' }}>
-                                                                Ollama · Mistral
-                                                            </span>
-                                                            <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>·</span>
-                                                            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Offline inference</span>
-                                                            <span style={{ color: 'var(--text-muted)' }}>·</span>
-                                                            <span style={{
-                                                                fontSize: '10px',
-                                                                fontFamily: 'monospace',
-                                                                color: getFidelityColor(incident.fidelityScore),
-                                                                fontWeight: 600
-                                                            }}>
-                                                                {Math.round(incident.fidelityScore * 100)}% confidence
-                                                            </span>
-                                                        </div>
-
-                                                        <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, fontStyle: 'italic' }}>
-                                                            {incident.summary}
-                                                        </div>
-
-                                                        {/* Scoring Breakdown Row */}
-                                                        <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
-                                                            {incident.fidelityFactors?.map(factor => {
-                                                                const factorColor = getFidelityColor(factor.score);
-                                                                return (
-                                                                    <div key={factor.label} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                                                                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{factor.label}:</span>
-                                                                        <div style={{
-                                                                            width: '40px',
-                                                                            height: '3px',
-                                                                            borderRadius: '2px',
-                                                                            background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                                                                            overflow: 'hidden'
-                                                                        }}>
-                                                                            <div style={{
-                                                                                height: '100%',
-                                                                                width: `${factor.score * 100}%`,
-                                                                                background: factorColor,
-                                                                                borderRadius: '2px'
-                                                                            }} />
-                                                                        </div>
-                                                                        <span style={{ fontSize: '10px', fontFamily: 'monospace', color: factorColor, fontWeight: 600 }}>
-                                                                            {Math.round(factor.score * 100)}%
-                                                                        </span>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Block 3: Response Playbook (6 brief points) */}
-                                                    {Array.isArray(incident.playbookBrief) && incident.playbookBrief.length > 0 && (
-                                                        <div style={{ marginTop: 14 }}>
+                                                        {/* Block 2: AI Summary */}
+                                                        <div style={{ marginTop: 16 }}>
                                                             <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                                                                 <Sparkles size={11} color="#00AEEF" />
-                                                                Response Playbook
+                                                                AI Analysis
+                                                            </div>
+
+                                                            {/* Ollama Header */}
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                gap: '8px',
+                                                                alignItems: 'center',
+                                                                marginBottom: '8px',
+                                                                padding: '6px 10px',
+                                                                borderRadius: '6px',
+                                                                background: isDark ? 'rgba(0,174,239,0.04)' : 'rgba(0,174,239,0.03)',
+                                                                border: '1px solid rgba(0,174,239,0.1)'
+                                                            }}>
+                                                                <Brain size={11} color="#00AEEF" />
+                                                                <span style={{ fontSize: '10px', fontWeight: 600, color: '#00AEEF', fontFamily: 'monospace' }}>
+                                                                    Ollama · Mistral
+                                                                </span>
+                                                                <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>·</span>
+                                                                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Offline inference</span>
+                                                                <span style={{ color: 'var(--text-muted)' }}>·</span>
+                                                                <span style={{
+                                                                    fontSize: '10px',
+                                                                    fontFamily: 'monospace',
+                                                                    color: getFidelityColor(incident.fidelityScore),
+                                                                    fontWeight: 600
+                                                                }}>
+                                                                    {Math.round(incident.fidelityScore * 100)}% confidence
+                                                                </span>
+                                                            </div>
+
+                                                            <div style={{
+                                                                marginTop: 4,
+                                                                padding: '12px 14px',
+                                                                borderRadius: '8px',
+                                                                border: '1px solid var(--glass-border)',
+                                                                background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.65)',
+                                                                maxHeight: '220px',
+                                                                overflowY: 'auto'
+                                                            }}>
+                                                                <div style={{
+                                                                    fontSize: 14,
+                                                                    color: 'var(--text-secondary)',
+                                                                    lineHeight: 1.78,
+                                                                    whiteSpace: 'pre-wrap'
+                                                                }}>
+                                                                    {narrativeText || 'Narrative unavailable for this incident.'}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Scoring Breakdown Row */}
+                                                            <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
+                                                                {incident.fidelityFactors?.map(factor => {
+                                                                    const factorColor = getFidelityColor(factor.score);
+                                                                    return (
+                                                                        <div key={factor.label} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                                                            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{factor.label}:</span>
+                                                                            <div style={{
+                                                                                width: '40px',
+                                                                                height: '3px',
+                                                                                borderRadius: '2px',
+                                                                                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                                                                                overflow: 'hidden'
+                                                                            }}>
+                                                                                <div style={{
+                                                                                    height: '100%',
+                                                                                    width: `${factor.score * 100}%`,
+                                                                                    background: factorColor,
+                                                                                    borderRadius: '2px'
+                                                                                }} />
+                                                                            </div>
+                                                                            <span style={{ fontSize: '10px', fontFamily: 'monospace', color: factorColor, fontWeight: 600 }}>
+                                                                                {Math.round(factor.score * 100)}%
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Block 3: Response Playbook (LLM generated) */}
+                                                        <div style={{ marginTop: 14 }}>
+                                                            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                                                    <Sparkles size={11} color="#00AEEF" />
+                                                                    Response Playbook
+                                                                </span>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleGenerateLlmPlaybook(incident.id);
+                                                                        }}
+                                                                        disabled={isGeneratingPlaybook}
+                                                                        style={{
+                                                                            border: '1px solid rgba(0,174,239,0.28)',
+                                                                            background: 'rgba(0,174,239,0.12)',
+                                                                            color: '#00AEEF',
+                                                                            borderRadius: 6,
+                                                                            padding: '5px 10px',
+                                                                            fontSize: 11,
+                                                                            fontWeight: 700,
+                                                                            cursor: isGeneratingPlaybook ? 'not-allowed' : 'pointer',
+                                                                            opacity: isGeneratingPlaybook ? 0.8 : 1,
+                                                                        }}
+                                                                    >
+                                                                        {isGeneratingPlaybook ? 'Generating…' : 'Generate LLM Playbook'}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            downloadIncidentPlaybookPdf(incident);
+                                                                        }}
+                                                                        disabled={!hasGeneratedPlaybook}
+                                                                        style={{
+                                                                            border: '1px solid rgba(21,128,61,0.3)',
+                                                                            background: hasGeneratedPlaybook ? 'rgba(21,128,61,0.12)' : 'rgba(148,163,184,0.12)',
+                                                                            color: hasGeneratedPlaybook ? '#15803D' : 'var(--text-muted)',
+                                                                            borderRadius: 6,
+                                                                            padding: '5px 10px',
+                                                                            fontSize: 11,
+                                                                            fontWeight: 700,
+                                                                            cursor: hasGeneratedPlaybook ? 'pointer' : 'not-allowed',
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 6,
+                                                                        }}
+                                                                    >
+                                                                        <Download size={12} />
+                                                                        Download PDF
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                             <div style={{
                                                                 background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
@@ -1002,140 +1259,265 @@ const Incidents = () => {
                                                                 borderRadius: '8px',
                                                                 padding: '10px 12px'
                                                             }}>
-                                                                {(incident.playbookBrief || []).slice(0, 6).map((point, idx) => (
-                                                                    <div key={`${incident.id}-pb-${idx}`} style={{
-                                                                        fontSize: '12px',
-                                                                        color: 'var(--text-secondary)',
-                                                                        lineHeight: 1.6,
-                                                                        marginBottom: idx < Math.min(5, (incident.playbookBrief || []).length - 1) ? 6 : 0
-                                                                    }}>
-                                                                        {idx + 1}. {point}
+                                                                {playbookSteps.length === 0 && (
+                                                                    <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                                                                        Generate LLM Playbook to populate steps and enable PDF export.
                                                                     </div>
+                                                                )}
+                                                                {playbookSteps.map((point, idx) => {
+                                                                    const isDone = getPlaybookStepDone(incident.id, idx);
+                                                                    return (
+                                                                        <div
+                                                                            key={`${incident.id}-pb-${idx}`}
+                                                                            style={{
+                                                                                background: isDark ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.8)',
+                                                                                border: `1px solid ${isDone ? 'rgba(21,128,61,0.3)' : 'var(--glass-border)'}`,
+                                                                                borderRadius: 8,
+                                                                                padding: '10px 12px',
+                                                                                marginBottom: idx < playbookSteps.length - 1 ? 8 : 0,
+                                                                            }}
+                                                                        >
+                                                                            <div style={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'flex-start',
+                                                                                justifyContent: 'space-between',
+                                                                                gap: 12
+                                                                            }}>
+                                                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                                                    <div style={{
+                                                                                        fontSize: '12px',
+                                                                                        color: 'var(--text-secondary)',
+                                                                                        lineHeight: 1.6,
+                                                                                        textDecoration: isDone ? 'line-through' : 'none',
+                                                                                        opacity: isDone ? 0.75 : 1,
+                                                                                    }}>
+                                                                                        {idx + 1}. {point}
+                                                                                    </div>
+                                                                                    <div style={{
+                                                                                        fontSize: '10px',
+                                                                                        color: isDone ? '#15803D' : 'var(--text-muted)',
+                                                                                        marginTop: 4,
+                                                                                        fontWeight: 600,
+                                                                                        letterSpacing: '0.02em'
+                                                                                    }}>
+                                                                                        {isDone ? 'Completed' : 'Ready for immediate automation'}
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        markPlaybookStepDone(incident.id, idx);
+                                                                                    }}
+                                                                                    disabled={isDone}
+                                                                                    style={{
+                                                                                        flexShrink: 0,
+                                                                                        display: 'inline-flex',
+                                                                                        alignItems: 'center',
+                                                                                        gap: 6,
+                                                                                        background: isDone ? 'rgba(21,128,61,0.14)' : 'rgba(0,174,239,0.12)',
+                                                                                        border: `1px solid ${isDone ? 'rgba(21,128,61,0.35)' : 'rgba(0,174,239,0.28)'}`,
+                                                                                        color: isDone ? '#15803D' : '#00AEEF',
+                                                                                        borderRadius: 6,
+                                                                                        padding: '6px 10px',
+                                                                                        fontSize: 11,
+                                                                                        fontWeight: 700,
+                                                                                        cursor: isDone ? 'default' : 'pointer',
+                                                                                        whiteSpace: 'nowrap',
+                                                                                        opacity: isDone ? 0.95 : 1
+                                                                                    }}
+                                                                                >
+                                                                                    {isDone ? <CheckCircle2 size={12} /> : <Sparkles size={12} />}
+                                                                                    {isDone ? 'Done' : 'Auto Immediate'}
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Block 4: Entities */}
+                                                        <div style={{ marginTop: 14 }}>
+                                                            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6 }}>
+                                                                Affected Entities
+                                                            </div>
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
+                                                                {incident.entities.map(ent => (
+                                                                    <span key={ent} style={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        background: isDark
+                                                                            ? 'rgba(255,255,255,0.05)'
+                                                                            : 'rgba(0,0,0,0.04)',
+                                                                        border: isDark
+                                                                            ? '1px solid rgba(255,255,255,0.1)'
+                                                                            : '1px solid rgba(0,0,0,0.1)',
+                                                                        borderRadius: '6px',
+                                                                        padding: '4px 10px',
+                                                                        fontSize: '11px',
+                                                                        fontFamily: "'Inter', sans-serif",
+                                                                        color: 'var(--text-secondary)',
+                                                                        margin: '3px'
+                                                                    }}>
+                                                                        {ent}
+                                                                    </span>
                                                                 ))}
                                                             </div>
                                                         </div>
-                                                    )}
 
-                                                    {/* Block 4: Entities */}
-                                                    <div style={{ marginTop: 14 }}>
-                                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6 }}>
-                                                            Affected Entities
+                                                        {/* Block 6: Status Row */}
+                                                        <div style={{ marginTop: 12, display: 'flex', gap: 16, alignItems: 'center' }}>
+                                                            {incident.playbookGenerated ? (
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#15803D', fontSize: 12 }}>
+                                                                    <CheckCircle2 size={13} />
+                                                                    Playbook ready
+                                                                </div>
+                                                            ) : (
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 12 }}>
+                                                                    <Clock size={13} />
+                                                                    Playbook pending
+                                                                </div>
+                                                            )}
+                                                            <span style={{ color: 'var(--text-muted)' }}>·</span>
+                                                            <span style={{
+                                                                background: 'rgba(0,174,239,0.08)',
+                                                                border: '1px solid rgba(0,174,239,0.15)',
+                                                                borderRadius: 4,
+                                                                padding: '2px 8px',
+                                                                fontSize: 11,
+                                                                fontFamily: "'Inter', sans-serif",
+                                                                color: '#00AEEF',
+                                                            }}>
+                                                                {incident.mitreId} · {incident.mitreTactic}
+                                                            </span>
                                                         </div>
-                                                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
-                                                            {incident.entities.map(ent => (
-                                                                <span key={ent} style={{
-                                                                    display: 'inline-flex',
+                                                    </div>
+
+                                                    {/* Right: Action Area */}
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'flex-end',
+                                                        justifyContent: 'space-between',
+                                                        flex: '0 0 260px',
+                                                        minWidth: 220,
+                                                        marginLeft: 'auto'
+                                                    }}>
+                                                        {/* Fidelity Score */}
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                            <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'right' }}>Fidelity Score</div>
+                                                            <div style={{
+                                                                fontSize: 28,
+                                                                fontWeight: 700,
+                                                                fontFamily: "'Inter', sans-serif",
+                                                                color: incident.fidelityScore >= 0.85 ? '#B91C1C' : incident.fidelityScore >= 0.5 ? '#D97706' : '#15803D',
+                                                                textAlign: 'right'
+                                                            }}>
+                                                                {incident.fidelityScore.toFixed(2)}
+                                                            </div>
+                                                            <div style={{
+                                                                fontSize: 11,
+                                                                textAlign: 'right',
+                                                                color: incident.fidelityScore >= 0.85 ? '#B91C1C' : incident.fidelityScore >= 0.5 ? '#D97706' : '#15803D',
+                                                            }}>
+                                                                {incident.fidelityScore >= 0.85 ? 'High confidence threat' : incident.fidelityScore >= 0.5 ? 'Medium confidence' : 'Low confidence'}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* CTA Button */}
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 16 }}>
+                                                            <button
+                                                                onClick={() => navigate(`/incidents/${incident.id}`, { state: { from: 'incidents' } })}
+                                                                style={{
+                                                                    background: '#00AEEF',
+                                                                    color: 'white',
+                                                                    fontWeight: 600,
+                                                                    fontSize: 13,
+                                                                    padding: '10px 24px',
+                                                                    borderRadius: 8,
+                                                                    border: 'none',
+                                                                    cursor: 'pointer',
+                                                                    display: 'flex',
                                                                     alignItems: 'center',
-                                                                    background: isDark
-                                                                        ? 'rgba(255,255,255,0.05)'
-                                                                        : 'rgba(0,0,0,0.04)',
-                                                                    border: isDark
-                                                                        ? '1px solid rgba(255,255,255,0.1)'
-                                                                        : '1px solid rgba(0,0,0,0.1)',
-                                                                    borderRadius: '6px',
-                                                                    padding: '4px 10px',
-                                                                    fontSize: '11px',
-                                                                    fontFamily: "'Inter', sans-serif",
-                                                                    color: 'var(--text-secondary)',
-                                                                    margin: '3px'
-                                                                }}>
-                                                                    {ent}
-                                                                </span>
-                                                            ))}
+                                                                    gap: 8,
+                                                                    boxShadow: '0 0 20px rgba(0,174,239,0.25)',
+                                                                    transition: 'all 0.2s ease',
+                                                                    whiteSpace: 'nowrap',
+                                                                }}
+                                                                onMouseEnter={e => {
+                                                                    e.currentTarget.style.background = '#0096CC';
+                                                                    e.currentTarget.style.boxShadow = '0 0 28px rgba(0,174,239,0.4)';
+                                                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                                                }}
+                                                                onMouseLeave={e => {
+                                                                    e.currentTarget.style.background = '#00AEEF';
+                                                                    e.currentTarget.style.boxShadow = '0 0 20px rgba(0,174,239,0.25)';
+                                                                    e.currentTarget.style.transform = 'translateY(0px)';
+                                                                }}
+                                                            >
+                                                                View Full Details <ArrowRight size={14} />
+                                                            </button>
+                                                            <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', marginTop: 6 }}>
+                                                                Full investigation · Playbook · Graph
+                                                            </div>
                                                         </div>
                                                     </div>
 
-                                                    {/* Block 5: Status Row */}
-                                                    <div style={{ marginTop: 12, display: 'flex', gap: 16, alignItems: 'center' }}>
-                                                        {incident.playbookGenerated ? (
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#15803D', fontSize: 12 }}>
-                                                                <CheckCircle2 size={13} />
-                                                                Playbook ready
-                                                            </div>
-                                                        ) : (
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 12 }}>
-                                                                <Clock size={13} />
-                                                                Playbook pending
-                                                            </div>
-                                                        )}
-                                                        <span style={{ color: 'var(--text-muted)' }}>·</span>
-                                                        <span style={{
-                                                            background: 'rgba(0,174,239,0.08)',
-                                                            border: '1px solid rgba(0,174,239,0.15)',
-                                                            borderRadius: 4,
-                                                            padding: '2px 8px',
-                                                            fontSize: 11,
-                                                            fontFamily: "'Inter', sans-serif",
-                                                            color: '#00AEEF',
-                                                        }}>
-                                                            {incident.mitreId} · {incident.mitreTactic}
-                                                        </span>
-                                                    </div>
                                                 </div>
 
-                                                {/* Right: Action Area */}
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-                                                    {/* Fidelity Score */}
-                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'right' }}>Fidelity Score</div>
-                                                        <div style={{
-                                                            fontSize: 28,
-                                                            fontWeight: 700,
-                                                            fontFamily: "'Inter', sans-serif",
-                                                            color: incident.fidelityScore >= 0.85 ? '#B91C1C' : incident.fidelityScore >= 0.5 ? '#D97706' : '#15803D',
-                                                            textAlign: 'right'
-                                                        }}>
-                                                            {incident.fidelityScore.toFixed(2)}
-                                                        </div>
-                                                        <div style={{
-                                                            fontSize: 11,
-                                                            textAlign: 'right',
-                                                            color: incident.fidelityScore >= 0.85 ? '#B91C1C' : incident.fidelityScore >= 0.5 ? '#D97706' : '#15803D',
-                                                        }}>
-                                                            {incident.fidelityScore >= 0.85 ? 'High confidence threat' : incident.fidelityScore >= 0.5 ? 'Medium confidence' : 'Low confidence'}
-                                                        </div>
+                                                {/* Full-width Attack Chain Graph */}
+                                                <div style={{ width: '100%' }}>
+                                                    <div style={{
+                                                        fontSize: 11,
+                                                        color: 'var(--text-muted)',
+                                                        fontWeight: 600,
+                                                        marginBottom: 8,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        gap: 8,
+                                                        flexWrap: 'wrap'
+                                                    }}>
+                                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                                            <GitBranch size={11} color="#00AEEF" />
+                                                            Attack Chain Graph
+                                                        </span>
+                                                        {graphFocusByIncident[incident.id] && (
+                                                            <span style={{
+                                                                fontSize: 10,
+                                                                color: '#00AEEF',
+                                                                border: '1px solid rgba(0,174,239,0.2)',
+                                                                background: 'rgba(0,174,239,0.08)',
+                                                                borderRadius: 999,
+                                                                padding: '2px 8px'
+                                                            }}>
+                                                                Focus: {graphFocusByIncident[incident.id]}
+                                                            </span>
+                                                        )}
                                                     </div>
 
-                                                    {/* CTA Button */}
-                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 16 }}>
-                                                        <button
-                                                            onClick={() => navigate(`/incidents/${incident.id}`, { state: { from: 'incidents' } })}
-                                                            style={{
-                                                                background: '#00AEEF',
-                                                                color: 'white',
-                                                                fontWeight: 600,
-                                                                fontSize: 13,
-                                                                padding: '10px 24px',
-                                                                borderRadius: 8,
-                                                                border: 'none',
-                                                                cursor: 'pointer',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: 8,
-                                                                boxShadow: '0 0 20px rgba(0,174,239,0.25)',
-                                                                transition: 'all 0.2s ease',
-                                                                whiteSpace: 'nowrap',
+                                                    <div style={{
+                                                        height: 'clamp(320px, 46vh, 460px)',
+                                                        borderRadius: 10,
+                                                        border: '1px solid var(--glass-border)',
+                                                        overflow: 'hidden',
+                                                        background: isDark ? 'rgba(2,6,23,0.72)' : 'rgba(248,250,252,0.72)',
+                                                    }}>
+                                                        <AttackGraph
+                                                            data={getIncidentGraphData(incident)}
+                                                            highlightEntity={graphFocusByIncident[incident.id] || incident.entity}
+                                                            onNodeClick={(nodeData) => {
+                                                                setGraphFocusByIncident((prev) => ({
+                                                                    ...prev,
+                                                                    [incident.id]: nodeData?.id || nodeData?.label || null,
+                                                                }));
                                                             }}
-                                                            onMouseEnter={e => {
-                                                                e.currentTarget.style.background = '#0096CC';
-                                                                e.currentTarget.style.boxShadow = '0 0 28px rgba(0,174,239,0.4)';
-                                                                e.currentTarget.style.transform = 'translateY(-1px)';
-                                                            }}
-                                                            onMouseLeave={e => {
-                                                                e.currentTarget.style.background = '#00AEEF';
-                                                                e.currentTarget.style.boxShadow = '0 0 20px rgba(0,174,239,0.25)';
-                                                                e.currentTarget.style.transform = 'translateY(0px)';
-                                                            }}
-                                                        >
-                                                            View Full Details <ArrowRight size={14} />
-                                                        </button>
-                                                        <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', marginTop: 6 }}>
-                                                            Full investigation · Playbook · Graph
-                                                        </div>
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
-                                        </motion.div>
+                                        </Motion.div>
                                     )}
                                 </AnimatePresence>
                             </div>

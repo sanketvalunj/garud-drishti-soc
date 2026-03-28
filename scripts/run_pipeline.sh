@@ -37,12 +37,19 @@ echo "✅ Clean state ready"
 echo ""
 echo "⚙️ Running SOC pipeline..."
 
-python scripts/generate_fake_logs.py || exit 1
-python scripts/normalize_logs.py || exit 1
-python scripts/extract_features.py || exit 1
-python scripts/detect_anomalies.py || exit 1
-python scripts/generate_incidents.py || exit 1
-python scripts/generate_playbooks.py || exit 1
+python3 garud_drishti/scripts/generate_fake_logs.py || exit 1
+python3 garud_drishti/ingestion/schema_mapper.py || exit 1
+python3 garud_drishti/ingestion/schema_validator.py || exit 1
+python3 garud_drishti/ingestion/normalize_logs.py || exit 1
+
+python3 -m garud_drishti.ingestion.normalize_logs \
+--input garud_drishti/data/raw_logs \
+--output garud_drishti/data/normalized_events \
+--report || exit 1
+
+python3 scripts/extract_features.py || exit 1
+python3 scripts/detect_anomalies.py || exit 1
+python3 garud_drishti/correlation_engine/correlation_pipeline.py || exit 1
 
 echo "✅ Pipeline completed"
 

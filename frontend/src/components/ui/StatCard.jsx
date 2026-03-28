@@ -1,19 +1,28 @@
 import React from 'react';
 
-const StatCard = ({ 
+const StatCard = ({
     title, value, subtitle, icon: Icon, badge,
-    valueColor, iconStyle
+    valueColor, iconStyle, onClick
 }) => {
     return (
-        <div 
-            className="p-6 rounded-xl shadow-sm flex flex-col justify-between transition-all duration-300 relative overflow-hidden hover:-translate-y-1 hover:shadow-lg hover:border-[#00AEEF]/30 border"
-            style={{ 
+        <div
+            className={`p-6 rounded-xl shadow-sm flex flex-col justify-between transition-all duration-300 relative overflow-hidden hover:-translate-y-1 hover:shadow-lg hover:border-[#00AEEF]/30 border ${onClick ? 'cursor-pointer' : ''}`}
+            style={{
                 background: 'var(--surface-color)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
                 borderColor: 'var(--glass-border)',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' 
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
             }}
+            onClick={onClick}
+            role={onClick ? 'button' : undefined}
+            tabIndex={onClick ? 0 : undefined}
+            onKeyDown={onClick ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onClick();
+                }
+            } : undefined}
         >
             <div className="flex justify-between items-start mb-2">
                 <div>
@@ -26,7 +35,7 @@ const StatCard = ({
                     <Icon size={20} />
                 </div>
             </div>
-            
+
             <div className="flex items-center gap-2 mt-auto">
                 {badge ? (
                     badge

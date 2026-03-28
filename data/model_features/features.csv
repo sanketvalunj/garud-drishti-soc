@@ -1,5 +1,0 @@
-user_id,total_events,failed_events,login_events,downloads,unique_ips,unique_servers,unique_devices,night_activity,critical_asset_access,avg_hour,failure_ratio
-emp_101,50,0,22,7,4,4,1,0,0,17.16,0.0
-emp_102,56,0,18,7,4,4,1,0,0,17.0,0.0
-emp_103,55,0,14,13,4,4,1,0,0,17.09090909090909,0.0
-emp_104,39,0,2,7,4,4,1,0,0,16.871794871794872,0.0

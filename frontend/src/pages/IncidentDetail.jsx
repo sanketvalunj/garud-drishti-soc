@@ -24,6 +24,25 @@ import {
 
 const MAX_ENTITIES_VISIBLE = 2
 
+const SOC_ESCALATION_TIERS = [
+  { id: 'tier1', label: 'Tier 1 SOC' },
+  { id: 'tier2', label: 'Tier 2 SOC' },
+  { id: 'tier3', label: 'Tier 3 SOC' },
+]
+
+const buildDefaultPlaybookSteps = (incident, incidentId) => {
+  const user = String((incident?.entities?.users || [])[0] || 'primary user account')
+  const sourceIp = String((incident?.entities?.ips || [])[0] || 'source IP')
+
+  return [
+    { id: 1, title: `Isolate user account: ${user}`, type: 'automated' },
+    { id: 2, title: `Block source IP: ${sourceIp}`, type: 'automated' },
+    { id: 3, title: 'Revoke active authentication sessions', type: 'automated' },
+    { id: 4, title: 'Audit database access for unauthorized activity', type: 'manual' },
+    { id: 5, title: 'Reset credentials and enforce MFA re-enrollment', type: 'manual' },
+  ].map((step) => ({ ...step, incidentId }))
+}
+
 // ─────────────────────────────────────
 // HELPER FUNCTIONS & COMPONENTS
 // ─────────────────────────────────────
@@ -86,37 +105,46 @@ const describeArc = (cx, cy, r, start, end) => {
   return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`
 }
 
+const formatGraphText = (value) => String(value || '').replace(/_/g, ' ').trim()
+
 const CustomNode = ({ data }) => {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
+  const isVirtual = Boolean(data?.virtual)
 
   const getIcon = (type) => ({
     ip: Wifi,
     user: User,
-    server: Server
+    server: Server,
+    virtual: GitBranch,
   }[type] || Server)
 
   const Icon = getIcon(data.type)
 
-  const statusColor = data.compromised
-    ? '#B91C1C'
-    : data.suspected
-      ? '#D97706'
-      : '#15803D'
+  const statusColor = isVirtual
+    ? '#00AEEF'
+    : data.compromised
+      ? '#B91C1C'
+      : data.suspected
+        ? '#D97706'
+        : '#15803D'
 
   return (
     <div style={{
-      background: isDark
-        ? 'rgba(15,25,40,0.95)'
-        : 'rgba(255,255,255,0.98)',
+      background: isVirtual
+        ? (isDark ? 'rgba(0,174,239,0.08)' : 'rgba(0,174,239,0.06)')
+        : isDark
+          ? 'rgba(15,25,40,0.95)'
+          : 'rgba(255,255,255,0.98)',
       border: '1px solid',
       borderColor: isDark
-        ? 'rgba(255,255,255,0.08)'
-        : 'rgba(0,0,0,0.08)',
-      borderTop: `3px solid ${statusColor}`,
+        ? (isVirtual ? 'rgba(0,174,239,0.4)' : 'rgba(255,255,255,0.08)')
+        : (isVirtual ? 'rgba(0,174,239,0.45)' : 'rgba(0,0,0,0.08)'),
+      borderTop: `3px ${isVirtual ? 'dashed' : 'solid'} ${statusColor}`,
+      borderStyle: isVirtual ? 'dashed' : 'solid',
       borderRadius: '8px',
       padding: '10px 14px',
-      minWidth: '110px',
+      minWidth: isVirtual ? '130px' : '110px',
       textAlign: 'center',
       boxShadow: isDark
         ? '0 4px 16px rgba(0,0,0,0.4)'
@@ -137,7 +165,7 @@ const CustomNode = ({ data }) => {
         fontSize: '8px', color: 'var(--text-muted)',
         letterSpacing: '0.08em', marginBottom: '4px', textTransform: 'uppercase'
       }}>
-        {data.type}
+        {isVirtual ? 'virtual entity' : data.type}
       </div>
 
       <div style={{
@@ -146,6 +174,19 @@ const CustomNode = ({ data }) => {
       }}>
         {data.label}
       </div>
+
+      {data?.subLabel && (
+        <div style={{
+          marginTop: '4px',
+          fontSize: '9px',
+          color: 'var(--text-muted)',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
+        }}>
+          {data.subLabel}
+        </div>
+      )}
 
       {/* Bottom handle — source (outgoing edges) */}
       <Handle
@@ -185,10 +226,13 @@ const IncidentDetail = () => {
   const [loading, setLoading] = useState(true)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showAllEntities, setShowAllEntities] = useState(false)
+  const [showAllMitreTechniques, setShowAllMitreTechniques] = useState(false)
   const [showActivateModal, setShowActivateModal] = useState(false)
   const [showEscalateModal, setShowEscalateModal] = useState(false)
   const [isActivating, setIsActivating] = useState(false)
+  const [isGeneratingPlaybook, setIsGeneratingPlaybook] = useState(false)
   const [incidentStatus, setIncidentStatus] = useState('investigating')
+  const [selectedSocTier, setSelectedSocTier] = useState('tier2')
   const [escalateRecipients, setEscalateRecipients] = useState(['ciso'])
   const [escalateReason, setEscalateReason] = useState('')
   const [showToast, setShowToast] = useState(false)
@@ -206,7 +250,8 @@ const IncidentDetail = () => {
 
   const playbookRef = useRef(null)
   const playbookStepLine = (() => {
-    const steps = (incident?.playbook?.steps || []).slice(0, 6)
+    const generatedSteps = Array.isArray(incident?.playbook?.steps) ? incident.playbook.steps : []
+    const steps = (generatedSteps.length ? generatedSteps : buildDefaultPlaybookSteps(incident, id)).slice(0, 6)
     const titles = steps
       .map(s => (s?.title || s?.action || '').toString().trim())
       .filter(Boolean)
@@ -291,8 +336,11 @@ const IncidentDetail = () => {
 
   // DYNAMIC GRAPH MAPPING
   const graphNodes = useMemo(() => {
-    if (!incident?.graphNodes) return []
-    return incident.graphNodes.map(n => ({
+    const sourceNodes = Array.isArray(incident?.graphNodes) ? incident.graphNodes : []
+    const sourceEdges = Array.isArray(incident?.graphEdges) ? incident.graphEdges : []
+    if (sourceNodes.length === 0) return []
+
+    const mappedNodes = sourceNodes.map(n => ({
       id: n.id,
       type: 'customNode',
       position: n.position,
@@ -300,44 +348,122 @@ const IncidentDetail = () => {
         label: n.label,
         type: n.type,
         compromised: n.compromised || false,
-        suspected: n.suspected || false
+        suspected: n.suspected || false,
+        virtual: false,
       }
     }))
+
+    const nodeById = new Map(sourceNodes.map((n) => [n.id, n]))
+    const virtualNodes = sourceEdges
+      .map((e, idx) => {
+        const srcNode = nodeById.get(e.source)
+        const tgtNode = nodeById.get(e.target)
+        if (!srcNode || !tgtNode) return null
+
+        const relation = formatGraphText(e.label)
+        const srcLabel = formatGraphText(srcNode.label || srcNode.id)
+        const tgtLabel = formatGraphText(tgtNode.label || tgtNode.id)
+        const midX = ((srcNode.position?.x ?? 0) + (tgtNode.position?.x ?? 0)) / 2 + (idx % 2 === 0 ? 170 : -170)
+        const midY = ((srcNode.position?.y ?? 0) + (tgtNode.position?.y ?? 0)) / 2
+
+        return {
+          id: `v-${e.id}`,
+          type: 'customNode',
+          position: { x: midX, y: midY },
+          data: {
+            label: relation || `${srcLabel} to ${tgtLabel}`,
+            subLabel: `${srcLabel} -> ${tgtLabel}`,
+            type: 'virtual',
+            compromised: false,
+            suspected: true,
+            virtual: true,
+          },
+        }
+      })
+      .filter(Boolean)
+
+    return [...mappedNodes, ...virtualNodes]
   }, [incident])
 
   const graphEdges = useMemo(() => {
-    if (!incident?.graphEdges) return []
-    return incident.graphEdges.map(e => ({
-      id: e.id,
-      source: e.source,
-      target: e.target,
-      label: e.label,
-      type: 'smoothstep',
-      animated: true,
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        color: '#00AEEF',
-        width: 16,
-        height: 16
-      },
-      style: {
-        stroke: '#00AEEF',
-        strokeWidth: 2,
-        opacity: 0.8
-      },
-      labelStyle: {
-        fontSize: 9,
-        fill: isDark ? '#64748B' : '#94A3B8',
-        fontWeight: '500'
-      },
-      labelBgStyle: {
-        fill: isDark
-          ? 'rgba(6,13,26,0.9)'
-          : 'rgba(248,250,252,0.9)',
-        rx: 3
-      },
-      labelBgPadding: [2, 4]
-    }))
+    const sourceNodes = Array.isArray(incident?.graphNodes) ? incident.graphNodes : []
+    const sourceEdges = Array.isArray(incident?.graphEdges) ? incident.graphEdges : []
+    if (sourceEdges.length === 0 || sourceNodes.length === 0) return []
+
+    const nodeIds = new Set(sourceNodes.map((n) => n.id))
+
+    return sourceEdges.flatMap((e) => {
+      if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) {
+        return []
+      }
+
+      const virtualNodeId = `v-${e.id}`
+
+      return [
+        {
+          id: `${e.id}-sv`,
+          source: e.source,
+          target: virtualNodeId,
+          type: 'smoothstep',
+          animated: true,
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: '#00AEEF',
+            width: 16,
+            height: 16
+          },
+          style: {
+            stroke: '#00AEEF',
+            strokeWidth: 1.8,
+            strokeDasharray: '6 4',
+            opacity: 0.85
+          },
+          labelStyle: {
+            fontSize: 9,
+            fill: isDark ? '#64748B' : '#94A3B8',
+            fontWeight: '500'
+          },
+          labelBgStyle: {
+            fill: isDark
+              ? 'rgba(6,13,26,0.9)'
+              : 'rgba(248,250,252,0.9)',
+            rx: 3
+          },
+          labelBgPadding: [2, 4]
+        },
+        {
+          id: `${e.id}-vt`,
+          source: virtualNodeId,
+          target: e.target,
+          type: 'smoothstep',
+          animated: true,
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: '#00AEEF',
+            width: 16,
+            height: 16
+          },
+          style: {
+            stroke: '#00AEEF',
+            strokeWidth: 1.8,
+            strokeDasharray: '6 4',
+            opacity: 0.85
+          },
+          labelStyle: {
+            fontSize: 9,
+            fill: isDark ? '#64748B' : '#94A3B8',
+            fontWeight: '500'
+          },
+          labelBgStyle: {
+            fill: isDark
+              ? 'rgba(6,13,26,0.9)'
+              : 'rgba(248,250,252,0.9)',
+            rx: 3
+          },
+          labelBgPadding: [2, 4]
+        }
+      ]
+    })
   }, [incident, isDark])
   const location = useLocation();
   const fromPage = location.state?.from || 'incidents';
@@ -357,6 +483,10 @@ const IncidentDetail = () => {
     setNodes(graphNodes)
     setEdges(graphEdges)
   }, [graphNodes, graphEdges, setNodes, setEdges])
+
+  useEffect(() => {
+    setShowAllMitreTechniques(false)
+  }, [incident?.id])
 
   // Load real correlated incident + short narrative (mistral via backend).
   useEffect(() => {
@@ -416,14 +546,59 @@ const IncidentDetail = () => {
   const [stepStatuses, setStepStatuses] = useState({})
 
   useEffect(() => {
-    setStepStatuses(Object.fromEntries((incident?.playbook?.steps || []).map(s => [s.id, 'pending'])))
+    const generatedSteps = Array.isArray(incident?.playbook?.steps) ? incident.playbook.steps : []
+    const baselineSteps = generatedSteps.length ? generatedSteps : buildDefaultPlaybookSteps(incident, id)
+    setStepStatuses(Object.fromEntries(baselineSteps.map((s, idx) => [s?.id || idx + 1, 'pending'])))
   }, [incident?.id])
+
+  useEffect(() => {
+    if (user?.role === 'tier1') {
+      setSelectedSocTier('tier2')
+    } else if (user?.role === 'tier2') {
+      setSelectedSocTier('tier3')
+    } else {
+      setSelectedSocTier('tier3')
+    }
+  }, [user?.role])
 
   const toggleStepStatus = (stepId) => {
     setStepStatuses(prev => ({
       ...prev,
       [stepId]: prev[stepId] === 'pending' ? 'completed' : 'pending'
     }))
+  }
+
+  const handleGeneratePlaybook = async () => {
+    setIsGeneratingPlaybook(true)
+    try {
+      const res = await api.generateCorrelatedIncidentPlaybook(id)
+      const generatedPlaybook = res?.playbook || {}
+      const generatedSteps = Array.isArray(generatedPlaybook?.steps) ? generatedPlaybook.steps : []
+
+      setIncident((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          playbook: {
+            ...(prev.playbook || {}),
+            ...generatedPlaybook,
+            generated: true,
+          },
+        }
+      })
+      setStepStatuses(Object.fromEntries(generatedSteps.map((s, idx) => [s?.id || idx + 1, 'pending'])))
+
+      setToastMessage('Playbook generated successfully. PDF download is now available.')
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3500)
+    } catch (err) {
+      console.error('Failed to generate playbook', err)
+      setToastMessage('Playbook generation failed. Please try again.')
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3500)
+    } finally {
+      setIsGeneratingPlaybook(false)
+    }
   }
 
   const addTerminalLine = (line, delay) => {
@@ -474,7 +649,7 @@ const IncidentDetail = () => {
     }, 300)
   }
 
-  const escalationTarget = user?.role === 'tier1' ? 'Tier 2' : 'Tier 3'
+  const escalationTarget = SOC_ESCALATION_TIERS.find((tier) => tier.id === selectedSocTier)?.label || 'Tier 2 SOC'
 
   const handleEscalate = () => {
     setShowEscalateModal(false)
@@ -494,6 +669,11 @@ const IncidentDetail = () => {
   }
 
   const completedStepsCount = Object.values(stepStatuses).filter(s => s === 'completed').length
+  const playbookSteps = Array.isArray(incident?.playbook?.steps) ? incident.playbook.steps : []
+  const hasGeneratedPlaybook = Boolean(incident?.playbook?.generated) || playbookSteps.length > 0
+  const defaultPlaybookSteps = buildDefaultPlaybookSteps(incident, id)
+  const displayPlaybookSteps = hasGeneratedPlaybook ? playbookSteps : defaultPlaybookSteps
+  const automatedPlaybookSteps = displayPlaybookSteps.filter((s) => s?.type === 'automated')
 
   const priorityConfig = {
     immediate: { label: 'Immediate', color: '#B91C1C', bg: 'rgba(185,28,28,0.08)', border: 'rgba(185,28,28,0.15)' },
@@ -535,6 +715,10 @@ const IncidentDetail = () => {
     { label: 'Compliance Agent', score: incident.agentScores.compliance, color: '#D97706' },
     { label: 'Business Impact', score: incident.agentScores.businessImpact, color: '#15803D' }
   ]
+
+  const mitreTechniques = Array.isArray(incident?.mitreTechniques) ? incident.mitreTechniques : []
+  const visibleMitreTechniques = showAllMitreTechniques ? mitreTechniques : mitreTechniques.slice(0, 4)
+  const hasMoreMitre = mitreTechniques.length > 4
 
   return (
     <div style={{
@@ -674,6 +858,7 @@ const IncidentDetail = () => {
 
             <button
               onClick={() => setShowActivateModal(true)}
+              disabled={isActivating}
               style={{
                 background: '#B91C1C',
                 color: 'white',
@@ -688,7 +873,7 @@ const IncidentDetail = () => {
                 gap: '6px',
                 boxShadow: '0 2px 8px rgba(185,28,28,0.35)',
                 transition: 'all 0.15s ease',
-                opacity: isActivating ? 0.7 : 1,
+                opacity: isActivating ? 0.6 : 1,
                 pointerEvents: isActivating ? 'none' : 'auto'
               }}
               onMouseEnter={(e) => {
@@ -927,6 +1112,9 @@ const IncidentDetail = () => {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(128,128,128,0.3)' }} /> Clean
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <div style={{ width: '16px', height: '2px', borderTop: '2px dashed #00AEEF' }} /> Virtual Link
                   </div>
                 </div>
               </div>
@@ -1174,7 +1362,7 @@ const IncidentDetail = () => {
                 <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>MITRE ATT&CK</div>
               </div>
 
-              {incident.mitreTechniques.map(tech => (
+              {visibleMitreTechniques.map(tech => (
                 <div key={tech.id} style={{
                   background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                   border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '12px 14px', marginBottom: '8px'
@@ -1205,6 +1393,28 @@ const IncidentDetail = () => {
                   </div>
                 </div>
               ))}
+
+              {hasMoreMitre && (
+                <button
+                  onClick={() => setShowAllMitreTechniques((prev) => !prev)}
+                  style={{
+                    width: '100%', marginTop: '8px', padding: '8px',
+                    background: 'transparent', border: '1px solid var(--glass-border)',
+                    borderRadius: '8px', color: '#00AEEF', fontSize: '12px', fontWeight: 600,
+                    cursor: 'pointer', transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(0,174,239,0.06)'
+                    e.currentTarget.style.borderColor = 'rgba(0,174,239,0.3)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent'
+                    e.currentTarget.style.borderColor = 'var(--glass-border)'
+                  }}
+                >
+                  {showAllMitreTechniques ? 'Show less' : `See more (${mitreTechniques.length - 4} more)`}
+                </button>
+              )}
             </div>
 
             {/* Multi-Agent Decision */}
@@ -1248,7 +1458,7 @@ const IncidentDetail = () => {
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', fontSize: '11px', color: '#15803D' }}>
                   <CheckCircle2 size={13} color="#15803D" />
-                  Playbook Generated
+                  {hasGeneratedPlaybook ? 'Playbook Generated' : 'Playbook Not Generated'}
                 </div>
               </div>
             </div>
@@ -1350,16 +1560,18 @@ const IncidentDetail = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Response Playbook</div>
                   <div style={{
-                    background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.15)',
-                    borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 600, color: '#00AEEF',
+                    background: hasGeneratedPlaybook ? 'rgba(0,174,239,0.08)' : 'rgba(217,119,6,0.08)',
+                    border: hasGeneratedPlaybook ? '1px solid rgba(0,174,239,0.15)' : '1px solid rgba(217,119,6,0.2)',
+                    borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: 600,
+                    color: hasGeneratedPlaybook ? '#00AEEF' : '#D97706',
                     display: 'flex', alignItems: 'center', gap: '4px'
                   }}>
-                    <Sparkles size={11} /> AI Generated
+                    <Sparkles size={11} /> {hasGeneratedPlaybook ? 'AI Generated' : 'Not Generated'}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {completedStepsCount} of {(incident?.playbook?.steps || []).length || 0} steps completed
+                    {completedStepsCount} of {displayPlaybookSteps.length || 0} steps completed
                   </div>
                   <div style={{
                     width: '120px',
@@ -1369,7 +1581,7 @@ const IncidentDetail = () => {
                     overflow: 'hidden'
                   }}>
                     <div style={{
-                      width: `${(completedStepsCount / Math.max(1, (incident?.playbook?.steps || []).length || 1)) * 100}%`,
+                      width: `${(completedStepsCount / Math.max(1, displayPlaybookSteps.length || 1)) * 100}%`,
                       height: '100%',
                       background: '#15803D',
                       transition: 'width 0.3s ease'
@@ -1381,11 +1593,11 @@ const IncidentDetail = () => {
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <button
-              onClick={downloadPlaybookPdf}
+                onClick={() => setShowEscalateModal(true)}
                 style={{
                   background: 'transparent',
-                  color: '#00AEEF',
-                  border: '1.5px solid rgba(0,174,239,0.4)',
+                  color: '#D97706',
+                  border: '1.5px solid rgba(217,119,6,0.35)',
                   borderRadius: '8px',
                   padding: '8px 16px',
                   fontSize: '13px',
@@ -1397,10 +1609,66 @@ const IncidentDetail = () => {
                   transition: 'all 0.15s ease'
                 }}
                 onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#D97706'
+                  e.currentTarget.style.color = 'white'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.color = '#D97706'
+                }}
+              >
+                <AlertTriangle size={14} />
+                Escalate to SOC Tier
+              </button>
+
+              <button
+                onClick={handleGeneratePlaybook}
+                disabled={isGeneratingPlaybook}
+                style={{
+                  background: isGeneratingPlaybook ? 'rgba(0,174,239,0.15)' : 'rgba(0,174,239,0.08)',
+                  color: '#00AEEF',
+                  border: '1.5px solid rgba(0,174,239,0.35)',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: isGeneratingPlaybook ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  gap: '6px',
+                  alignItems: 'center',
+                  opacity: isGeneratingPlaybook ? 0.7 : 1,
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {isGeneratingPlaybook ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                {isGeneratingPlaybook ? 'Generating...' : hasGeneratedPlaybook ? 'Regenerate' : 'Generate Playbook'}
+              </button>
+
+              <button
+                onClick={downloadPlaybookPdf}
+                disabled={!hasGeneratedPlaybook || isGeneratingPlaybook}
+                style={{
+                  background: 'transparent',
+                  color: (!hasGeneratedPlaybook || isGeneratingPlaybook) ? 'var(--text-muted)' : '#00AEEF',
+                  border: (!hasGeneratedPlaybook || isGeneratingPlaybook) ? '1.5px solid var(--glass-border)' : '1.5px solid rgba(0,174,239,0.4)',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: (!hasGeneratedPlaybook || isGeneratingPlaybook) ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  gap: '6px',
+                  alignItems: 'center',
+                  opacity: (!hasGeneratedPlaybook || isGeneratingPlaybook) ? 0.7 : 1,
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  if (!hasGeneratedPlaybook || isGeneratingPlaybook) return
                   e.currentTarget.style.background = '#00AEEF'
                   e.currentTarget.style.color = 'white'
                 }}
                 onMouseLeave={(e) => {
+                  if (!hasGeneratedPlaybook || isGeneratingPlaybook) return
                   e.currentTarget.style.background = 'transparent'
                   e.currentTarget.style.color = '#00AEEF'
                 }}
@@ -1451,7 +1719,7 @@ const IncidentDetail = () => {
             }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
-                  {`${(incident?.playbook?.steps || []).length || 0}-step response outline`}
+                  {`${displayPlaybookSteps.length || 0}-step response outline`}
                 </div>
                 <div style={{
                   marginTop: 6,
@@ -1470,10 +1738,10 @@ const IncidentDetail = () => {
                 whiteSpace: 'nowrap',
                 fontFamily: "'JetBrains Mono', monospace"
               }}>
-                Details in PDF
+                {hasGeneratedPlaybook ? 'Details in PDF' : 'Generate to enable PDF'}
               </div>
             </div>
-            {Array.isArray(incident?.playbook?.steps) && incident.playbook.steps.length > 0 && (
+            {displayPlaybookSteps.length > 0 && (
               <div style={{
                 marginTop: 12,
                 background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)',
@@ -1481,19 +1749,33 @@ const IncidentDetail = () => {
                 borderRadius: '10px',
                 padding: '12px 14px'
               }}>
-                {(incident.playbook.steps || []).slice(0, 6).map((step, idx) => (
+                {displayPlaybookSteps.slice(0, 6).map((step, idx) => (
                   <div
                     key={`pb-step-${step?.id || idx}`}
                     style={{
                       fontSize: 12,
                       color: 'var(--text-secondary)',
                       lineHeight: 1.6,
-                      marginBottom: idx < Math.min(5, (incident.playbook.steps || []).length - 1) ? 6 : 0
+                      marginBottom: idx < Math.min(5, displayPlaybookSteps.length - 1) ? 6 : 0
                     }}
                   >
                     {idx + 1}. {(step?.title || step?.description || step?.action || '').toString()}
                   </div>
                 ))}
+              </div>
+            )}
+            {!hasGeneratedPlaybook && (
+              <div style={{
+                marginTop: 12,
+                padding: '12px 14px',
+                borderRadius: '10px',
+                border: '1px dashed rgba(217,119,6,0.3)',
+                background: 'rgba(217,119,6,0.06)',
+                color: 'var(--text-secondary)',
+                fontSize: 12,
+                lineHeight: 1.5,
+              }}>
+                Showing default response steps. Generate Playbook to create an AI-tailored plan and enable PDF export.
               </div>
             )}
           </div>
@@ -1761,12 +2043,17 @@ const IncidentDetail = () => {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {incident.playbook.steps.filter(s => s.type === 'automated').map(step => (
+                  {automatedPlaybookSteps.map(step => (
                     <div key={step.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <Zap size={12} color="#00AEEF" />
                       <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{step.title}</div>
                     </div>
                   ))}
+                  {automatedPlaybookSteps.length === 0 && (
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                      No automated steps are currently available for this incident.
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1783,15 +2070,16 @@ const IncidentDetail = () => {
                 </button>
                 <button
                   onClick={handleActivateResponse}
+                  disabled={isActivating}
                   style={{
-                    background: '#B91C1C', color: 'white', border: 'none',
+                    background: isActivating ? 'rgba(185,28,28,0.5)' : '#B91C1C', color: 'white', border: 'none',
                     borderRadius: '8px', padding: '9px 20px', fontSize: '13px',
-                    fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(185,28,28,0.3)',
+                    fontWeight: 700, cursor: isActivating ? 'not-allowed' : 'pointer', boxShadow: '0 2px 8px rgba(185,28,28,0.3)',
                     display: 'flex', alignItems: 'center', gap: '8px'
                   }}
                 >
                   <Zap size={14} />
-                  Activate Response
+                  {isActivating ? 'Activating...' : 'Activate Response'}
                 </button>
               </div>
             </motion.div>
@@ -1835,6 +2123,41 @@ const IncidentDetail = () => {
               <div style={{ padding: '24px' }}>
                 <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
                   Escalating <span style={{ color: 'var(--text-color)', fontWeight: 600 }}>{incident.id}</span> · {incident.type} · Fidelity: {incident.fidelityScore}
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px' }}>Escalate to</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {SOC_ESCALATION_TIERS.map((tier) => {
+                      const isSelected = selectedSocTier === tier.id
+                      return (
+                        <button
+                          key={tier.id}
+                          onClick={() => setSelectedSocTier(tier.id)}
+                          style={{
+                            width: '100%',
+                            textAlign: 'left',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '12px',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid',
+                            borderColor: isSelected ? 'rgba(217,119,6,0.3)' : 'var(--glass-border)',
+                            background: isSelected ? 'rgba(217,119,6,0.05)' : 'transparent',
+                            cursor: 'pointer',
+                            color: 'var(--text-color)',
+                            fontSize: '13px',
+                            fontWeight: isSelected ? 600 : 500,
+                          }}
+                        >
+                          <span>{tier.label}</span>
+                          {isSelected ? <Check size={14} color="#D97706" /> : <ArrowRight size={14} color="var(--text-muted)" />}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>

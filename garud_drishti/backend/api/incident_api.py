@@ -464,8 +464,6 @@ def _build_incident_list_item(
     pb_row = (playbooks_by_id or {}).get(inc_id) or {}
     soc_row = (soc_by_id or {}).get(inc_id) or {}
     pb_steps = _normalize_playbook_steps(pb_row.get("steps"))
-    if not pb_steps:
-        pb_steps = _normalize_playbook_steps(((soc_row.get("response") if isinstance(soc_row, dict) else {}) or {}).get("steps"))
     playbook_brief = [str(s.get("title") or "").strip() for s in pb_steps[:6] if str(s.get("title") or "").strip()]
 
     return {
@@ -492,7 +490,7 @@ def _build_incident_list_item(
             ]
             if x
         ],
-        "playbookGenerated": True,
+        "playbookGenerated": bool(pb_steps),
         "playbookBrief": playbook_brief,
         "fidelityFactors": _fidelity_factors_from_components(incident),
     }
@@ -652,33 +650,11 @@ def get_correlated_incident_detail(incident_id: str):
 
     playbooks_by_id = _load_playbooks_by_incident_id()
     pb = playbooks_by_id.get(incident_id) or {}
-    pb_steps_check = _normalize_playbook_steps(pb.get("steps"))
-    needs_regen = (
-        (not pb)
-        or (not pb_steps_check)
-        or (len(pb_steps_check) < 6)
-        or any("llm unavailable" in str(s.get("title") or "").lower() for s in pb_steps_check)
-        or (not str(pb.get("playbook_report") or "").strip())
-    )
-    if needs_regen:
-        try:
-            generated = _generate_playbook_with_mistral(inc, soc_item if isinstance(soc_item, dict) else {}, attack_chain if isinstance(attack_chain, list) else [])
-            playbooks_by_id = _persist_playbook_record(incident_id, generated)
-            pb = playbooks_by_id.get(incident_id) or generated
-        except Exception:
-            # Keep dynamic fallback from SOC response if LLM generation fails.
-            pb = pb or {}
-    soc_response = soc_item.get("response") if isinstance(soc_item, dict) else {}
 
-    pb_title = str(
-        pb.get("playbook_title")
-        or _stage_to_title(str((soc_response or {}).get("playbook") or ""))
-        or "SOC Incident Response Playbook"
-    )
+    pb_title = str(pb.get("playbook_title") or "Playbook not generated yet")
     pb_steps = _normalize_playbook_steps(pb.get("steps"))
-    if not pb_steps:
-        pb_steps = _normalize_playbook_steps((soc_response or {}).get("steps"))
     pb_report = str(pb.get("playbook_report") or "")
+    pb_generated = bool(pb_steps or pb_report)
     kill_chain_stages = (
         [_stage_to_title(str((s or {}).get("stage") or "")) for s in attack_chain if isinstance(s, dict) and (s.get("stage") or "")]
         if isinstance(attack_chain, list) and attack_chain
@@ -726,9 +702,45 @@ def get_correlated_incident_detail(incident_id: str):
             "generatedAt": gen_at.strftime("%H:%M:%S") if gen_at else "",
             "steps": pb_steps,
             "report": pb_report,
+            "generated": pb_generated,
         },
         "graphNodes": graph_nodes,
         "graphEdges": graph_edges,
+    }
+
+
+@router.post("/correlated-incidents/{incident_id}/generate-playbook")
+def generate_correlated_incident_playbook(incident_id: str):
+    incidents, by_id = _load_correlated()
+    inc = by_id.get(incident_id)
+    if not inc:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    soc_by_id = _load_soc_results_by_incident_id()
+    soc_item = soc_by_id.get(incident_id) or {}
+    soc_attack = soc_item.get("attack_analysis") if isinstance(soc_item, dict) else {}
+    attack_chain = soc_attack.get("attack_chain") if isinstance(soc_attack, dict) else []
+
+    generated = _generate_playbook_with_mistral(
+        inc,
+        soc_item if isinstance(soc_item, dict) else {},
+        attack_chain if isinstance(attack_chain, list) else [],
+    )
+    playbooks_by_id = _persist_playbook_record(incident_id, generated)
+    pb = playbooks_by_id.get(incident_id) or generated
+    pb_steps = _normalize_playbook_steps(pb.get("steps"))
+    pb_report = str(pb.get("playbook_report") or "")
+
+    return {
+        "incident_id": incident_id,
+        "generated": True,
+        "playbook": {
+            "title": str(pb.get("playbook_title") or "SOC Incident Response Playbook"),
+            "generatedAt": datetime.now(timezone.utc).strftime("%H:%M:%S"),
+            "steps": pb_steps,
+            "report": pb_report,
+            "generated": bool(pb_steps or pb_report),
+        },
     }
 
 
@@ -785,6 +797,33 @@ def attack_category_breakdown():
     items = [{"category": k, "count": v} for k, v in sorted(counts.items(), key=lambda kv: kv[1], reverse=True)]
     total = sum(counts.values())
     return {"total": total, "breakdown": items}
+
+
+@router.get("/incident-severity-distribution")
+def incident_severity_distribution():
+    incidents, _ = _load_correlated()
+    counts = {"high": 0, "medium": 0, "low": 0}
+
+    for inc in incidents:
+        if not isinstance(inc, dict):
+            continue
+        risk_level = str(((inc.get("risk_assessment") or {}).get("risk_level") or ""))
+        sev = _normalize_severity_from_risk_level(risk_level)
+        if sev not in counts:
+            sev = "low"
+        counts[sev] += 1
+
+    return {
+        "total": sum(counts.values()),
+        "high": counts["high"],
+        "medium": counts["medium"],
+        "low": counts["low"],
+        "breakdown": [
+            {"severity": "High", "count": counts["high"]},
+            {"severity": "Medium", "count": counts["medium"]},
+            {"severity": "Low", "count": counts["low"]},
+        ],
+    }
 
 
 @router.get("/incidents")

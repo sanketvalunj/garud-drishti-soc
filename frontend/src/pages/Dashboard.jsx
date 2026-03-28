@@ -9,12 +9,12 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePipeline } from '../context/PipelineContext';
 import { useAuth } from '../context/AuthContext';
+import { useLiveStream } from '../context/LiveStreamContext';
 import {
     BarChart, Bar, Cell, PieChart, Pie, XAxis, Tooltip, ResponsiveContainer, LabelList
 } from 'recharts';
 import StatCard from '../components/ui/StatCard';
 import api from '../services/api';
-import LiveEventStream from '../components/incidents/LiveEventStream';
 
 // New AI Observability Components
 import AIPipeline from '../components/AIPipeline';
@@ -26,11 +26,12 @@ import MitreMapping from '../components/MitreMapping';
 import PlaybookViewer from '../components/incidents/PlaybookViewer';
 import AutomationPanel from '../components/AutomationPanel';
 
-// ─── LIVE STREAM SETTINGS ───────────────────────────────────
-const STREAM_URL = 'http://127.0.0.1:8000/stream-events';
+const HISTORY_POINTS = 12;
+const EMPTY_SERIES = Array(HISTORY_POINTS).fill(0);
 
-const generateSparkline = (points, min, max) => {
-    return Array.from({ length: points }, () => Math.floor(Math.random() * (max - min) + min));
+const pushMetric = (series, value) => {
+    const safeSeries = Array.isArray(series) ? series : EMPTY_SERIES;
+    return [...safeSeries.slice(-(HISTORY_POINTS - 1)), value];
 };
 
 // ─── DEFAULTS (replaced at runtime via backend) ─────────────
@@ -107,6 +108,7 @@ const Dashboard = () => {
     const navigate = useNavigate();
     const { isRunning, lastRun, runPipeline } = usePipeline();
     const { user } = useAuth();
+    const { liveEvents, isStreamEnabled, connectionState, toggleStream } = useLiveStream();
     // API to integrate
     const [stats, setStats] = useState({
         incidents: 0,
@@ -120,16 +122,17 @@ const Dashboard = () => {
     const [recentIncidents, setRecentIncidents] = useState([]);
     const [categoryData, setCategoryData] = useState(mockCategoryData);
     const [severityData, setSeverityData] = useState(mockSeverityData);
+    const [highAlertIncidents, setHighAlertIncidents] = useState([]);
+    const [showHighAlertNotifications, setShowHighAlertNotifications] = useState(false);
+    const [showAllHighAlerts, setShowAllHighAlerts] = useState(false);
 
     // CHANGE 1 — LIVE INCIDENT FEED STATE
-    const [liveEvents, setLiveEvents] = useState([]);
-    const [isStreamActive, setIsStreamActive] = useState(true);
     const [newEventIds, setNewEventIds] = useState(new Set());
     const [showPipelineToast, setShowPipelineToast] = useState(false);
     const [borderAngle, setBorderAngle] = useState(0);
     const liveRef = React.useRef(null);
-
-    const esRef = React.useRef(null);
+    const seenLiveEventIdsRef = React.useRef(new Set());
+    const hasPrimedSeenIdsRef = React.useRef(false);
 
     useEffect(() => {
         if (!isRunning) {
@@ -144,130 +147,143 @@ const Dashboard = () => {
         return () => clearInterval(interval);
     }, [isRunning]);
 
-    // CHANGE 2 — SYSTEM HEALTH STATE
-    // API to integrate
-    const [healthData] = useState({
-        eventsPerMin: generateSparkline(12, 40, 120),
-        aiLatency: generateSparkline(12, 0.8, 2.4),
-        pipelineLoad: generateSparkline(12, 20, 80)
+    // CHANGE 2 — SYSTEM HEALTH STATE (live + interactive)
+    const [healthData, setHealthData] = useState({
+        eventsPerMin: [...EMPTY_SERIES],
+        aiLatency: [...EMPTY_SERIES],
+        pipelineLoad: [...EMPTY_SERIES]
+    });
+    const [healthStatus, setHealthStatus] = useState({
+        aiEngine: 'Checking',
+        faiss: 'Checking',
+        ollama: 'Checking'
+    });
+    const [healthMeta, setHealthMeta] = useState({
+        isRefreshing: false,
+        autoRefresh: true,
+        lastUpdated: '--'
     });
 
-    // Live stream from backend SSE (demo_logs.json)
     useEffect(() => {
-        if (!isStreamActive) {
-            if (esRef.current) {
-                esRef.current.close();
-                esRef.current = null;
-            }
+        if (!Array.isArray(liveEvents)) {
             return;
         }
 
-        const connect = () => {
-            if (esRef.current) return;
+        if (!hasPrimedSeenIdsRef.current) {
+            seenLiveEventIdsRef.current = new Set(liveEvents.map((evt) => evt.id));
+            hasPrimedSeenIdsRef.current = true;
+            return;
+        }
 
-            const es = new EventSource(STREAM_URL);
-            esRef.current = es;
+        const unseen = liveEvents
+            .slice(0, 8)
+            .filter((evt) => evt?.id && !seenLiveEventIdsRef.current.has(evt.id))
+            .map((evt) => evt.id);
 
-            es.onopen = () => {
-                console.log('[Dashboard SSE] Connected');
+        if (unseen.length === 0) {
+            return;
+        }
+
+        setNewEventIds((prev) => {
+            const next = new Set(prev);
+            unseen.forEach((id) => next.add(id));
+            return next;
+        });
+
+        unseen.forEach((id) => seenLiveEventIdsRef.current.add(id));
+        if (seenLiveEventIdsRef.current.size > 500) {
+            const recentIds = liveEvents.slice(0, 300).map((evt) => evt.id);
+            seenLiveEventIdsRef.current = new Set(recentIds);
+        }
+
+        const timer = setTimeout(() => {
+            setNewEventIds((prev) => {
+                const next = new Set(prev);
+                unseen.forEach((id) => next.delete(id));
+                return next;
+            });
+        }, 3000);
+
+        return () => clearTimeout(timer);
+    }, [liveEvents]);
+
+    const streamStatusConfig = (() => {
+        if (!isStreamEnabled || connectionState === 'paused') {
+            return {
+                label: 'Paused',
+                color: 'var(--text-muted)',
+                bg: 'rgba(148,163,184,0.08)',
+                border: 'rgba(148,163,184,0.2)',
+                pulse: false,
             };
+        }
 
-            es.onmessage = (msg) => {
-                try {
-                    const data = JSON.parse(msg.data);
-
-                    const ts = new Date(data.timestamp || Date.now());
-                    const timeStr = ts.toLocaleTimeString('en-GB', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit'
-                    });
-
-                    const rawSev = (data.severity || 'info').toString().toLowerCase();
-                    const uiSev = (rawSev === 'critical' || rawSev === 'high')
-                        ? 'high'
-                        : (rawSev === 'warning')
-                            ? 'medium'
-                            : 'low';
-
-                    const id = data.event_id || `evt-${Date.now()}-${Math.random()}`;
-
-                    const newEvent = {
-                        id,
-                        time: timeStr,
-                        type: data.event_type || data.event_category || 'EVENT',
-                        entity: data.user || data.entity_id || '—',
-                        severity: uiSev,
-                        source: data.source || data.source_ip || '—',
-                        isNew: true,
-                        incidentId: data.incident_id || ''
-                    };
-
-                    setLiveEvents(prev => {
-                        const updated = [newEvent, ...prev];
-                        return updated.slice(0, 8);
-                    });
-
-                    setNewEventIds(prev => {
-                        const next = new Set(prev);
-                        next.add(id);
-                        return next;
-                    });
-
-                    setTimeout(() => {
-                        setNewEventIds(prev => {
-                            const next = new Set(prev);
-                            next.delete(id);
-                            return next;
-                        });
-                    }, 3000);
-                } catch (e) {
-                    console.error('[Dashboard SSE] parse error', e);
-                }
+        if (connectionState === 'live') {
+            return {
+                label: 'Live',
+                color: '#15803D',
+                bg: 'rgba(21,128,61,0.08)',
+                border: 'rgba(21,128,61,0.15)',
+                pulse: true,
             };
+        }
 
-            es.onerror = () => {
-                console.error('[Dashboard SSE] error');
-                try {
-                    es.close();
-                } catch {}
-                esRef.current = null;
-                // reconnect after pause
-                setTimeout(connect, 3000);
+        if (connectionState === 'connecting') {
+            return {
+                label: 'Connecting',
+                color: '#D97706',
+                bg: 'rgba(217,119,6,0.08)',
+                border: 'rgba(217,119,6,0.2)',
+                pulse: true,
             };
+        }
+
+        if (connectionState === 'reconnecting') {
+            return {
+                label: 'Reconnecting',
+                color: '#D97706',
+                bg: 'rgba(217,119,6,0.08)',
+                border: 'rgba(217,119,6,0.2)',
+                pulse: true,
+            };
+        }
+
+        return {
+            label: 'Offline',
+            color: '#B91C1C',
+            bg: 'rgba(185,28,28,0.08)',
+            border: 'rgba(185,28,28,0.2)',
+            pulse: false,
         };
-
-        connect();
-
-        return () => {
-            if (esRef.current) {
-                esRef.current.close();
-                esRef.current = null;
-            }
-        };
-    }, [isStreamActive]);
+    })();
 
     const fetchDashboardData = async () => {
         try {
-            const [demoLogsCount, resPlaybooks, resRecent, resCategories] = await Promise.all([
+            const [demoLogsCount, resPlaybooks, resRecent, resCategories, resSeverity, resCorrelatedAll] = await Promise.all([
                 api.getDemoLogsCount().catch(() => ({ count: 0, by_severity: {} })),
                 api.getPlaybooks().catch(() => ({ playbooks: [] })),
                 api.getCorrelatedIncidents({ recentOnly: true, limit: 5 }).catch(() => ({ incidents: [] })),
-                api.getAttackCategoryBreakdown().catch(() => ({ breakdown: [] }))
+                api.getAttackCategoryBreakdown().catch(() => ({ breakdown: [] })),
+                api.getIncidentSeverityDistribution().catch(() => ({ high: 0, medium: 0, low: 0 })),
+                api.getCorrelatedIncidents({ recentOnly: false, limit: 200 }).catch(() => ({ incidents: [] }))
             ]);
 
             const playbooks = resPlaybooks?.playbooks || [];
             const recent = resRecent?.incidents || [];
             const breakdown = resCategories?.breakdown || [];
+            const allCorrelated = resCorrelatedAll?.incidents || [];
+            const highOnly = allCorrelated.filter((inc) => String(inc?.severity || '').toLowerCase() === 'high');
 
             setStats(prev => ({
                 ...prev,
                 incidents: demoLogsCount?.count || 0,
+                highRisk: resSeverity?.high || highOnly.length || 0,
                 playbooks: playbooks.length,
                 aiDecisions: playbooks.length
             }));
 
             setRecentIncidents(recent);
+            setHighAlertIncidents(highOnly);
 
             // Attack category breakdown (real, from correlated incidents)
             const palette = ['#00395D', '#0067A5', '#00AEEF', '#3ABEF9', '#7DD3FC', '#94A3B8'];
@@ -278,23 +294,90 @@ const Dashboard = () => {
             }));
             if (cat.length > 0) setCategoryData(cat);
 
-            // Severity distribution derived from recent incidents (keeps UI stable + real)
-            const sevCounts = recent.reduce((acc, inc) => {
-                const sev = (inc.severity || '').toLowerCase();
-                const key = sev === 'high' ? 'High' : sev === 'medium' ? 'Medium' : 'Low';
-                acc[key] = (acc[key] || 0) + 1;
-                return acc;
-            }, {});
+            // Severity distribution from backend endpoint backed by correlated_incidents.json
             setSeverityData([
-                { name: 'High', value: sevCounts.High || 0, color: '#B91C1C' },
-                { name: 'Medium', value: sevCounts.Medium || 0, color: '#D97706' },
-                { name: 'Low', value: sevCounts.Low || 0, color: '#00AEEF' }
+                { name: 'High', value: resSeverity?.high || 0, color: '#B91C1C' },
+                { name: 'Medium', value: resSeverity?.medium || 0, color: '#D97706' },
+                { name: 'Low', value: resSeverity?.low || 0, color: '#00AEEF' }
             ]);
 
         } catch (error) {
             console.error("Dashboard data fetch failed", error);
         }
     };
+
+    const fetchSystemHealthMetrics = React.useCallback(async (showSpinner = false) => {
+        if (showSpinner) {
+            setHealthMeta(prev => ({ ...prev, isRefreshing: true }));
+        }
+
+        try {
+            const [systemHealth, pipelineStatus, modelStatus, storageStatus, demoLogsCount] = await Promise.all([
+                api.getSystemHealth().catch(() => ({})),
+                api.getPipelineStatus().catch(() => ({})),
+                api.getModelStatus().catch(() => ({})),
+                api.getStorageStatus().catch(() => ({ files: {} })),
+                api.getDemoLogsCount().catch(() => ({ count: 0 }))
+            ]);
+
+            const eventsProcessed = Number(pipelineStatus?.events_processed || 0);
+            const startAt = pipelineStatus?.start_time ? new Date(pipelineStatus.start_time).getTime() : NaN;
+            let eventsPerMin = 0;
+
+            if (!Number.isNaN(startAt) && eventsProcessed > 0) {
+                const elapsedMinutes = Math.max((Date.now() - startAt) / 60000, 0.1);
+                eventsPerMin = Math.round(eventsProcessed / elapsedMinutes);
+            }
+
+            if (eventsPerMin <= 0) {
+                eventsPerMin = Number(demoLogsCount?.count || 0);
+            }
+
+            const apiLatencyMs = Number(systemHealth?.api_latency_ms || 0);
+            const aiLatencySec = Number((apiLatencyMs / 1000).toFixed(2));
+
+            const pipelineState = String(pipelineStatus?.status || 'idle').toLowerCase();
+            const progress = Number(pipelineStatus?.progress || 0);
+            let pipelineLoad = 15;
+
+            if (pipelineState === 'running') {
+                pipelineLoad = Math.min(95, Math.max(25, Math.round(progress)));
+            } else if (pipelineState === 'completed') {
+                pipelineLoad = 22;
+            } else if (pipelineState === 'failed') {
+                pipelineLoad = 88;
+            }
+
+            setHealthData(prev => ({
+                eventsPerMin: pushMetric(prev.eventsPerMin, eventsPerMin),
+                aiLatency: pushMetric(prev.aiLatency, aiLatencySec),
+                pipelineLoad: pushMetric(prev.pipelineLoad, pipelineLoad)
+            }));
+
+            const incidentsFileReady = Boolean(storageStatus?.files?.['incidents.json']);
+            setHealthStatus({
+                aiEngine: modelStatus?.llm_available ? 'Operational' : 'Offline',
+                faiss: incidentsFileReady ? 'Synced' : 'Syncing',
+                ollama: modelStatus?.fallback_mode ? 'Fallback' : (modelStatus?.llm_available ? 'Online' : 'Offline')
+            });
+
+            setHealthMeta(prev => ({
+                ...prev,
+                lastUpdated: new Date().toLocaleTimeString('en-GB', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                })
+            }));
+        } catch (error) {
+            console.error('System health fetch failed', error);
+            setHealthStatus(prev => ({ ...prev, aiEngine: 'Error' }));
+        } finally {
+            if (showSpinner) {
+                setHealthMeta(prev => ({ ...prev, isRefreshing: false }));
+            }
+        }
+    }, []);
 
 
     useEffect(() => {
@@ -303,6 +386,40 @@ const Dashboard = () => {
             fetchDashboardData();
         }
     }, [isRunning]);
+
+    useEffect(() => {
+        fetchSystemHealthMetrics(false);
+    }, [fetchSystemHealthMetrics]);
+
+    useEffect(() => {
+        if (!healthMeta.autoRefresh) {
+            return;
+        }
+
+        const timer = setInterval(() => {
+            fetchSystemHealthMetrics(false);
+        }, 10000);
+
+        return () => clearInterval(timer);
+    }, [healthMeta.autoRefresh, fetchSystemHealthMetrics]);
+
+    const latestEventsPerMin = healthData.eventsPerMin[healthData.eventsPerMin.length - 1] || 0;
+    const latestAiLatency = healthData.aiLatency[healthData.aiLatency.length - 1] || 0;
+    const latestPipelineLoad = healthData.pipelineLoad[healthData.pipelineLoad.length - 1] || 0;
+
+    const aiLatencyColor = latestAiLatency <= 0.35 ? '#15803D' : latestAiLatency <= 0.8 ? '#D97706' : '#B91C1C';
+    const aiLatencyLabel = latestAiLatency <= 0.35 ? 'Optimized' : latestAiLatency <= 0.8 ? 'Degraded' : 'High Latency';
+
+    const getStatusColor = (status) => {
+        const s = String(status || '').toLowerCase();
+        if (s.includes('operational') || s.includes('online') || s.includes('synced')) {
+            return '#15803D';
+        }
+        if (s.includes('syncing') || s.includes('fallback') || s.includes('warning') || s.includes('degraded')) {
+            return '#D97706';
+        }
+        return '#B91C1C';
+    };
 
     return (
         <div className="space-y-6">
@@ -327,7 +444,7 @@ const Dashboard = () => {
                 />
                 <StatCard
                     title="High Alerts"
-                    value="23"
+                    value={stats.highRisk || 0}
                     icon={ShieldAlert}
                     iconStyle={{
                         padding: '10px',
@@ -335,8 +452,12 @@ const Dashboard = () => {
                         backgroundColor: 'rgba(0,57,93,0.08)',
                         color: '#00395D'
                     }}
-                    subtitle="Requires immediate action"
+                    subtitle={`Requires immediate action \u00b7 ${Math.min(3, highAlertIncidents.length)} shown first`}
                     valueColor="#B91C1C"
+                    onClick={() => {
+                        setShowHighAlertNotifications(true);
+                        setShowAllHighAlerts(false);
+                    }}
                 />
                 <StatCard
                     title="Avg Detection Time"
@@ -367,6 +488,107 @@ const Dashboard = () => {
                     }
                 />
             </div>
+
+            <AnimatePresence>
+                {showHighAlertNotifications && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[1200] flex items-center justify-center p-4"
+                        style={{ background: 'rgba(2, 6, 23, 0.55)' }}
+                        onClick={() => setShowHighAlertNotifications(false)}
+                    >
+                        <motion.div
+                            initial={{ y: 24, opacity: 0, scale: 0.98 }}
+                            animate={{ y: 0, opacity: 1, scale: 1 }}
+                            exit={{ y: 12, opacity: 0, scale: 0.98 }}
+                            transition={{ duration: 0.2 }}
+                            className="w-full max-w-2xl rounded-xl border"
+                            style={{
+                                background: 'var(--surface-color)',
+                                borderColor: 'var(--glass-border)',
+                                backdropFilter: 'blur(20px)',
+                                WebkitBackdropFilter: 'blur(20px)'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--glass-border)' }}>
+                                <div>
+                                    <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>High Alert Notifications</h3>
+                                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{stats.highRisk || 0} high severity incidents</p>
+                                </div>
+                                <button
+                                    className="text-xs px-2 py-1 rounded border"
+                                    style={{ borderColor: 'var(--glass-border)', color: 'var(--text-muted)' }}
+                                    onClick={() => setShowHighAlertNotifications(false)}
+                                >
+                                    Close
+                                </button>
+                            </div>
+
+                            <div className="max-h-[420px] overflow-y-auto px-3 py-3 space-y-2">
+                                {!showAllHighAlerts && (
+                                    <div className="rounded-lg border px-3 py-4 text-sm" style={{ borderColor: 'var(--glass-border)', color: 'var(--text-muted)' }}>
+                                        Click See more to view high alert notifications.
+                                    </div>
+                                )}
+
+                                {showAllHighAlerts && highAlertIncidents.map((inc) => (
+                                    <button
+                                        key={inc.id}
+                                        className="w-full text-left rounded-lg border px-3 py-3 hover:bg-white/10 transition-colors"
+                                        style={{ borderColor: 'var(--glass-border)' }}
+                                        onClick={() => {
+                                            setShowHighAlertNotifications(false);
+                                            navigate(`/incidents?highlight=${inc.id}`);
+                                        }}
+                                    >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-sm font-semibold" style={{ color: '#B91C1C' }}>{inc.id}</span>
+                                            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{inc.detectedAt || 'recent'}</span>
+                                        </div>
+                                        <p className="text-sm mt-1" style={{ color: 'var(--text-primary)' }}>{inc.type || 'Suspicious Activity'}</p>
+                                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{inc.summary || 'High-risk activity requires immediate action.'}</p>
+                                    </button>
+                                ))}
+
+                                {showAllHighAlerts && highAlertIncidents.length === 0 && (
+                                    <div className="rounded-lg border px-3 py-4 text-sm" style={{ borderColor: 'var(--glass-border)', color: 'var(--text-muted)' }}>
+                                        No high alert incidents found.
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="px-5 py-3 border-t flex items-center justify-between" style={{ borderColor: 'var(--glass-border)' }}>
+                                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                                    Showing {Math.min(showAllHighAlerts ? highAlertIncidents.length : 3, highAlertIncidents.length)} of {highAlertIncidents.length}
+                                </span>
+
+                                {!showAllHighAlerts && highAlertIncidents.length > 3 && (
+                                    <button
+                                        className="text-xs font-semibold px-3 py-1.5 rounded border"
+                                        style={{ borderColor: 'var(--glass-border)', color: '#00AEEF' }}
+                                        onClick={() => setShowAllHighAlerts(true)}
+                                    >
+                                        See more
+                                    </button>
+                                )}
+
+                                {showAllHighAlerts && (
+                                    <button
+                                        className="text-xs font-semibold px-3 py-1.5 rounded border"
+                                        style={{ borderColor: 'var(--glass-border)', color: 'var(--text-muted)' }}
+                                        onClick={() => setShowAllHighAlerts(false)}
+                                    >
+                                        Show less
+                                    </button>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Pipeline Control - Only visible for Tier 3 and Manager */}
             {(user?.role === 'tier3' || user?.role === 'manager') && (
@@ -515,16 +737,17 @@ const Dashboard = () => {
 
                             <div style={{
                                 display: 'flex', gap: '6px', alignItems: 'center',
-                                background: 'rgba(21,128,61,0.08)', border: '1px solid rgba(21,128,61,0.15)',
+                                background: streamStatusConfig.bg,
+                                border: `1px solid ${streamStatusConfig.border}`,
                                 borderRadius: '20px', padding: '2px 10px'
                             }}>
                                 <div style={{
                                     width: '7px', height: '7px', borderRadius: '50%',
-                                    background: '#15803D',
-                                    animation: isStreamActive ? 'pulse-ring 2s infinite' : 'none'
+                                    background: streamStatusConfig.color,
+                                    animation: streamStatusConfig.pulse ? 'pulse-ring 2s infinite' : 'none'
                                 }} />
-                                <span style={{ fontSize: '10px', fontWeight: 600, color: '#15803D' }}>
-                                    {isStreamActive ? 'Live' : 'Paused'}
+                                <span style={{ fontSize: '10px', fontWeight: 600, color: streamStatusConfig.color }}>
+                                    {streamStatusConfig.label}
                                 </span>
                             </div>
                         </div>
@@ -538,7 +761,7 @@ const Dashboard = () => {
                             </div>
 
                             <button
-                                onClick={() => setIsStreamActive(!isStreamActive)}
+                                onClick={toggleStream}
                                 style={{
                                     background: 'none', border: 'none', cursor: 'pointer',
                                     color: 'var(--text-muted)', fontSize: '11px',
@@ -548,7 +771,7 @@ const Dashboard = () => {
                                 }}
                                 className="hover:bg-white/5"
                             >
-                                {isStreamActive ? (
+                                {isStreamEnabled ? (
                                     <><Pause size={14} /> Pause</>
                                 ) : (
                                     <><Play size={14} /> Resume</>
@@ -730,7 +953,7 @@ const Dashboard = () => {
                 >
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Incident Severity Distribution</h3>
-                        <span className="text-[11px] font-medium border px-2 py-1 rounded" style={{ color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', borderColor: 'var(--glass-border)' }}>Last 24 hours</span>
+                        <span className="text-[11px] font-medium border px-2 py-1 rounded" style={{ color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', borderColor: 'var(--glass-border)' }}>Correlated incidents</span>
                     </div>
                     <div className="h-[220px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -906,7 +1129,35 @@ const Dashboard = () => {
 
             {/* ROW 5 — System Health (Change 2) */}
             <div className="mt-8">
-                <h3 className="font-semibold mb-4 px-1" style={{ color: 'var(--text-secondary)' }}>System Health Metrics</h3>
+                <div className="mb-4 px-1 flex items-center justify-between gap-3">
+                    <h3 className="font-semibold" style={{ color: 'var(--text-secondary)' }}>System Health Metrics</h3>
+                    <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                        <span>Updated {healthMeta.lastUpdated}</span>
+                        <button
+                            onClick={() => setHealthMeta(prev => ({ ...prev, autoRefresh: !prev.autoRefresh }))}
+                            className="px-2 py-1 rounded border"
+                            style={{
+                                borderColor: 'var(--glass-border)',
+                                background: 'var(--surface-color)',
+                                color: healthMeta.autoRefresh ? '#15803D' : 'var(--text-muted)'
+                            }}
+                        >
+                            {healthMeta.autoRefresh ? 'Auto: On' : 'Auto: Off'}
+                        </button>
+                        <button
+                            onClick={() => fetchSystemHealthMetrics(true)}
+                            className="px-2 py-1 rounded border flex items-center gap-1"
+                            style={{
+                                borderColor: 'var(--glass-border)',
+                                background: 'var(--surface-color)',
+                                color: 'var(--text-primary)'
+                            }}
+                        >
+                            <RefreshCw size={12} className={healthMeta.isRefreshing ? 'animate-spin' : ''} />
+                            Refresh
+                        </button>
+                    </div>
+                </div>
 
                 {/* Health Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -928,7 +1179,7 @@ const Dashboard = () => {
                         </div>
 
                         <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#00AEEF', marginBottom: '8px' }}>
-                            {healthData.eventsPerMin[healthData.eventsPerMin.length - 1]}
+                            {latestEventsPerMin}
                         </div>
 
                         {/* Sparkline SVG */}
@@ -966,13 +1217,13 @@ const Dashboard = () => {
                         <div className="flex justify-between items-center mb-2">
                             <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>AI Processing Latency</span>
                             <div className="flex items-center gap-1.5">
-                                <div className="w-1.5 h-1.5 rounded-full bg-[#15803D]" />
-                                <span style={{ fontSize: '10px', color: '#15803D', fontWeight: 600 }}>Optimized</span>
+                                <div className="w-1.5 h-1.5 rounded-full" style={{ background: aiLatencyColor }} />
+                                <span style={{ fontSize: '10px', color: aiLatencyColor, fontWeight: 600 }}>{aiLatencyLabel}</span>
                             </div>
                         </div>
 
-                        <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#15803D', marginBottom: '8px' }}>
-                            {healthData.aiLatency[healthData.aiLatency.length - 1].toFixed(1)}s
+                        <div style={{ fontSize: '22px', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: aiLatencyColor, marginBottom: '8px' }}>
+                            {latestAiLatency.toFixed(2)}s
                         </div>
 
                         {/* Sparkline SVG */}
@@ -990,8 +1241,8 @@ const Dashboard = () => {
                                 }).join(' ');
                                 return (
                                     <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: 40 }}>
-                                        <path d={pathData} fill="none" stroke="#15803D" strokeWidth="1.5" opacity="0.7" />
-                                        <path d={pathData + ` L ${w} ${h} L 0 ${h} Z`} fill="rgba(21,128,61,0.08)" />
+                                        <path d={pathData} fill="none" stroke={aiLatencyColor} strokeWidth="1.5" opacity="0.7" />
+                                        <path d={pathData + ` L ${w} ${h} L 0 ${h} Z`} fill={`${aiLatencyColor}15`} />
                                     </svg>
                                 );
                             })()}
@@ -1008,7 +1259,7 @@ const Dashboard = () => {
                         }}
                     >
                         {(() => {
-                            const load = healthData.pipelineLoad[healthData.pipelineLoad.length - 1];
+                            const load = latestPipelineLoad;
                             const loadColor = load < 60 ? '#15803D' : load < 80 ? '#D97706' : '#B91C1C';
                             return (
                                 <>
@@ -1056,12 +1307,12 @@ const Dashboard = () => {
                 {/* Status Strip Footer */}
                 <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
                     {[
-                        { label: 'AI Engine', status: 'Operational' },
-                        { label: 'FAISS Index', status: 'Synced' },
-                        { label: 'Ollama', status: 'Online' }
+                        { label: 'AI Engine', status: healthStatus.aiEngine },
+                        { label: 'FAISS Index', status: healthStatus.faiss },
+                        { label: 'Ollama', status: healthStatus.ollama }
                     ].map((item, idx) => (
                         <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
-                            <div className="w-1.5 h-1.5 rounded-full bg-[#15803D]" />
+                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: getStatusColor(item.status) }} />
                             <span style={{ fontWeight: 600 }}>{item.label}</span>
                             <span>&middot;</span>
                             <span>{item.status}</span>

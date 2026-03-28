@@ -44,6 +44,16 @@ export default {
         }
     },
 
+    generateCorrelatedIncidentPlaybook: async (id) => {
+        try {
+            const response = await apiClient.post(`/correlated-incidents/${id}/generate-playbook`);
+            return response.data;
+        } catch (error) {
+            console.error('API Error: generateCorrelatedIncidentPlaybook', error);
+            throw error;
+        }
+    },
+
     getCorrelatedIncidentNarrative: async (id) => {
         try {
             const response = await apiClient.get(`/correlated-incidents/${id}/narrative`);
@@ -61,6 +71,16 @@ export default {
         } catch (error) {
             console.error('API Error: getAttackCategoryBreakdown', error);
             return { total: 0, breakdown: [] };
+        }
+    },
+
+    getIncidentSeverityDistribution: async () => {
+        try {
+            const response = await apiClient.get('/incident-severity-distribution');
+            return response.data;
+        } catch (error) {
+            console.error('API Error: getIncidentSeverityDistribution', error);
+            return { total: 0, high: 0, medium: 0, low: 0, breakdown: [] };
         }
     },
 
